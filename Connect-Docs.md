@@ -6,14 +6,14 @@
 
 ## 🚀 Overview
 
->_**COMMENT**_: NEED TO FILL IN DETAILS
+<!-- Need to fill details -->
 
-**Eventify** start here 
+**Eventify** _start here_
 
 ---
 
 ## ✨ Key Features
->_**COMMENT**_ CAN ADJUST AS NEEDED
+<!-- Can adjust sections and details as needed -->
 - 🧾 **Lottery-based sign-up:** _FILL_
 - 📅 **Event management dashboard:** _FILL_
 - 👥 **User profiles:** _FILL_
@@ -23,7 +23,7 @@
 ---
 
 ## 🧭 Documentation Index
-> _**COMMENT**_ Need to edit the hyperlink as we go
+<!-- Need to edit hyperlinks as we go -->
 
 | Section | Description |
 |----------|-------------|
@@ -32,8 +32,8 @@
 | [⚙️ Architecture](docs/architecture.md) | Backend design, database schema, and flow |
 | [📱 API Reference](docs/api.md) | Endpoints, request/response examples |
 | [💡 Feature Roadmap](docs/roadmap.md) | Upcoming releases and improvements |
-| [🧑‍💻 Contributing](docs\contributing.md) | Guidelines for developers |
-
+| [🧑‍💻 Contributing](docs/contributing.md) | Guidelines for developers |
+ <!-- Need to use forward slashes for github functionality -- Backward only works locally -->
 ---
 
 ## 💻 Quick Start
