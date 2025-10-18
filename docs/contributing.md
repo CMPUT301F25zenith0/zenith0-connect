@@ -3,7 +3,7 @@
 This page outlines the individual contributions made by each team member and links to related project documentation such as meeting notes and progress records.
 
 ---
-> REMEMBER EVERYTHING CAN BE EDITED
+<!-- Check if needs edits -->
 
 ## 🧑‍💻 Team Members & Contributions
 
