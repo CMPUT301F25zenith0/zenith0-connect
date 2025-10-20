@@ -1,3 +1,4 @@
+[⬅️Back](../UI-design/ui-main.md)
 # 🖼️ UI Mockups
 
 This page contains **rough interface mockups** illustrating where key UI elements (buttons, text, input fields, logos, etc.) are placed and how they will be used.
@@ -9,6 +10,7 @@ This page contains **rough interface mockups** illustrating where key UI element
 ## 📱 Overview
 
 Each mockup below represents a part of the interface, showing **placement**, **proportion**, and **intended interaction**.
+[Mockup-PDF](./images_OR_assets/Final_%20Mockup%20Interface%20(P2).pdf)
 
 ---
 
@@ -26,38 +28,28 @@ Showcases placement of:
 ### Mockup
 | Rough Layout | Description |
 |:-------------:|:------------|
-| ![Login Screen Mockup](./images_OR_assets/tst%20image.PNG) | **Interaction:** Users enter credentials and proceed. <br> **Design intent:** Keep it simple, with clean spacing and clear CTA buttons. |
+| ![Login Screen Mockup](./images_OR_assets/login_screen.PNG) | **Interaction:** Lets the user authenticate via Email/Password or Device ID to access the app. Includes link to Sign Up and Forgot Password. <br> **Design intent:** Fulfills 01.01.01 (login), supports 01.01.02 (auth flow completeness).|
 
 ---
 
 ## 🏠 Example: Home Screen
 
-**Goal:** Display navigation buttons and primary actions clearly.
+**Goal:** Display events, navigation buttons and primary actions clearly.
 
 | Mockup | Notes |
 |:-------:|:------|
-| ![Home Screen Mockup](./images/home_mockup.png) | - Top bar: logo + title <br> - Center: main action buttons <br> - Bottom: navigation bar <br><br>**Usage:** Establishes the primary layout for user entry after login. |
+| ![Home Screen Mockup](./images_OR_assets/home-events%20screen.PNG) | **Interaction:** The Entrant Dashboard displays a list of available, joined, and past events. It includes filters for date and category, helping users quickly find events and navigate to detailed pages. <br> **Design Intent** Addresses 01.02.01–01.03.02 by showing the user’s active events, supporting event discovery, and linking directly to join/withdraw functionality. |
 
 ---
 
-## 🔤 Text and Typography Placement
-
-![Typography Mockup](./images/typography_layout.png)
-
-**Notes:**
-- Headings use **large bold fonts** for emphasis.
-- Body text follows consistent spacing and alignment.
-- Labels beside inputs maintain a clear left margin.
-
----
 
 ## 🧩 Component Layouts
 
 | Component | Image | Usage Notes |
 |------------|:------:|-------------|
-| **Button Styles** | ![Buttons](./images/buttons.png) | Primary, secondary, and disabled states. Maintain padding and rounded corners. |
-| **Input Fields** | ![Inputs](./images/inputs.png) | Display input fields with placeholder text and labels above. |
-| **Logo Placement** | ![Logo Placement](./images/logo_layout.png) | Ensure visibility and spacing consistency across pages. |
+| **Button Styles** | ![Buttons]() | Primary, secondary, and disabled states. Maintain padding and rounded corners. |
+| **Input Fields** | ![Inputs]() | Display input fields with placeholder text and labels above. |
+| **Logo Placement** | ![Logo Placement]() | Ensure visibility and spacing consistency across pages. |
 
 ---
 
@@ -74,10 +66,10 @@ Showcases placement of:
 
 ## 🧾 Notes for Review
 
-- These mockups focus on **structure**, not color or typography.
-- Final design decisions will be reflected in the [Design System](../UI_Design/Design_System.md).
+- These mockups focus on **structure**, not color or typography. ➡️[Colour/Typography](ui-ideas.md)
+- Final design decisions will be reflected in the [Design](./ui-designs.md).
 - Feedback on spacing, placement, and usability is welcome before refining visuals.
 
 ---
 
-_Last updated: {{DATE}}_
+_Last updated: [2025-10-20]_

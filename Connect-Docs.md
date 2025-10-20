@@ -8,7 +8,7 @@
 
 <!-- Need to fill details -->
 
-**Eventify** _start here_
+**Zenith-Connect** is a mobile application designed to make community event sign-ups fair, accessible, and stress-free. Instead of a first-come, first-served system, it uses a lottery mechanism to randomly select participants from a waiting list after a registration period. Organizers can create and manage events, upload images, scan QR codes, and track participation through Firebase integration. With distinct roles for entrants, organizers, and admins, Zenith-Connect ensures an inclusive and efficient experience for all users.
 
 ---
 
@@ -28,13 +28,11 @@
 
 | Section | Description |
 |----------|-------------|
-| [🛠 Setup Guide](docs/setup.md) | Installation, dependencies, and local run instructions |
+| [🛠 Setup Guide] | Installation, dependencies, and local run instructions |
 | [🎨 UI Design](docs/UI-design/ui-main.md) | Screens, color palettes, and navigation flow |
 | [⚙️ Architecture](docs/architecture/architecture-main.md) | Backend design, database schema, and flow |
-| [📱 API Reference](docs/api.md) | Endpoints, request/response examples |
-| [💡 Feature Roadmap](docs/roadmap.md) | Upcoming releases and improvements |
+| [📱 API Reference] | Endpoints, request/response examples |
+| [💡 Feature Roadmap] | Upcoming releases and improvements |
 | [🧑‍💻 Contributing](docs/contributing.md) | Guidelines for developers |
  <!-- Need to use forward slashes for github functionality -- Backward only works locally -->
 ---
-
-## 💻 Quick Start

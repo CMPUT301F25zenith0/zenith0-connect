@@ -1,3 +1,4 @@
+[⬅️Back](../Connect-Docs.md)
 # 👥 Team Contributions
 
 This page outlines the individual contributions made by each team member and links to related project documentation such as meeting notes and progress records.
@@ -78,8 +79,8 @@ _Example: DevOps / Deployment Engineer_
 | Document | Description |
 |-----------|-------------|
 | [📝 Meetings ](meetings.md) | Regular meetings to go over project details, and update status |
-| [🧾 Development Log](development-log.md) | DO WE WANT THIS?? Summary of daily or weekly progress |
-| [📊 Presentation & Report Materials](presentation-materials.md) | Slides, summary reports, and presentation details |
+| [🧾 Development Log]() | DO WE WANT THIS?? Summary of daily or weekly progress |
+| [📊 Presentation & Report Materials]() | Slides, summary reports, and presentation details |
 
 ---
 
