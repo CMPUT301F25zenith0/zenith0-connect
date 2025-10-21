@@ -5,23 +5,25 @@
 
 This page showcases the final UI designs for the application, demonstrating the visual direction, user interface components, and overall user experience.
 
+[Figma Link](https://www.figma.com/design/mhHKO6VMWJjie2viA3m7rc/App-UI?node-id=0-1&t=ZvJWi04sCoDymUa7-1)
+
 ---
 
 ## Design System
 
 ### Color Palette
 
-- **Primary**: `#FFFFFF` - Description of usage
-- **Secondary**: `#FFFFFF` - Description of usage
-- **Accent**: `#FFFFFF` - Description of usage
-- **Background**: `#FFFFFF` - Description of usage
-- **Text**: `#FFFFFF` - Description of usage
+- **Primary**: `#0b2e32` - backgrounds, navigation buttons
+- **Secondary**: `#94b1b5` - secondary buttonds
+- **Accent**: `#507d82` - small changes in colour through out UI
+- **Background**: `#0b2e32` / `#FFFFFF` - Backgrounds
+- **Text**: `#FFFFFF` / `#000000` - Used in titles, buttons texts, pops, and more
 
 ### Typography
 
-- **Headings**: Font Family, Weight, Sizes
-- **Body Text**: Font Family, Weight, Size
-- **Buttons/Labels**: Font Family, Weight, Size
+- **Headings**: *****
+- **Body Text**: *****
+- **Buttons/Labels**: *****
 
 ---
 
@@ -29,121 +31,45 @@ This page showcases the final UI designs for the application, demonstrating the 
 
 ### 1. Home Screen / Dashboard
 
-![Home Screen]()
+![Home Screen](./images_OR_assets/home_screen%20design.PNG)
 
-**Purpose**: Brief description of this screen's function
-
-**Key Features**:
-- Feature or component 1
-- Feature or component 2
-- Feature or component 3
-
-**User Flow**: Description of how users interact with this screen
-
----
-
-### 2. [Screen Name]
-
-![Screen Name]()
-
-**Purpose**: Brief description of this screen's function
+**Purpose**: Shows friendly guidance when no events match filters; offers CTA to refresh or adjust filters. Extends 01.02.01–01.02.02 (browse/filter) with empty-state handling.
 
 **Key Features**:
-- Feature or component 1
-- Feature or component 2
-- Feature or component 3
+- Event Search
+- Access to event details and immediate joing of waitlist
+- Access to wide areas of the app from the home screen
 
-**User Flow**: Description of how users interact with this screen
+**User Flow**: Navigate to many places in the app. view event details, their events, scan a QR code, profile, all from this page
 
 ---
 
-### 3. [Screen Name]
+### 2. Event Creation
 
-![Screen Name]()
+![Event Creation](./images_OR_assets/create-event_screen.PNG)
 
-**Purpose**: Brief description of this screen's function
+**Purpose**: Allows organizers to create a new event by filling in key details such as title, date, location, registration window, price and geolocation settings. Addresses 02.01.01, 02.03.01, 02.04.01, by handling event creation and submission to the system
 
 **Key Features**:
-- Feature or component 1
-- Feature or component 2
-- Feature or component 3
+- Lists all information to be filled for event creation, giving organizer creative control
+- Provides option to require geolocation, and set event locaiton
 
-**User Flow**: Description of how users interact with this screen
-
----
-
-## Component Library
-
-### Buttons
-
-![Button Variations]()
-
-Description of button styles, states (default, hover, active, disabled), and usage guidelines
-
-### Forms & Inputs
-
-![Form Elements]()
-
-Description of input fields, dropdowns, checkboxes, and other form elements
-
-### Navigation
-
-![Navigation Components]()
-
-Description of navigation patterns, menus, and navigation bars
-
-### Cards & Containers
-
-![Card Components]()
-
-Description of card designs and container styles
+**User Flow**: organizer can enter here and fill out details for their event ot be created. Or back out, or click on lower nav bar to access other parts of the app
 
 ---
 
-## Responsive Design
+### 3. Manage Draw
 
-### Mobile View
+![Manage Draw](./images_OR_assets/manage%20draw.PNG)
 
-![Mobile Design]()
+**Purpose**: Displays the waiting list of entrants for a specific event, allowing organizers to initiate or schedule draws. Fulfills 02.05.01–02.05.02, handling random selection and result generation.
 
-Description of mobile-specific adaptations and considerations
+**Key Features**:
+- Defines the current event
+- Tabs that list various information -> keeping organized
+- scrolling feature that continues till entrants are listed
 
-### Tablet View
-
-![Tablet Design]()
-
-Description of tablet-specific adaptations and considerations
-
-### Desktop View
-
-![Desktop Design]()
-
-Description of desktop-specific features and layout
-
----
-
-## Interaction Design
-
-### Animations & Transitions
-
-- **Page Transitions**: Description of transition effects
-- **Micro-interactions**: Description of button clicks, hover effects, etc.
-- **Loading States**: Description of loading indicators and skeleton screens
-
-### Gestures (Mobile)
-
-- **Swipe**: Description of swipe actions
-- **Tap**: Description of tap interactions
-- **Long Press**: Description of long press functionality
-
----
-
-## Accessibility Features
-
-- **Color Contrast**: WCAG compliance details
-- **Screen Reader Support**: Description of accessibility labels
-- **Keyboard Navigation**: Description of keyboard shortcuts and navigation
-- **Touch Targets**: Minimum size specifications
+**User Flow**: Organizer can access the waiting list, selected, enrolled, and cancelled. All of which have special actions such as notification, replacing, or cancelling.
 
 ---
 
@@ -171,5 +97,4 @@ Overview of how the designs evolved through feedback and testing
 - [ ] Iterate based on user feedback
 
 ---
-
-[← Back to Main](./index.md) | [View Wireframes](./wireframes.md) | [View Prototypes](./prototypes.md)
+_Last updated: [2025-10-21]_

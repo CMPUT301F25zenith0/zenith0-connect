@@ -1,7 +1,5 @@
 # 🎟️ Zenith Connect — Smart Event Sign-up & Lottery App
 
-> A modern platform that helps users sign up for events and get selected fairly through a lottery-based system.
-
 ---
 
 ## 🚀 Overview
@@ -29,7 +27,7 @@
 | Section | Description |
 |----------|-------------|
 | [🛠 Setup Guide] | Installation, dependencies, and local run instructions |
-| [🎨 UI Design](docs/UI-design/ui-main.md) | Screens, color palettes, and navigation flow |
+| [🎨 UI Design](./docs/UI-design/ui-main.md) | Screens, color palettes, and navigation flow |
 | [⚙️ Architecture](/docs/architecture/architecture-main.md) | Backend design, database schema, and flow |
 | [📱 API Reference] | Endpoints, request/response examples |
 | [💡 Feature Roadmap] | Upcoming releases and improvements |

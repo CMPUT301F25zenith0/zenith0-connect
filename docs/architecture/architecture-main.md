@@ -1,3 +1,4 @@
+[⬅️Back](../../Connect-Docs.md)
 # 🏗️ System Architecture Overview
 
 Welcome to the **Architecture** documentation for this application.  
@@ -28,14 +29,13 @@ This document provides a high-level overview of how different parts of the appli
 The backend is responsible for handling API requests, managing business logic, and interacting with the database.
 
 - **Framework / Language:** _e.g., Java, Android Studio Enviornment, Firebase 
-- **Architecture Pattern:** _e.g., MVC, Clean Architecture
 - **Key Modules:**
   - Authentication & Authorization
   - API Endpoints
   - Data Processing / Business Logic
 
 📄 **Detailed Documentation:**  
-➡️ [Backend Design Document](./Backend_Design.md) *(To be created)*
+➡️ [Backend Design Document] *(To be created)*
 
 ---
 
@@ -44,15 +44,14 @@ The backend is responsible for handling API requests, managing business logic, a
 
 This section outlines the data storage design, including entities, relationships, and schema diagrams.
 
-- **Database Type:** _e.g., MongoDB / Firebase_
+- **Database Type:** _e.g. Firebase_
 - **Main Entities:**
   - Users
   - Events
-  - Transactions
   - etc.
 
 📄 **Detailed Schema:**  
-➡️ [Database Schema](./Database_Schema.md) *(To be created)*
+➡️ [Database Schema] *(To be created)*
 
 ---
 
@@ -66,7 +65,7 @@ Include:
 - Event Handling Logic
 
 📄 **Detailed Flow Description:**  
-➡️ [System Flow Diagram](./System_Flow.md) *(To be created)*
+➡️ [System Flow Diagram] *(To be created)*
 
 ---
 
@@ -88,4 +87,4 @@ Class–Responsibility–Collaborator (CRC) cards define the roles of classes an
 
 ---
 
-_Last updated: {{DATE}}_
+_Last updated: [2025-10-21]
