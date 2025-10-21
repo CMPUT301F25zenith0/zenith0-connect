@@ -30,7 +30,7 @@
 |----------|-------------|
 | [🛠 Setup Guide] | Installation, dependencies, and local run instructions |
 | [🎨 UI Design](docs/UI-design/ui-main.md) | Screens, color palettes, and navigation flow |
-| [⚙️ Architecture](docs/architecture/architecture-main.md) | Backend design, database schema, and flow |
+| [⚙️ Architecture](/docs/architecture/architecture-main.md) | Backend design, database schema, and flow |
 | [📱 API Reference] | Endpoints, request/response examples |
 | [💡 Feature Roadmap] | Upcoming releases and improvements |
 | [🧑‍💻 Contributing](docs/contributing.md) | Guidelines for developers |

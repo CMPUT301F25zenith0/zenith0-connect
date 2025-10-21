@@ -75,7 +75,7 @@ Include:
 Class–Responsibility–Collaborator (CRC) cards define the roles of classes and their relationships.
 
 📄 **View CRC Cards:**  
-➡️ [CRC Cards](docs/architecture/crc.md)
+➡️ [CRC Cards](./crc.md)
 
 ---
 
