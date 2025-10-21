@@ -11,7 +11,6 @@ This page contains **rough interface mockups** illustrating where key UI element
 
 Each mockup below represents a part of the interface, showing **placement**, **proportion**, and **intended interaction**.
 [Mockup-PDF](./images_OR_assets/Final_%20Mockup%20Interface%20(P2).pdf)
-
 ---
 
 ## 🔘 Example: Login Screen
@@ -47,8 +46,8 @@ Showcases placement of:
 
 | Component | Image | Usage Notes |
 |------------|:------:|-------------|
-| **Button Styles** | ![Buttons]() | Primary, secondary, and disabled states. Maintain padding and rounded corners. |
-| **Input Fields** | ![Inputs]() | Display input fields with placeholder text and labels above. |
+| **Button Styles** | ![Buttons](./images_OR_assets/button.PNG) | Primary, secondary, and disabled states. Maintain padding and rounded corners. |
+| **Input Fields** | ![Inputs](./images_OR_assets/input%20field.PNG) | Display input fields with placeholder text and labels above. |
 | **Logo Placement** | ![Logo Placement]() | Ensure visibility and spacing consistency across pages. |
 
 ---
@@ -72,4 +71,4 @@ Showcases placement of:
 
 ---
 
-_Last updated: [2025-10-20]_
+_Last updated: [2025-10-21]_

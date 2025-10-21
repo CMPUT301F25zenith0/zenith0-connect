@@ -44,9 +44,9 @@ The design aims to provide an intuitive experience that supports the core featur
 This section contains high-fidelity and low-fidelity mockups representing the main screens of the application.
 
 📄 **View Mockups / Designs:**  
-➡️ [UI Mockups](ui-mockups.md) *(To be created)*
+➡️ [UI Mockups](ui-mockups.md)
 
-➡️ [UI Designs](ui-designs.md) *(To be created)*
+➡️ [UI Designs](ui-designs.md)
 
 
 Include: ➡️[CLICK HERE](ui-ideas.md)
@@ -62,10 +62,10 @@ Include: ➡️[CLICK HERE](ui-ideas.md)
 Describes how users navigate through the app, from launch to core feature completion.
 
 📄 **User Flow Document:**  
-➡️ [User Flow Diagram](./User_Flow.md) *(To be created)*
+➡️ [User Flow Diagram](https://www.figma.com/design/mhHKO6VMWJjie2viA3m7rc/App-UI?node-id=0-1&t=ZvJWi04sCoDymUa7-1) 
 
 Include:
-- Flow diagrams (e.g., Figma / draw.io)
+- Flow diagrams (e.g., Figma)
 - Navigation paths
 - Decision points or branching logic
 
@@ -76,14 +76,4 @@ Include:
 
 ---
 
-<!-- Dunno why I left this here, but its there if want to keep it-->
-## 📚 Additional Resources
-
-- [Accessibility Guidelines](./Accessibility_Guide.md)
-- [UI Testing Plan](./UI_Testing.md)
-- [Branding Guide](./Branding.md)
-- [Prototype Links (Figma)](https://www.figma.com/file/...) *(if available)*
-
----
-
-_Last updated: [2025-10-18]_
+_Last updated: [2025-10-21]_

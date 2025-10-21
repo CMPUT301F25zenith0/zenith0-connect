@@ -19,12 +19,12 @@ It captures the rationale behind colors, typography, buttons, and layout to ensu
 
 | Element | Color | Usage | Notes |
 |----------|--------|--------|-------|
-| **Primary** | `#3A6EA5` | Buttons, links, highlights | Represents trust and calmness |
-| **Secondary** | `#F5B700` | Accents, highlights | Adds warmth and contrast |
-| **Background** | `#FFFFFF` | Main background | Clean, neutral backdrop for content |
-| **Text (Primary)** | `#1C1C1C` | Main text | High readability on white |
-| **Text (Secondary)** | `#555555` | Subtext, captions | Lower contrast for hierarchy |
-| **Error / Alert** | `#E63946` | Error messages, warnings | Strong visual feedback |
+| **Primary** | `#` | Buttons, links, highlights | Represents trust and calmness |
+| **Secondary** | `#` | Accents, highlights | Adds warmth and contrast |
+| **Background** | `#` | Main background | Clean, neutral backdrop for content |
+| **Text (Primary)** | `#` | Main text | High readability on white |
+| **Text (Secondary)** | `#` | Subtext, captions | Lower contrast for hierarchy |
+| **Error / Alert** | `#` | Error messages, warnings | Strong visual feedback |
 
 > 💡 **Rationale:**  
 > The palette balances **vibrancy** and **readability**, creating a friendly yet professional tone that aligns with community engagement.
@@ -36,10 +36,10 @@ It captures the rationale behind colors, typography, buttons, and layout to ensu
 
 | Element | Font Family | Size | Weight | Usage |
 |----------|--------------|------|---------|--------|
-| **Headings (H1–H3)** | *Poppins* | 24–32px | Bold | Section titles and screen headers |
-| **Body Text** | *Roboto* | 14–16px | Regular | Main readable text for all screens |
-| **Buttons / Labels** | *Roboto Medium* | 14px | Medium | Short actionable text |
-| **Captions / Notes** | *Roboto* | 12px | Light | Secondary or explanatory text |
+| **Headings (H1–H3)** | ** | 24–32px | Bold | Section titles and screen headers |
+| **Body Text** | ** | 14–16px | Regular | Main readable text for all screens |
+| **Buttons / Labels** | ** | 14px | Medium | Short actionable text |
+| **Captions / Notes** | ** | 12px | Light | Secondary or explanatory text |
 
 > 🧠 **Decision Reasoning:**  
 > Poppins adds a modern and approachable character for headings, while Roboto ensures maximum legibility on Android devices.
@@ -50,9 +50,9 @@ It captures the rationale behind colors, typography, buttons, and layout to ensu
 
 | Type | Style | Usage | Example |
 |------|--------|--------|---------|
-| **Primary Button** | Solid fill with primary color, white text | Main call-to-action (e.g., “Join Lottery”) | ![Primary Button](./images/button_primary.png) |
-| **Secondary Button** | Outline with primary color | Secondary actions (e.g., “View Details”) | ![Secondary Button](./images/button_secondary.png) |
-| **Disabled Button** | Gray background, lighter text | Inactive state or loading | ![Disabled Button](./images/button_disabled.png) |
+| **Primary Button** | Solid fill with primary color, white text | Main call-to-action (e.g., “Join Lottery”) | ![Primary Button](./images_OR_assets/primary%20button.PNG) |
+| **Secondary Button** | Outline with primary color | Secondary actions (e.g., “View Details”) | ![Secondary Button](./images_OR_assets/secondary%20buton.PNG) |
+| **Disabled Button** | Gray background, lighter text | Inactive state or loading | ![Disabled Button](./images_OR_assets/disabled%20button.PNG) |
 
 > ✨ **Design Intent:** Buttons are spacious with rounded corners (8–12px radius) to enhance touch accessibility and create a friendly interface.
 
