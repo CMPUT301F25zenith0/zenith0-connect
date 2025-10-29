@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Connect">
         <activity
-            android:name=".MainActivity"
+            android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,6 +20,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+
+
+        <!-- User activities -->
+        <activity android:name=".activities.ProfileActivity" />
+        <activity android:name=".activities.EventListActivity" />
+
+        <!-- Organizer activities -->
+        <activity android:name=".activities.OrganizerActivity" />
+
     </application>
 
 </manifest>
