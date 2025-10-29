@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/profile_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/f1"> <!-- F1 color -->
+
+    <!-- Name -->
+    <EditText
+        android:id="@+id/et_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/hint_name"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/f2" /> <!-- F2 color -->
+
+    <!-- Email -->
+    <EditText
+        android:id="@+id/et_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/hint_email"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:inputType="textEmailAddress"
+        android:backgroundTint="@color/f3" />
+
+    <!-- Phone -->
+    <EditText
+        android:id="@+id/et_phone"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/hint_phone"
+        android:padding="12dp"
+        android:layout_marginBottom="24dp"
+        android:inputType="phone"
+        android:backgroundTint="@color/f4" />
+
+    <!-- Submit Button -->
+    <Button
+        android:id="@+id/btn_submit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/btn_submit"
+        android:background="#507D82"
+        android:textColor="@color/white"
+        android:padding="12dp" />
+</LinearLayout>
