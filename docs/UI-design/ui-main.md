@@ -62,7 +62,11 @@ Include: ➡️[CLICK HERE](ui-ideas.md)
 Describes how users navigate through the app, from launch to core feature completion.
 
 📄 **User Flow Document:**  
-➡️ [User Flow Diagram](https://www.figma.com/design/mhHKO6VMWJjie2viA3m7rc/App-UI?node-id=0-1&t=ZvJWi04sCoDymUa7-1) 
+[User Flow Diagram - Figma](https://www.figma.com/design/mhHKO6VMWJjie2viA3m7rc/App-UI?node-id=0-1&t=ZvJWi04sCoDymUa7-1) 
+
+➡️[User UI Flow](./Figma%20-%20User.png)
+➡️[Organizer UI Flow](./Figma%20-%20Organizer.png)
+➡️[Admin UI Flow](./Figma-%20Admin.png)
 
 Include:
 - Flow diagrams (e.g., Figma)
