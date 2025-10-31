@@ -52,7 +52,7 @@
 
     <!-- Log In button -->
     <Button
-        android:id="@+id/bnt_login"
+        android:id="@+id/btn_login"
         android:layout_width="0dp"
         android:layout_height="56dp"
         android:text="Log In"
@@ -72,7 +72,7 @@
         android:text="Create Account"
         android:textColor="@color/black"
         android:backgroundTint="@color/f1"
-        app:layout_constraintTop_toBottomOf="@id/bnt_login"
+        app:layout_constraintTop_toBottomOf="@id/btn_login"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp"

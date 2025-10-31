@@ -9,27 +9,29 @@
 
     <LinearLayout
         android:id="@+id/headerLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="115dp"
+        android:layout_height="37dp"
         android:layout_marginTop="24dp"
         android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
+        <ImageButton
             android:id="@+id/back_btn"
-            android:layout_width="35dp"
+            android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:src="@drawable/ic_back_arrow"/>
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Back button"
+            android:src="@drawable/ic_back_arrow" />
 
         <TextView
             android:id="@+id/login_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="79dp"
+            android:layout_height="match_parent"
             android:layout_marginStart="12dp"
             android:text="Login"
             android:textColor="@android:color/black"
-            android:textSize="22sp"
+            android:textSize="26sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -56,42 +58,50 @@
         app:layout_constraintStart_toStartOf="parent"
         android:textColor="@android:color/black"/>
 
-
     <!-- Email Field-->
     <EditText
         android:id="@+id/et_email"
         android:layout_width="0dp"
         android:layout_height="50dp"
         android:backgroundTint="@null"
-        app:backgroundTint = "@null"
+        app:backgroundTint="@null"
         android:background="@drawable/edittext_bg"
         android:hint="@string/hint_email"
-        android:inputType="textPassword"
+        android:textColorHint="@color/hint_colour"
+        android:inputType="textEmailAddress"
         android:padding="15dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/login_txt" />
 
-    <!-- Password Field-->
-    <!--android:drawableEnd="@drawable/ic_hidden"-->
-    <EditText
-        android:id="@+id/et_Password"
+    <!-- Password Field with TextInputLayout -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/til_password"
         android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:hint="@string/hint_password"
-        android:inputType="textPassword"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
         app:passwordToggleEnabled="true"
-        android:background="@drawable/edittext_bg"
-        android:padding="15dp"
+        app:passwordToggleDrawable="@drawable/password_toggle_selector"
+        app:passwordToggleTint="@color/f3"
+        app:boxBackgroundMode="none"
+        android:textColorHint="@color/hint_colour"
         app:layout_constraintTop_toBottomOf="@id/et_email"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="10dp"/>
+        app:layout_constraintEnd_toEndOf="parent">
 
-    <!-- Remember Me -->
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/et_Password"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="@string/hint_password"
+            android:inputType="textPassword"
+            android:background="@drawable/edittext_bg"
+            android:padding="15dp"/>
 
-    <!-- Continue Button -->
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Remember Me Checkbox -->
     <CheckBox
         android:id="@+id/remem_me_check"
         android:layout_width="wrap_content"
@@ -101,8 +111,9 @@
         android:buttonTint="@color/f3"
         android:text="Remember me"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/et_Password" />
+        app:layout_constraintTop_toBottomOf="@id/til_password" />
 
+    <!-- Continue Button -->
     <Button
         android:id="@+id/login_btn"
         android:layout_width="0dp"

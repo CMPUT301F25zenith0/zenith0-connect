@@ -4,11 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.connect.R;
 
@@ -18,19 +14,26 @@ import com.example.connect.R;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private Button btnLogin;
+    private Button btnLogin, btnAcctCreate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.open_screen);
 
         btnLogin = findViewById(R.id.btn_login);
+        btnAcctCreate = findViewById(R.id.create_acct_btn);
 
-        // Navigate to ProfileActivity when clicked
+        // Navigate to login activity when clicked
         btnLogin.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivity(intent);
         });
+        // Navigate to create profile activity when clicked
+        btnAcctCreate.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, CreateActivity.class);
+            startActivity(intent);
+        });
+
     }
 }

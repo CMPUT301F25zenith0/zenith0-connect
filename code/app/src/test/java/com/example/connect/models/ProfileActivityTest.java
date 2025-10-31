@@ -1,8 +1,6 @@
 package com.example.connect.models;
 
 
-import com.example.connect.activities.ProfileActivity;
-import com.example.connect.models.User;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.*;
