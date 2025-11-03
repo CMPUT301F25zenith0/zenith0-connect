@@ -36,4 +36,5 @@ public class ProfileActivityTest {
         assertEquals("alicej@example.com", user.getEmail());
         assertEquals("0987654321", user.getPhone());
     }
+
 }

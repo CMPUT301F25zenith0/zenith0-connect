@@ -6,5 +6,8 @@
     <string name="btn_submit">Submit</string>
     <string name="toast_profile_updated">Profile updated!</string>
     <string name="btn_login">Login</string>
+    <string name="events_empty">No joinable events right now.</string>
+    <string name="events_error_generic">Couldn’t load events. Please try again.</string>
+
 
 </resources>
