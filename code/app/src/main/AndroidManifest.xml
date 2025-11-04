@@ -21,10 +21,10 @@
             </intent-filter>
         </activity>
 
-
-
         <!-- User activities -->
-        <activity android:name=".activities.ProfileActivity" />
+        <activity android:name=".activities.LoginActivity" />
+        <activity android:name=".activities.CreateActivity"/>
+
         <activity android:name=".activities.EventListActivity" />
 
         <!-- Organizer activities -->

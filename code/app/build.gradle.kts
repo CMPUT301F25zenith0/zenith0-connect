@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
-    id("com.google.gms.google-services")  // ⬅️ add this
+    id("com.google.gms.google-services") // Firebase plugin
 }
 
 android {
@@ -26,27 +26,33 @@ android {
         }
     }
 
+    // Use Java 17 + desugaring (needed for java.time / LocalDate)
     compileOptions {
-        // Needed for java.time (LocalDate) used in Event.java
-        sourceCompatibility = JavaVersion.VERSION_17        // ⬅️ change to 17
-        targetCompatibility = JavaVersion.VERSION_17        // ⬅️ change to 17
-        isCoreLibraryDesugaringEnabled = true               // ⬅️ add this
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 }
 
 dependencies {
-    // 🔥 Firebase (BOM manages versions)
-    implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
-    implementation("com.google.firebase:firebase-firestore")
+    // --- Firebase (use ONE BoM; latest from your friend) ---
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
+    implementation("com.google.firebase:firebase-auth")       // login
+    implementation("com.google.firebase:firebase-firestore")  // event list
+    // (Optional) analytics, messaging, storage later:
+    // implementation("com.google.firebase:firebase-analytics")
 
-    // java.time support on older Android
+    // Desugaring for java.time on older Android
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.2")
 
-    // your existing deps
+    // --- UI / AndroidX (keep your catalog) ---
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    implementation("androidx.cardview:cardview:1.0.0")
+
+    // --- Tests ---
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
