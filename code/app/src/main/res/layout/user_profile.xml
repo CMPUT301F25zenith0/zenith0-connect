@@ -54,7 +54,6 @@
                 android:layout_alignEnd="@id/profile_img"
                 android:layout_alignBottom="@id/profile_img"
                 android:src="@drawable/ic_edit"
-                android:background="@drawable/bg_circle_dark"
                 android:padding="6dp"
                 android:contentDescription="Edit Profile" />
 

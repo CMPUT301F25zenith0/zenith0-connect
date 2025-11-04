@@ -2,6 +2,9 @@ package com.example.connect.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.util.Log;
+import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -13,87 +16,228 @@ import com.example.connect.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+/**
+ * Activity responsible for handling user authentication and login functionality.
+ * <p>
+ * This activity provides a login interface where users can enter their credentials
+ * (email and password) to authenticate with Firebase Authentication. It includes
+ * input validation, error handling, and user-friendly error messages.
+ * </p>
+ *
+ * @author Aakansh Chatterjee
+ * @version 1.0
+ */
 
 public class LoginActivity extends AppCompatActivity {
 
-    private EditText et_Pass, et_Email;
-    private Button btn_login;
-    private ImageButton btn_back;
+    // UI Elements
+    private EditText etEmail, etPassword;
+    private Button btnLogin;
+    private ImageButton btnBack;
 
-    private boolean result;
-
+    // Firebase
     private FirebaseAuth mAuth;
 
-
-
+    /**
+     * Called when the activity is first created.
+     * Initializes the activity, sets up the layout, Firebase authentication,
+     * and configures UI component listeners.
+     *
+     * @param savedInstanceState Bundle containing the activity's previously saved state,
+     *                          or null if there is no saved state
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.login_activity);
+        setContentView(R.layout.login_activity); // Load login screen
 
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
+        // Initialize views
+        initViews();
 
-        et_Email = findViewById(R.id.et_email);
-        et_Pass = findViewById(R.id.et_Password);
-
-        btn_login = findViewById(R.id.login_btn);
-        btn_back= findViewById(R.id.back_btn);
-
-        btn_login.setOnClickListener(v -> {
-            loginCheck(et_Email, et_Pass);
-        });
-
-        // The animation slides the screen to the left, even though going back wards
-        // This looks weird, to fix we need to do animation stuff --> If we got time
-        btn_back.setOnClickListener(v -> {
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            startActivity(intent);
-        });
+        // Set click listeners
+        setupClickListeners();
     }
 
-// TO BE TESTED --> NEED AND UP AND RUNNING DATABASE First
-    protected void loginCheck(EditText et_Email, EditText et_Pass){
-        // need to write code that checks the database for the account
-            // Figure if firebase have their own search parameters, and if there methods I can import here
-        // Or build a search for the email first, and check if the account details match the password.
+    /**
+     * Initializes all UI components by finding their references from the layout.
+     * This method links the Java variables to their corresponding XML view elements.
+     */
+    private void initViews() {
+        etEmail = findViewById(R.id.et_email);
+        etPassword = findViewById(R.id.et_Password);
+        btnLogin = findViewById(R.id.login_btn);
+        btnBack = findViewById(R.id.back_btn);
+    }
 
-        String email = et_Email.getText().toString().trim();
-        String password = et_Pass.getText().toString().trim();
+    /**
+     * Sets up click listeners for interactive UI components.
+     * Configures the login button to trigger authentication and the back button
+     * to return to the previous screen.
+     */
+    private void setupClickListeners() {
+        btnLogin.setOnClickListener(v -> loginUser());
 
-        // Redundant Checks
+        // Better way to handle back button
+        btnBack.setOnClickListener(v -> onBackPressed());
+    }
+
+    /**
+     * Handles the user login process.
+     * <p>
+     * This method performs the following steps:
+     * <ol>
+     *   <li>Retrieves and trims email and password input</li>
+     *   <li>Validates the input fields</li>
+     *   <li>Disables the login button to prevent duplicate requests</li>
+     *   <li>Attempts authentication with Firebase</li>
+     *   <li>Handles success by navigating to EventListActivity</li>
+     *   <li>Handles failure by displaying appropriate error messages</li>
+     * </ol>
+     * </p>
+     */
+    private void loginUser() {
+        // Get input values
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
 
         // Validate inputs
-        if (email.isEmpty()) {
-            et_Email.setError("Email is required");
-            et_Email.requestFocus();
+        if (!validateInputs(email, password)) {
+            return;
         }
 
-        if (password.isEmpty()) {
-            et_Pass.setError("Password is required");
-            et_Pass.requestFocus();
-        }
+        // Show loading state
+        // Stops button spam
+        btnLogin.setEnabled(false);
+        btnLogin.setText("Logging in...");
 
+        // Log Action
+        Log.d("LoginActivity", "Attempting login for: " + email);
 
-        // Sign in with Firebase
+        // Sign in with Firebase Authentication
         mAuth.signInWithEmailAndPassword(email, password)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        // Login successful
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        Toast.makeText(LoginActivity.this, "Login successful!", Toast.LENGTH_SHORT).show();
+                .addOnSuccessListener(authResult -> {
+                    // Login successful
+                    FirebaseUser user = mAuth.getCurrentUser();
+                    Log.d("LoginActivity", "Login successful! UID: " + user.getUid());
 
-                        // Navigate to next activity
-                        Intent intent = new Intent(LoginActivity.this, EventListActivity.class);
-                        startActivity(intent);
-                        finish();
+                    Toast.makeText(LoginActivity.this,
+                            "Welcome back!",
+                            Toast.LENGTH_SHORT).show();
 
-                    } else {
-                        // Login failed
-                        Toast.makeText(LoginActivity.this, "Login failed: " + task.getException().getMessage(),
-                                Toast.LENGTH_LONG).show();
-                    }
+                    // Navigate to main app screen
+                    Intent intent = new Intent(LoginActivity.this, EventListActivity.class);
+                    startActivity(intent);
+                    finish(); // Close login screen so user can't go back to it
+                })
+                .addOnFailureListener(e -> {
+                    // Login failed
+                    Log.e("LoginActivity", "Login failed: " + e.getMessage(), e);
+                    resetButton();
+
+                    // Show user-friendly error message
+                    String errorMessage = getErrorMessage(e.getMessage());
+                    Toast.makeText(LoginActivity.this,
+                            errorMessage,
+                            Toast.LENGTH_LONG).show();
                 });
+    }
+
+    /**
+     * Validates user input for email and password fields.
+     * <p>
+     * Performs the following validations:
+     * <ul>
+     *   <li>Checks if email field is empty</li>
+     *   <li>Validates email format using Android Patterns</li>
+     *   <li>Checks if password field is empty</li>
+     *   <li>Ensures password meets minimum length requirement (6 characters)</li>
+     * </ul>
+     * </p>
+     *
+     * @param email    The email address entered by the user
+     * @param password The password entered by the user
+     * @return true if all validations pass, false otherwise
+     */
+    private boolean validateInputs(String email, String password) {
+        // Check if email is empty
+        if (TextUtils.isEmpty(email)) {
+            etEmail.setError("Email is required");
+            etEmail.requestFocus();
+            return false;
+        }
+
+        // Check if email is valid format
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etEmail.setError("Please enter a valid email");
+            etEmail.requestFocus();
+            return false;
+        }
+
+        // Check if password is empty
+        if (TextUtils.isEmpty(password)) {
+            etPassword.setError("Password is required");
+            etPassword.requestFocus();
+            return false;
+        }
+
+        // Check password length  --> need to match what we set in account creation
+        if (password.length() < 6) {
+            etPassword.setError("Password must be at least 6 characters");
+            etPassword.requestFocus();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Resets the login button to its default state.
+     * Re-enables the button and restores the original button text after
+     * a login attempt completes (successfully or unsuccessfully).
+     */
+    private void resetButton() {
+        btnLogin.setEnabled(true);
+        btnLogin.setText("Login");
+    }
+
+    /**
+     * Converts technical Firebase error messages into user-friendly error messages.
+     * <p>
+     * Maps common Firebase authentication errors to clear, actionable messages
+     * that users can understand without technical knowledge.
+     * </p>
+     *
+     * @param firebaseError The raw error message from Firebase Authentication,
+     *                     or null if no specific error message is available
+     * @return A user-friendly error message string appropriate for display in the UI
+     */
+    private String getErrorMessage(String firebaseError) {
+        if (firebaseError == null) {
+            return "Login failed. Please try again.";
+        }
+
+        if (firebaseError.contains("no user record") ||
+                firebaseError.contains("user not found")) {
+            return "No account found with this email.";
+        }
+
+        if (firebaseError.contains("wrong password") ||
+                firebaseError.contains("invalid-credential")) {
+            return "Incorrect password. Please try again.";
+        }
+
+        if (firebaseError.contains("too many requests")) {
+            return "Too many failed attempts. Please try again later.";
+        }
+
+        if (firebaseError.contains("network")) {
+            return "Network error. Please check your connection.";
+        }
+
+        // Default message for other errors
+        return "Login failed: " + firebaseError;
     }
 }

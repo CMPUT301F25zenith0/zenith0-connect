@@ -40,11 +40,14 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    implementation(libs.firebase.firestore)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
 
     // Import the Firebase BoM
-    implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
     implementation("com.google.firebase:firebase-auth:24.0.1")
+    implementation ("com.google.firebase:firebase-firestore")
+    implementation("com.google.android.material:material:1.9.0")
 }
