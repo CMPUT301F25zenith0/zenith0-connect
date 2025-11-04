@@ -76,6 +76,20 @@
                 android:tint="@color/black"
                 android:padding="12dp"
                 app:tint="@color/black" />
+
+            <!-- Profile Button -->
+            <ImageButton
+                android:id="@+id/btn_profile"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_profile_name"
+                android:contentDescription="@string/profile"
+                android:tint="@color/black"
+                android:scaleType="centerInside"
+                android:padding="12dp"
+                app:tint="@color/black" />
         </LinearLayout>
 
         <!-- Filter Chips -->

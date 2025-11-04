@@ -1,10 +1,9 @@
 package com.example.connect.models;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-
-import java.io.Serializable;
 
 /**
  * Represents a single event visible to entrants.

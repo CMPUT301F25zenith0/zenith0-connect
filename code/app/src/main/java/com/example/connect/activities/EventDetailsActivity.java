@@ -1,8 +1,8 @@
 package com.example.connect.activities;
 
 import android.os.Bundle;
-import android.widget.TextView;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -128,3 +128,4 @@ public class EventDetailsActivity extends AppCompatActivity {
         }
     }
 }
+

@@ -6,7 +6,6 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -49,6 +48,15 @@ public class EventListActivity extends AppCompatActivity {
             });
         }
 
+        // Setup profile button
+        android.widget.ImageButton btnProfile = findViewById(R.id.btn_profile);
+        if (btnProfile != null) {
+            btnProfile.setOnClickListener(v -> {
+                Intent profileIntent = new Intent(EventListActivity.this, ProfileActivity.class);
+                startActivity(profileIntent);
+            });
+        }
+
         // Check if critical views are found
         if (recycler == null) {
             android.util.Log.e("EventListActivity", "RecyclerView not found!");
@@ -66,7 +74,7 @@ public class EventListActivity extends AppCompatActivity {
             }
             @Override public void onJoin(Event e) {
                 // TODO: Implement join waitlist functionality
-                Toast.makeText(EventListActivity.this, "Join waitlist functionality coming soon", Toast.LENGTH_SHORT).show();
+                android.widget.Toast.makeText(EventListActivity.this, "Join waitlist functionality coming soon", android.widget.Toast.LENGTH_SHORT).show();
             }
         });
         recycler.setAdapter(adapter);
