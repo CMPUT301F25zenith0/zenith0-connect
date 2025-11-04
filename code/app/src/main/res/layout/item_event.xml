@@ -87,7 +87,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"
-                    app:strokeColor="@color/black" />
+                    app:strokeColor="@color/black"
+                    app:cornerRadius="8dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnJoin"
@@ -96,7 +97,8 @@
                     android:layout_marginStart="8dp"
                     android:text="@string/btn_join_waitlist"
                     android:textColor="@color/white"
-                    app:backgroundTint="@color/black" />
+                    app:backgroundTint="@color/black"
+                    app:cornerRadius="8dp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

@@ -13,9 +13,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Connect">
 
-        <!-- ✅ Start the app directly with EventListActivity -->
+        <!-- ✅ Start the app with LoginActivity -->
         <activity
-            android:name=".activities.EventListActivity"
+            android:name=".activities.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,7 +25,7 @@
 
         <!-- Other activities (no launcher intent-filter) -->
         <activity android:name=".activities.MainActivity" />
-        <activity android:name=".activities.LoginActivity" />
+        <activity android:name=".activities.EventListActivity" />
         <activity android:name=".activities.CreateActivity" />
         <activity android:name=".activities.OrganizerActivity" />
 

@@ -43,19 +43,27 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
                 android:hint="@string/search_events_hint"
                 style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 app:boxBackgroundColor="@color/white"
                 app:hintTextColor="@color/hint_colour"
-                app:boxStrokeColor="@color/black">
+                app:boxStrokeColor="@color/black"
+                app:boxCornerRadiusTopStart="28dp"
+                app:boxCornerRadiusTopEnd="28dp"
+                app:boxCornerRadiusBottomStart="28dp"
+                app:boxCornerRadiusBottomEnd="28dp">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/search_edit_text"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="56dp"
                     android:inputType="text"
                     android:imeOptions="actionSearch"
                     android:textColor="@color/black"
-                    android:textColorHint="@color/hint_colour" />
+                    android:textColorHint="@color/hint_colour"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <!-- Search Icon -->
@@ -90,7 +98,8 @@
                 android:textColor="@color/white"
                 app:chipBackgroundColor="@color/f3"
                 app:chipStrokeColor="@color/white"
-                app:chipStrokeWidth="1dp" />
+                app:chipStrokeWidth="1dp"
+                app:chipCornerRadius="20dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_date"
@@ -101,7 +110,8 @@
                 android:textColor="@color/white"
                 app:chipBackgroundColor="@color/f3"
                 app:chipStrokeColor="@color/white"
-                app:chipStrokeWidth="1dp" />
+                app:chipStrokeWidth="1dp"
+                app:chipCornerRadius="20dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_location"
@@ -112,7 +122,8 @@
                 android:textColor="@color/white"
                 app:chipBackgroundColor="@color/f3"
                 app:chipStrokeColor="@color/white"
-                app:chipStrokeWidth="1dp" />
+                app:chipStrokeWidth="1dp"
+                app:chipCornerRadius="20dp" />
         </com.google.android.material.chip.ChipGroup>
 
         <!-- Event List -->
