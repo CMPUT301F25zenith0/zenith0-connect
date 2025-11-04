@@ -1,10 +1,12 @@
 package com.example.connect.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -56,8 +58,16 @@ public class EventListActivity extends AppCompatActivity {
 
         recycler.setLayoutManager(new LinearLayoutManager(this));
         adapter = new EventListAdapter(new EventListAdapter.Listener() {
-            @Override public void onDetails(Event e) { /* TODO: navigate */ }
-            @Override public void onJoin(Event e)    { /* TODO: join */ }
+            @Override public void onDetails(Event e) {
+                // Navigate to Event Details screen
+                Intent intent = new Intent(EventListActivity.this, EventDetailsActivity.class);
+                intent.putExtra("event", e);
+                startActivity(intent);
+            }
+            @Override public void onJoin(Event e) {
+                // TODO: Implement join waitlist functionality
+                Toast.makeText(EventListActivity.this, "Join waitlist functionality coming soon", Toast.LENGTH_SHORT).show();
+            }
         });
         recycler.setAdapter(adapter);
 

@@ -4,11 +4,13 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+import java.io.Serializable;
+
 /**
  * Represents a single event visible to entrants.
  * Minimal fields for listing + "joinable" logic.
  */
-public class Event {
+public class Event implements Serializable {
 
     private String id;                 // Firestore doc id
     private String name;

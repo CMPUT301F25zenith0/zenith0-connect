@@ -72,9 +72,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
 
-            <!-- Action Buttons -->
+            <!-- Action Buttons (Stacked Vertically) -->
             <LinearLayout
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -84,7 +84,7 @@
                     android:id="@+id/btnDetails"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:text="@string/btn_view_details"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="@color/black"
                     app:strokeColor="@color/black"
@@ -92,9 +92,9 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnJoin"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="8dp"
                     android:text="@string/btn_join_waitlist"
                     android:textColor="@color/white"
                     app:backgroundTint="@color/black"

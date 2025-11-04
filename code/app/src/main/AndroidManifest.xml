@@ -26,6 +26,7 @@
         <!-- Other activities (no launcher intent-filter) -->
         <activity android:name=".activities.MainActivity" />
         <activity android:name=".activities.EventListActivity" />
+        <activity android:name=".activities.EventDetailsActivity" />
         <activity android:name=".activities.CreateActivity" />
         <activity android:name=".activities.OrganizerActivity" />
 
