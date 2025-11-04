@@ -58,24 +58,5 @@ public class EventRepository {
     public Task<com.google.firebase.firestore.QuerySnapshot> fetchAll() {
         return db.collection("events").get();
     }
-    // in EventRepository
-    public com.google.firebase.firestore.ListenerRegistration listenJoinableEvents(EventsCallback cb) {
-        return FirebaseFirestore.getInstance().collection("events")
-                .addSnapshotListener((snap, e) -> {
-                    if (e != null) { cb.onError(e); return; }
-                    if (snap == null) { cb.onSuccess(new ArrayList<>()); return; }
-                    List<Event> out = new ArrayList<>();
-                    for (var doc : snap.getDocuments()) {
-                        Event ev = doc.toObject(Event.class);
-                        if (ev == null) continue;
-                        ev.setId(doc.getId());
-                        ev.setDate(Event.toIsoDate(doc.get("date")));
-                        ev.setRegOpens(Event.toIsoDate(doc.get("regOpens")));
-                        ev.setRegCloses(Event.toIsoDate(doc.get("regCloses")));
-                        if (ev.isJoinableToday()) out.add(ev);
-                    }
-                    cb.onSuccess(out);
-                });
-    }
 
 }
