@@ -34,24 +34,55 @@ public class EventRepository {
      * (You can move the joinable filter server-side later.)
      */
     public void fetchJoinableEvents(@NonNull EventsCallback cb) {
-        Query q = db.collection("events").orderBy("regCloses", Query.Direction.ASCENDING);
+        try {
+            // Try with orderBy first, but catch if index doesn't exist
+            Query q = db.collection("events").orderBy("regCloses", Query.Direction.ASCENDING);
 
-        q.get().addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) {
-                cb.onError(task.getException());
-                return;
-            }
+            q.get().addOnCompleteListener(task -> {
+                if (!task.isSuccessful()) {
+                    Exception e = task.getException();
+                    android.util.Log.e("EventRepository", "Query failed, trying without orderBy", e);
+                    
+                    // If orderBy fails (likely missing index), try without it
+                    db.collection("events").get().addOnCompleteListener(task2 -> {
+                        if (!task2.isSuccessful()) {
+                            cb.onError(task2.getException());
+                            return;
+                        }
+                        processResults(task2.getResult(), cb);
+                    });
+                    return;
+                }
+                processResults(task.getResult(), cb);
+            });
+        } catch (Exception e) {
+            android.util.Log.e("EventRepository", "Error in fetchJoinableEvents", e);
+            cb.onError(e);
+        }
+    }
+    
+    private void processResults(com.google.firebase.firestore.QuerySnapshot snapshot, EventsCallback cb) {
+        try {
             List<Event> results = new ArrayList<>();
-            for (DocumentSnapshot doc : task.getResult().getDocuments()) {
-                Event e = doc.toObject(Event.class);
-                if (e == null) continue;
-                e.setId(doc.getId());
-                if (e.isJoinableToday()) {
-                    results.add(e);
+            if (snapshot != null && snapshot.getDocuments() != null) {
+                for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                    try {
+                        Event e = doc.toObject(Event.class);
+                        if (e == null) continue;
+                        e.setId(doc.getId());
+                        if (e.isJoinableToday()) {
+                            results.add(e);
+                        }
+                    } catch (Exception ex) {
+                        android.util.Log.w("EventRepository", "Error processing document " + doc.getId(), ex);
+                    }
                 }
             }
             cb.onSuccess(results);
-        });
+        } catch (Exception e) {
+            android.util.Log.e("EventRepository", "Error processing results", e);
+            cb.onError(e);
+        }
     }
 
     /** (Optional) raw list without filtering */

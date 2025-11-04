@@ -59,10 +59,33 @@ public class EventListAdapter extends RecyclerView.Adapter<EventListAdapter.VH> 
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         Event e = items.get(pos);
-        h.title.setText(e.getName());
-        h.date.setText(h.itemView.getContext().getString(R.string.event_date_fmt, e.getDate()));
-        h.reg.setText(h.itemView.getContext().getString(R.string.event_reg_fmt,
-                e.getRegOpens(), e.getRegCloses()));
+        h.title.setText(e.getName() != null ? e.getName() : "Event Title");
+        
+        // Date & Time
+        String dateTime = "";
+        if (e.getDate() != null && !e.getDate().isEmpty()) {
+            dateTime = e.getDate();
+            if (e.getTime() != null && !e.getTime().isEmpty()) {
+                dateTime = h.itemView.getContext().getString(R.string.event_date_time_fmt, e.getDate(), e.getTime());
+            }
+        }
+        h.dateAndTime.setText(dateTime);
+        
+        // Location
+        if (e.getLocation() != null && !e.getLocation().isEmpty()) {
+            h.location.setText(h.itemView.getContext().getString(R.string.event_location_fmt, e.getLocation()));
+            h.location.setVisibility(android.view.View.VISIBLE);
+        } else {
+            h.location.setVisibility(android.view.View.GONE);
+        }
+        
+        // Price
+        if (e.getPrice() != null && !e.getPrice().isEmpty()) {
+            h.price.setText(h.itemView.getContext().getString(R.string.event_price_fmt, e.getPrice()));
+            h.price.setVisibility(android.view.View.VISIBLE);
+        } else {
+            h.price.setVisibility(android.view.View.GONE);
+        }
 
         h.btnDetails.setOnClickListener(v -> listener.onDetails(e));
         h.btnJoin.setOnClickListener(v -> listener.onJoin(e));
@@ -71,13 +94,16 @@ public class EventListAdapter extends RecyclerView.Adapter<EventListAdapter.VH> 
     @Override public int getItemCount() { return items.size(); }
 
     static class VH extends RecyclerView.ViewHolder {
-        TextView title, date, reg;
+        TextView title, dateAndTime, location, price;
         MaterialButton btnDetails, btnJoin;
+        android.widget.ImageView eventImage;
         VH(@NonNull View v) {
             super(v);
             title = v.findViewById(R.id.tvTitle);
-            date  = v.findViewById(R.id.tvDate);
-            reg   = v.findViewById(R.id.tvReg);
+            dateAndTime = v.findViewById(R.id.tvDateAndTime);
+            location = v.findViewById(R.id.tvLocation);
+            price = v.findViewById(R.id.tvPrice);
+            eventImage = v.findViewById(R.id.event_image);
             btnDetails = v.findViewById(R.id.btnDetails);
             btnJoin    = v.findViewById(R.id.btnJoin);
         }

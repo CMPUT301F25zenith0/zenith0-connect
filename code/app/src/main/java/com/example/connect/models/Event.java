@@ -13,6 +13,9 @@ public class Event {
     private String id;                 // Firestore doc id
     private String name;
     private String date;               // ISO yyyy-MM-dd (first session or display date)
+    private String time;               // Event time (e.g., "6:00 PM")
+    private String location;            // Event location
+    private String price;               // Event price (e.g., "$60")
     private String regOpens;           // ISO yyyy-MM-dd
     private String regCloses;          // ISO yyyy-MM-dd
     private int maxParticipants;
@@ -25,9 +28,19 @@ public class Event {
     public Event(String id, String name, String date,
                  String regOpens, String regCloses,
                  int maxParticipants, String posterUrl) {
+        this(id, name, date, null, null, null, regOpens, regCloses, maxParticipants, posterUrl);
+    }
+
+    public Event(String id, String name, String date, String time,
+                 String location, String price,
+                 String regOpens, String regCloses,
+                 int maxParticipants, String posterUrl) {
         this.id = id;
         this.name = name;
         this.date = date;
+        this.time = time;
+        this.location = location;
+        this.price = price;
         this.regOpens = regOpens;
         this.regCloses = regCloses;
         this.maxParticipants = maxParticipants;
@@ -55,6 +68,15 @@ public class Event {
 
     public String getPosterUrl() { return posterUrl; }
     public void setPosterUrl(String posterUrl) { this.posterUrl = posterUrl; }
+
+    public String getTime() { return time; }
+    public void setTime(String time) { this.time = time; }
+
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+
+    public String getPrice() { return price; }
+    public void setPrice(String price) { this.price = price; }
 
     // --- Helpers ---
     private static final DateTimeFormatter ISO = DateTimeFormatter.ISO_LOCAL_DATE;

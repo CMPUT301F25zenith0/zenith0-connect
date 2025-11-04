@@ -19,6 +19,11 @@
 
     <string name="event_date_fmt">Event date: %1$s</string>
     <string name="event_reg_fmt">Reg closes: %2$s</string>
+    <string name="event_date_time_fmt">%1$s at %2$s</string>
+    <string name="event_location_fmt">Location: %1$s</string>
+    <string name="event_price_fmt">Price: %1$s</string>
+    <string name="event_image_desc">Event poster image</string>
+    <string name="menu">Menu</string>
 
 
 

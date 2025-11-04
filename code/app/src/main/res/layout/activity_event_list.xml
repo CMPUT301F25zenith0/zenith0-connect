@@ -3,79 +3,144 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/f3">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorSurface"
-        app:title="@string/events_title"
-        app:titleCentered="true"
-        app:navigationIconTint="@color/black" />
+    <!-- Toolbar removed - using search bar directly -->
 
     <LinearLayout
+        android:id="@+id/content_layout"
         android:orientation="vertical"
-        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="?attr/actionBarSize">
+        android:layout_height="match_parent">
 
-        <com.google.android.material.search.SearchBar
-            android:id="@+id/searchBar"
+        <!-- Search Bar with Hamburger Menu -->
+        <LinearLayout
+            android:id="@+id/search_container"
+            android:orientation="horizontal"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:hint="@string/search_events_hint"
-            app:defaultMarginsEnabled="true" />
-        <com.google.android.material.search.SearchView
-            android:id="@+id/search_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_anchor="@id/search_bar" />
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:background="@color/f1"
+            android:gravity="center_vertical">
 
+            <!-- Hamburger Menu Icon -->
+            <ImageButton
+                android:id="@+id/btn_menu"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_menu"
+                android:contentDescription="@string/menu"
+                android:tint="@color/black"
+                android:scaleType="centerInside"
+                android:padding="12dp"
+                app:tint="@color/black" />
+
+            <!-- Search Bar -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/search_layout"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/search_events_hint"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                app:boxBackgroundColor="@color/white"
+                app:hintTextColor="@color/hint_colour"
+                app:boxStrokeColor="@color/black">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/search_edit_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch"
+                    android:textColor="@color/black"
+                    android:textColorHint="@color/hint_colour" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Search Icon -->
+            <ImageView
+                android:id="@+id/search_icon"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_search"
+                android:contentDescription="@string/search_events_hint"
+                android:tint="@color/black"
+                android:padding="12dp"
+                app:tint="@color/black" />
+        </LinearLayout>
+
+        <!-- Filter Chips -->
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chips"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="16dp"
             android:paddingTop="8dp"
+            android:background="@color/f3"
             app:singleSelection="false"
             app:chipSpacingHorizontal="8dp">
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_interest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:text="@string/filter_interest" />
+                android:text="@string/filter_interest"
+                android:textColor="@color/white"
+                app:chipBackgroundColor="@color/f3"
+                app:chipStrokeColor="@color/white"
+                app:chipStrokeWidth="1dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:text="@string/filter_date" />
+                android:text="@string/filter_date"
+                android:textColor="@color/white"
+                app:chipBackgroundColor="@color/f3"
+                app:chipStrokeColor="@color/white"
+                app:chipStrokeWidth="1dp" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:text="@string/filter_location" />
+                android:text="@string/filter_location"
+                android:textColor="@color/white"
+                app:chipBackgroundColor="@color/f3"
+                app:chipStrokeColor="@color/white"
+                app:chipStrokeWidth="1dp" />
         </com.google.android.material.chip.ChipGroup>
 
+        <!-- Event List -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/events_recycler"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
             android:paddingTop="8dp"
+            android:background="@color/f3"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
+        <!-- Progress Indicator -->
         <ProgressBar
             android:id="@+id/events_progress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center" />
+            android:layout_gravity="center"
+            android:layout_marginTop="16dp"
+            android:indeterminateTint="@color/white" />
 
+        <!-- Empty State -->
         <TextView
             android:id="@+id/events_empty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/events_empty"
+            android:textColor="@color/white"
             android:gravity="center"
             android:padding="24dp"
             android:visibility="gone"/>
