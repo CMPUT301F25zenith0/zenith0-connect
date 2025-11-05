@@ -29,7 +29,9 @@
 
         <!-- Organizer activities -->
         <activity android:name=".activities.OrganizerActivity" />
-
+        <activity
+            android:name=".activities.QRTestActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
