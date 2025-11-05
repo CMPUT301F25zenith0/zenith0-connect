@@ -125,6 +125,24 @@ public class EventListAdapter extends RecyclerView.Adapter<EventListAdapter.VH> 
         notifyDataSetChanged();
     }
 
+    // interest filter
+
+    // Filter by Interest (compares interest string with event name)
+    public void filterByInterest(String interest) {
+        items.clear();
+        if (interest == null || interest.trim().isEmpty()) {
+            items.addAll(all);
+        } else {
+            String lowerInterest = interest.toLowerCase();
+            for (Event e : all) {
+                if (e.getName() != null && e.getName().toLowerCase().contains(lowerInterest)) {
+                    items.add(e);
+                }
+            }
+        }
+        notifyDataSetChanged();
+    }
+
     // clear filter
     public void clearFilters() {
         items.clear();

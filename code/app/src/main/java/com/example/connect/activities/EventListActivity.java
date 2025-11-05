@@ -134,7 +134,44 @@ public class EventListActivity extends AppCompatActivity {
         // interest filter button
 
         // Define interest chip
+        // interest filter button
         Chip interestChip = findViewById(R.id.chip_interest);
+        if (interestChip != null) {
+            interestChip.setOnClickListener(v -> {
+                // Create an input field for the user
+                final android.widget.EditText input = new android.widget.EditText(EventListActivity.this);
+                input.setHint("Enter an interest (e.g., Music, Tech, Sports)");
+
+                // Build a dialog to capture user input
+                android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(EventListActivity.this);
+                builder.setTitle("Filter by Interest");
+                builder.setView(input);
+                builder.setPositiveButton("Apply", (dialog, which) -> {
+                    String userInterest = input.getText().toString().trim();
+
+                    if (!userInterest.isEmpty()) {
+                        interestChip.setText(userInterest);
+                        interestChip.setChecked(true);
+
+                        if (adapter != null) adapter.filterByInterest(userInterest);
+                    } else {
+                        Toast.makeText(EventListActivity.this, "Please enter an interest", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+                builder.show();
+            });
+
+            // Long press to clear interest filter
+            interestChip.setOnLongClickListener(v -> {
+                interestChip.setText("Interest");
+                interestChip.setChecked(false);
+                if (adapter != null) adapter.filterByInterest(""); // reset list
+                return true;
+            });
+        }
+
+
 
 
 
