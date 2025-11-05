@@ -108,4 +108,31 @@ public class EventListAdapter extends RecyclerView.Adapter<EventListAdapter.VH> 
             btnJoin    = v.findViewById(R.id.btnJoin);
         }
     }
+
+    // filter by Date function
+
+    public void filterByDate(String selectedDate) {
+        items.clear();
+        if (selectedDate == null || selectedDate.trim().isEmpty()) {
+            items.addAll(all);
+        } else {
+            for (Event e : all) {
+                if (e.getDate() != null && e.getDate().equals(selectedDate)) {
+                    items.add(e);
+                }
+            }
+        }
+        notifyDataSetChanged();
+    }
+
+    // clear filter
+    public void clearFilters() {
+        items.clear();
+        items.addAll(all); // Reset to full list
+        notifyDataSetChanged();
+    }
+
+
+
+
 }

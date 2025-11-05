@@ -111,7 +111,8 @@
                 app:chipBackgroundColor="@color/f3"
                 app:chipStrokeColor="@color/white"
                 app:chipStrokeWidth="1dp"
-                app:chipCornerRadius="20dp" />
+                app:chipCornerRadius="20dp"
+                android:checkable="false" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_location"
@@ -124,6 +125,19 @@
                 app:chipStrokeColor="@color/white"
                 app:chipStrokeWidth="1dp"
                 app:chipCornerRadius="20dp" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_clear_filters"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/Widget.MaterialComponents.Chip.Action"
+                android:text="Clear Filters"
+                android:textColor="@color/white"
+                app:chipBackgroundColor="@color/f3"
+                app:chipStrokeColor="@color/white"
+                app:chipStrokeWidth="1dp"
+                app:chipCornerRadius="20dp" />
+
         </com.google.android.material.chip.ChipGroup>
 
         <!-- Event List -->
