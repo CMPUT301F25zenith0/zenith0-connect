@@ -40,7 +40,7 @@ public class QRTestActivity extends AppCompatActivity {
         // Set default event ID for quick testing
         eventIdEditText.setText("event_12345");
 
-        // Generate standard QR code
+        // Generate standard QR code --> going to use specific event id from database
         generateQrButton.setOnClickListener(v -> {
             String eventId = eventIdEditText.getText().toString().trim();
 

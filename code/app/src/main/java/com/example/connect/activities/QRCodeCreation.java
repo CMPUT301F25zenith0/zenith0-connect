@@ -15,7 +15,7 @@ public class QRCodeCreation {
      * @param eventId The unique identifier for the event
      * @param width The width of the QR code in pixels
      * @param height The height of the QR code in pixels
-     * @return Bitmap of the QR code, or null if generation fails
+     * @return Bitmap of the QR code, which can be saved into the event. OR null if generation fails
      */
     public static Bitmap generateEventQRCode(String eventId, int width, int height) {
         try {
