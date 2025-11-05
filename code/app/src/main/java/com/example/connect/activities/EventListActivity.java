@@ -169,6 +169,8 @@ public class EventListActivity extends AppCompatActivity {
                 if (adapter != null) adapter.filterByInterest(""); // reset list
                 return true;
             });
+
+
         }
 
 
@@ -190,9 +192,11 @@ public class EventListActivity extends AppCompatActivity {
                     dateChip.setChecked(false);
                 }
 
-                if (interestChip != null) interestChip.setChecked(false);
-                // if (locationChip != null) locationChip.setChecked(false); --- location filter later
-
+                // this is clearing the intereset filter
+                if (interestChip != null) {
+                    interestChip.setText("Interest");  // reset text label
+                    interestChip.setChecked(false);    // uncheck visually
+                }
                 // Reset RecyclerView
                 if (adapter != null) adapter.clearFilters();
 
