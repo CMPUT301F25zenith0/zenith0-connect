@@ -67,10 +67,11 @@ public class EventDetailsActivity extends AppCompatActivity {
             tvName.setText(event.getName() != null ? event.getName() : "Event Name");
         }
 
-        // Event Date
+        // Event Date (formatted nicely)
         TextView tvDate = findViewById(R.id.tv_event_date);
         if (tvDate != null && event.getDate() != null && !event.getDate().isEmpty()) {
-            tvDate.setText("Date: " + event.getDate());
+            String formattedDate = event.getFormattedDate();
+            tvDate.setText("Date: " + formattedDate);
             tvDate.setVisibility(android.view.View.VISIBLE);
         } else if (tvDate != null) {
             tvDate.setVisibility(android.view.View.GONE);
@@ -103,22 +104,28 @@ public class EventDetailsActivity extends AppCompatActivity {
             tvPrice.setVisibility(android.view.View.GONE);
         }
 
-        // Registration Opens
+        // Registration Opens (formatted from Timestamp)
         TextView tvRegOpens = findViewById(R.id.tv_reg_opens);
-        if (tvRegOpens != null && event.getRegOpens() != null && !event.getRegOpens().isEmpty()) {
-            tvRegOpens.setText("Registration Opens: " + event.getRegOpens());
-            tvRegOpens.setVisibility(android.view.View.VISIBLE);
-        } else if (tvRegOpens != null) {
-            tvRegOpens.setVisibility(android.view.View.GONE);
+        if (tvRegOpens != null) {
+            String regOpensStr = event.getRegOpens(); // This now returns formatted string from Timestamp
+            if (regOpensStr != null && !regOpensStr.isEmpty()) {
+                tvRegOpens.setText("Registration Opens: " + regOpensStr);
+                tvRegOpens.setVisibility(android.view.View.VISIBLE);
+            } else {
+                tvRegOpens.setVisibility(android.view.View.GONE);
+            }
         }
 
-        // Registration Closes
+        // Registration Closes (formatted from Timestamp)
         TextView tvRegCloses = findViewById(R.id.tv_reg_closes);
-        if (tvRegCloses != null && event.getRegCloses() != null && !event.getRegCloses().isEmpty()) {
-            tvRegCloses.setText("Registration Closes: " + event.getRegCloses());
-            tvRegCloses.setVisibility(android.view.View.VISIBLE);
-        } else if (tvRegCloses != null) {
-            tvRegCloses.setVisibility(android.view.View.GONE);
+        if (tvRegCloses != null) {
+            String regClosesStr = event.getRegCloses(); // This now returns formatted string from Timestamp
+            if (regClosesStr != null && !regClosesStr.isEmpty()) {
+                tvRegCloses.setText("Registration Closes: " + regClosesStr);
+                tvRegCloses.setVisibility(android.view.View.VISIBLE);
+            } else {
+                tvRegCloses.setVisibility(android.view.View.GONE);
+            }
         }
 
         // Max Participants
