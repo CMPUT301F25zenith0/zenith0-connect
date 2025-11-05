@@ -1,14 +1,14 @@
 package com.example.connect.activities;
 
 import android.graphics.Bitmap;
-import android.graphics.Color;
+
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.journeyapps.barcodescanner.BarcodeEncoder;
 
-public class QRCodeCreation {
+public class QRGeneration {
 
     /**
      * Generates a QR code bitmap for an event

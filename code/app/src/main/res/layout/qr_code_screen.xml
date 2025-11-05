@@ -39,9 +39,32 @@
     </LinearLayout>
 
 
+    <!-- Barcode Scanner -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        app:cardCornerRadius="40dp"
+        app:cardUseCompatPadding="true"
+        app:cardElevation="8dp"
+        android:clipToOutline="true"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+    <!-- Your barcode scanner -->
+    <com.journeyapps.barcodescanner.DecoratedBarcodeView
+        android:id="@+id/barcode_scanner"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:zxing_scanner_layout="@layout/custom_barcode_scanner" />
+
+</androidx.cardview.widget.CardView>
+
+
     <!-- Bottom Text -->
     <TextView
-        android:id="@+id/tvPlaceQrCode"
+        android:id="@+id/qr_info"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"

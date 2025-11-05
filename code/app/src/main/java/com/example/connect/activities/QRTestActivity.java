@@ -50,13 +50,13 @@ public class QRTestActivity extends AppCompatActivity {
             }
 
             // Generate QR code
-            Bitmap qrCode = QRCodeCreation.generateEventQRCode(eventId);
+            Bitmap qrCode = QRGeneration.generateEventQRCode(eventId);
 
             if (qrCode != null) {
                 qrCodeImageView.setImageBitmap(qrCode);
 
                 // Display the encoded data
-                String qrData = QRCodeCreation.generateEventQRCodeData(eventId);
+                String qrData = QRGeneration.generateEventQRCodeData(eventId);
                 qrDataTextView.setText("QR Code Data: " + qrData);
 
                 Toast.makeText(this, "QR Code generated successfully!", Toast.LENGTH_SHORT).show();
@@ -75,7 +75,7 @@ public class QRTestActivity extends AppCompatActivity {
             }
 
             // Generate colored QR code (blue on white)
-            Bitmap coloredQrCode = QRCodeCreation.generateColoredEventQRCode(
+            Bitmap coloredQrCode = QRGeneration.generateColoredEventQRCode(
                     eventId,
                     400,
                     400,
@@ -87,7 +87,7 @@ public class QRTestActivity extends AppCompatActivity {
                 qrCodeImageView.setImageBitmap(coloredQrCode);
 
                 // Display the encoded data
-                String qrData = QRCodeCreation.generateEventQRCodeData(eventId);
+                String qrData = QRGeneration.generateEventQRCodeData(eventId);
                 qrDataTextView.setText("QR Code Data: " + qrData);
 
                 Toast.makeText(this, "Colored QR Code generated successfully!", Toast.LENGTH_SHORT).show();

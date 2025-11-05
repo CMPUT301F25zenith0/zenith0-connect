@@ -3,8 +3,11 @@ package com.example.connect.activities;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
+import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,7 +20,16 @@ import com.journeyapps.barcodescanner.BarcodeCallback;
 import com.journeyapps.barcodescanner.BarcodeResult;
 import com.journeyapps.barcodescanner.DecoratedBarcodeView;
 
-
+/**
+ * Activity responsible for scanning QR codes using the device camera.
+ * <p>
+ * This activity uses the JourneyApps {@link DecoratedBarcodeView} for live camera scanning.
+ * It handles camera permission requests, QR code parsing, and navigation to the
+ * corresponding event activity when a valid QR code is detected.
+ * </p>
+ *  @author Aakansh Chatterjee
+ *  @version 1.0
+ */
 public class QRCodeScanner extends AppCompatActivity {
 
     // For cam permissions
@@ -25,15 +37,22 @@ public class QRCodeScanner extends AppCompatActivity {
 
     // For Specifying location where cam screen is shown and scanning occurs
     private DecoratedBarcodeView barcodeView;
-    //
     private boolean isScanning = true;
 
+    private ImageButton backBtn;
+
+    /**
+     * Called when the activity is created. Initializes the camera view and handles permission checks.
+     *
+     * @param savedInstanceState Saved instance state bundle (if any).
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_qr_scanner); // testing XML --> going to integrate into our UI
+        setContentView(R.layout.qr_code_screen);
 
-        barcodeView = findViewById(R.id.barcode_scanner); // Finding location from XML for where the cam view is to be placed
+        barcodeView = findViewById(R.id.barcode_scanner);
+        backBtn = findViewById(R.id.back_btn);
 
         // Check camera permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -44,9 +63,14 @@ public class QRCodeScanner extends AppCompatActivity {
         } else {
             startScanning(); // starts the scanning process --> continuous till QR code is found and scanned
         }
+
+        backBtn.setOnClickListener(v -> onBackPressed());
     }
 
-    // Scanning process
+    /**
+     * Starts continuous scanning using {@link BarcodeCallback}.
+     * Stops scanning after the first successful QR code detection to prevent multiple triggers.
+     */
     private void startScanning() {
         barcodeView.decodeContinuous(new BarcodeCallback() {
             @Override
@@ -59,10 +83,14 @@ public class QRCodeScanner extends AppCompatActivity {
         });
     }
 
+    /**
+     * Parses and validates scanned QR code data.
+     * Expected format: {@code myapp://event/signup?eventId=event_12345}
+     *
+     * @param scannedData The raw text content of the scanned QR code.
+     */
     private void handleScannedData(String scannedData) {
-        // Parse the QR code data
         // Expected format: "myapp://event/signup?eventId=event_12345"
-
         // parse the data for our event name
         try {
             Uri uri = Uri.parse(scannedData);
@@ -83,7 +111,7 @@ public class QRCodeScanner extends AppCompatActivity {
             } else {
                 showError("Invalid QR code format");
             }
-            // If there an error with parsing, we are told what kind, otherwise an expection is thrown by android studio as seen below
+            // If there an error with parsing, we are told what kind, OR an exception is thrown by android studio as seen below
         } catch (Exception e) {
             showError("Failed to parse QR code: " + e.getMessage());
             e.printStackTrace();
@@ -91,7 +119,11 @@ public class QRCodeScanner extends AppCompatActivity {
     }
 
 
-    // Navigates to the new activity with out event, adding the eventID to the intent --> To be accessed in our EventDetails Activity
+    /**
+     * Navigates to the event details activity using the provided eventID.
+     *
+     * @param eventId The unique event identifier extracted from the QR code.
+     */
     private void navigateToEvent(String eventId) {
         // Navigate to your event details/signup activity
         Intent intent = new Intent(this, EventDetails.class);
@@ -100,13 +132,24 @@ public class QRCodeScanner extends AppCompatActivity {
         finish(); // Close scanner activity
     }
 
+    /**
+     * Displays a Toast message for errors and re-enables scanning.
+     *
+     * @param message The error message to display.
+     */
     private void showError(String message) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         // Allow scanning again after error
         isScanning = true;
     }
 
-    // Handles the request for permissions
+    /**
+     * Handles the result of camera permission requests.
+     *
+     * @param requestCode  The request code identifying the permission request.
+     * @param permissions  The requested permissions.
+     * @param grantResults The grant results for the corresponding permissions.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
@@ -123,7 +166,9 @@ public class QRCodeScanner extends AppCompatActivity {
         }
     }
 
-    // Camera turns on
+    /**
+     * Resumes the camera preview when the activity becomes visible.
+     */
     @Override
     protected void onResume() {
         super.onResume();
@@ -132,7 +177,9 @@ public class QRCodeScanner extends AppCompatActivity {
         }
     }
 
-    // Camera Pauses
+    /**
+     * Pauses the camera preview when the activity is no longer in the foreground.
+     */
     @Override
     protected void onPause() {
         super.onPause();
@@ -141,8 +188,9 @@ public class QRCodeScanner extends AppCompatActivity {
         }
     }
 
-    // Stop the camera completely
-    // Called when this activity exited/destroyed
+    /**
+     * Stops and releases the camera resources when the activity is destroyed.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();
