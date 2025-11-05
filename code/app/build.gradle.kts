@@ -44,7 +44,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
-
+    implementation ("com.journeyapps:zxing-android-embedded:4.3.0")
     // Import the Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:34.5.0"))
     implementation("com.google.firebase:firebase-auth:24.0.1")
