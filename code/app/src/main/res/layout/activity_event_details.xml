@@ -130,7 +130,18 @@
                 android:layout_height="wrap_content"
                 android:textSize="16sp"
                 android:textColor="@color/black"
-                android:layout_marginBottom="24dp" />
+                android:layout_marginBottom="8dp" />
+
+            <!-- Waiting List Count -->
+            <TextView
+                android:id="@+id/tv_waiting_list_count"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:layout_marginBottom="24dp"
+                android:visibility="gone" />
 
             <!-- Event ID (Hidden by default) -->
             <TextView

@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
 import com.example.connect.models.Event;
+import com.example.connect.network.WaitingListRepository;
 import com.google.android.material.button.MaterialButton;
 
 /**
@@ -19,6 +20,7 @@ import com.google.android.material.button.MaterialButton;
 public class EventDetailsActivity extends AppCompatActivity {
 
     private Event event;
+    private WaitingListRepository waitingListRepo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +35,9 @@ public class EventDetailsActivity extends AppCompatActivity {
             return;
         }
 
+        // Initialize waiting list repository
+        waitingListRepo = new WaitingListRepository();
+
         // Setup back button
         ImageView btnBack = findViewById(R.id.btn_back);
         if (btnBack != null) {
@@ -41,6 +46,9 @@ public class EventDetailsActivity extends AppCompatActivity {
 
         // Display event details
         displayEventDetails();
+        
+        // Load waiting list count
+        loadWaitingListCount();
 
         // Setup Join Waitlist button
         MaterialButton btnJoin = findViewById(R.id.btn_join_waitlist);
@@ -126,6 +134,46 @@ public class EventDetailsActivity extends AppCompatActivity {
             tvEventId.setText("Event ID: " + event.getId());
             tvEventId.setVisibility(android.view.View.GONE); // Hide by default
         }
+    }
+
+    /**
+     * Load and display the waiting list count for this event.
+     */
+    private void loadWaitingListCount() {
+        if (event == null || event.getId() == null || event.getId().isEmpty()) {
+            android.util.Log.w("EventDetailsActivity", "Event or Event ID is null/empty");
+            return;
+        }
+
+        String eventId = event.getId();
+        android.util.Log.d("EventDetailsActivity", "Loading waiting list count for Event ID: " + eventId);
+
+        waitingListRepo.getWaitingListCount(eventId, new WaitingListRepository.WaitingListCountCallback() {
+            @Override
+            public void onSuccess(int count) {
+                android.util.Log.d("EventDetailsActivity", "Waiting list count loaded successfully: " + count);
+                runOnUiThread(() -> {
+                    TextView tvWaitingListCount = findViewById(R.id.tv_waiting_list_count);
+                    if (tvWaitingListCount != null) {
+                        tvWaitingListCount.setText("Total Entrants on Waiting List: " + count);
+                        tvWaitingListCount.setVisibility(android.view.View.VISIBLE);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(Exception e) {
+                android.util.Log.e("EventDetailsActivity", "Error loading waiting list count for Event ID: " + eventId, e);
+                // Still show count as 0 if there's an error
+                runOnUiThread(() -> {
+                    TextView tvWaitingListCount = findViewById(R.id.tv_waiting_list_count);
+                    if (tvWaitingListCount != null) {
+                        tvWaitingListCount.setText("Total Entrants on Waiting List: 0");
+                        tvWaitingListCount.setVisibility(android.view.View.VISIBLE);
+                    }
+                });
+            }
+        });
     }
 }
 
