@@ -10,7 +10,7 @@ public class ProfileTest {
 
     @Test
     public void testUserCreation() {
-        User user = new User("Alice Smith", "alice@example.com", "1234567890");
+        User user = new User("Alice Smith", "alice@example.com", "1234567890", "");
 
         // Initially, values should match constructor
         assertEquals("Alice Smith", user.getName());
@@ -20,7 +20,7 @@ public class ProfileTest {
 
     @Test
     public void testProfileUpdate() {
-        User user = new User("Alice Smith", "alice@example.com", "1234567890");
+        User user = new User("Alice Smith", "alice@example.com", "1234567890","");
 
         // Update profile info
         user.setName("Alice Johnson");

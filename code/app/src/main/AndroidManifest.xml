@@ -29,6 +29,14 @@
 
         <!-- Organizer activities -->
         <activity android:name=".activities.OrganizerActivity" />
+        <!-- This ensures FCM messages reach service.-->
+        <service
+            android:name=".network.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
 
     </application>
 

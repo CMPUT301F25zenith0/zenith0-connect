@@ -11,6 +11,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.connect.R;
+import com.example.connect.utils.NotificationTokenManager;
+import com.google.firebase.auth.FirebaseAuth;
 
 /**
  * Main launcher activity for the app.
@@ -32,5 +34,10 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
             startActivity(intent);
         });
+
+        // After successful login
+        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+            NotificationTokenManager.updateToken();
+        }
     }
 }
