@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Unread Indicator -->
+        <View
+            android:id="@+id/notification_indicator"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:background="#2196F3"
+            android:layout_marginEnd="12dp"/>
+
+        <!-- Content -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/tv_notification_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Notification Title"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#333333"/>
+
+            <!-- Event Name -->
+            <TextView
+                android:id="@+id/tv_event_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Event: Community Basketball"
+                android:textSize="12sp"
+                android:textColor="#666666"
+                android:layout_marginTop="4dp"
+                android:visibility="gone"/>
+
+            <!-- Body -->
+            <TextView
+                android:id="@+id/tv_notification_body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Notification body text goes here"
+                android:textSize="14sp"
+                android:textColor="#666666"
+                android:layout_marginTop="8dp"/>
+
+            <!-- Time -->
+            <TextView
+                android:id="@+id/tv_notification_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Nov 05, 2025 at 2:30 PM"
+                android:textSize="12sp"
+                android:textColor="#999999"
+                android:layout_marginTop="8dp"/>
+
+            <!-- Decline Button (US 01.05.03) -->
+            <Button
+                android:id="@+id/btn_decline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Decline Invitation"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#F44336"
+                android:layout_marginTop="12dp"
+                android:visibility="gone"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
