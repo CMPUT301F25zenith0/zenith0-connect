@@ -31,18 +31,16 @@
         <activity android:name=".activities.CreateAcctActivity" />
         <activity android:name=".activities.OrganizerActivity" />
 
-
-        <!-- Utils / Testing -->
-        <activity
-            android:name=".activities.QRTestActivity"
-            android:exported="false" />
-
         <activity android:name=".activities.QRCodeScanner" />
-
+        <activity
+            android:name=".activities.CreateEvent"
+            android:exported="false" />
     </application>
 
     <!-- Permission to Use Camera -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
 </manifest>

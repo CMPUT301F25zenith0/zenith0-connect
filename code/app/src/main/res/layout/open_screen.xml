@@ -79,9 +79,13 @@
         android:layout_marginHorizontal="32dp" />
 
     <Button
-        android:id="@+id/btn_test_qr"
+        android:id="@+id/btn_organizer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Test QR Generator"
-        android:layout_marginTop="16dp"/>
+        android:text="Organizer Dashboard"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#3D5454"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:layout_marginTop="16dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>

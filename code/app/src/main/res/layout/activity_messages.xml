@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#5F8A8A">
+
+    <!-- Top Bar -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/topBar"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:background="#5F8A8A"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- Back button (icon) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="12dp"
+            android:backgroundTint="#2C4E4E"
+            android:contentDescription="Back"
+            app:icon="@android:drawable/ic_media_previous"
+            app:iconTint="#FFFFFF"
+            app:iconPadding="0dp"
+            app:cornerRadius="18dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Messages"
+            android:textColor="#000000"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toEndOf="@id/btnBack"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Search Bar -->
+    <LinearLayout
+        android:id="@+id/searchBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:background="@android:drawable/edit_text"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/btnMenu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="☰"
+            android:textSize="20sp"
+            android:textColor="#666666"
+            android:paddingEnd="12dp" />
+
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Search messages"
+            android:textColorHint="#999999"
+            android:textSize="14sp"
+            android:background="@android:color/transparent"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp" />
+
+        <TextView
+            android:id="@+id/btnSearch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔍"
+            android:textSize="20sp"
+            android:textColor="#666666"
+            android:paddingStart="12dp" />
+    </LinearLayout>
+
+    <!-- Filter By Event Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnFilterByEvent"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:text="Filter By Event"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:backgroundTint="#92B8A0"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:cornerRadius="24dp"
+        app:layout_constraintTop_toBottomOf="@id/searchBar"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Messages RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewMessages"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/btnFilterByEvent"
+        app:layout_constraintBottom_toTopOf="@id/btnNewMessage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- New Message Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnNewMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="48dp"
+        android:text="New Message"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:backgroundTint="#92B8A0"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:layout_marginBottom="12dp"
+        android:layout_marginEnd="16dp"
+        app:cornerRadius="24dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Bottom Navigation (kept as buttons per your mock) -->
+    <LinearLayout
+        android:id="@+id/bottomNavigation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#2C3E3E"
+        android:padding="8dp"
+        android:gravity="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNavDashboard"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Dashboard"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:layout_marginEnd="6dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNavMessage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Message"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:layout_marginEnd="6dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNavMap"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Map"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:layout_marginEnd="6dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNavProfile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Profile"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
