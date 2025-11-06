@@ -89,7 +89,11 @@ public class EventListActivity extends AppCompatActivity {
 
         notificationBtn.setOnClickListener(v -> {
             // TODO - Navigate to notifications page
-            Toast.makeText(this, "Notifications - Coming Soon", Toast.LENGTH_SHORT).show();
+            // aalpesh added code here for entrant
+            Intent notifIntent = new Intent(EventListActivity.this, NotificationsActivity.class);
+            startActivity(notifIntent);
+
+//            Toast.makeText(this, "Notifications - Coming Soon", Toast.LENGTH_SHORT).show();
         });
 
         // Search functionality
