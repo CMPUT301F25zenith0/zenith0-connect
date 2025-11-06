@@ -7,6 +7,16 @@
     android:gravity="center"
     android:padding="24dp"
     android:background="@color/f1">
+    <Button
+        android:id="@+id/btn_entrant"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="👤 Entrant Dashboard\nView Notifications"
+        android:textSize="16sp"
+        android:padding="16dp"
+        android:backgroundTint="#2196F3"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp"/>
 
     <Button
         android:id="@+id/btn_login"

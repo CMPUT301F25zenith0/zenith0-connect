@@ -15,17 +15,21 @@ public class User {
     /** Phone number */
     private String phone;
 
+    public String fcmToken;
+
     /**
      * Constructs a new User.
      *
      * @param name  full name
      * @param email email address
      * @param phone phone number
+     * @param fcmToken firebase cloud token
      */
-    public User(String name, String email, String phone) {
+    public User(String name, String email, String phone, String fcmToken){
         this.name = name;
         this.email = email;
         this.phone = phone;
+        this.fcmToken = fcmToken;
     }
 
     // Getters and setters
