@@ -1,3 +1,4 @@
+[⬅️Back](../meetings.md)
 # 📝 Weekly Meeting Notes — Week 1
 
 **Date:** 2025-09-16  
@@ -81,3 +82,5 @@
 - Draft **initial requirements and feature list** for the event booking app.  
 - Ensure **Project Part 0** submission requirements are met. 
 
+> _Last updated: [2025-10-18]_  
+> _Prepared by: [Aakansh Chatterjee]_

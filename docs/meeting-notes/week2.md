@@ -1,4 +1,5 @@
-# 📝 Weekly Meeting Notes — Week [X]
+[⬅️Back](../meetings.md)
+# 📝 Weekly Meeting Notes — Week 2
 
 **Date:** [2025-010-09]  
 **Time:** [6:15pm – 6:45pm]  

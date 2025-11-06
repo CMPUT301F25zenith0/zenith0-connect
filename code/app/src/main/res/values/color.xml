@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="f1">#B7E4EA</color>  <!-- Winter Chill F1 -->
+    <color name="f2">#94B1B5</color>
+    <color name="f3">#507D82</color>
+    <color name="f4">#0B2E32</color>
+
+    <color name="f5">#93B185</color> <!-- Button Colour for user pages-->
+
+    <!-- QR code scanner colours -->
+    <color name="zxing_custom_possible_result_points">#c0ffbd</color>
+    <color name="zxing_custom_result_view">#b0000000</color>
+    <color name="zxing_custom_viewfinder_laser">#ff0000</color>
+    <color name="zxing_custom_viewfinder_mask">#60000000</color>
+
+
+    <!-- Shade looks green in the preview | Could try D3D3D3 -->
+    <color name="text_field_bg">#fafafa</color>
+    <color name="hint_colour">#a6a5a7</color>
+</resources>
