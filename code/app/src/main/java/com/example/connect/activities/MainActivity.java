@@ -22,7 +22,11 @@ import com.google.firebase.auth.FirebaseUser;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private Button btnLogin, btnAcctCreate, btnOrganizer;
+    private Button btnLogin, btnAcctCreate;
+    private FirebaseAuth mAuth;
+    private SharedPreferences sharedPreferences;
+    private static final String PREFS_NAME = "LoginPrefs";
+    private static final String KEY_REMEMBER_ME = "rememberMe";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,7 +82,6 @@ public class MainActivity extends AppCompatActivity {
     private void setupMainActivityUI() {
         btnLogin = findViewById(R.id.btn_login);
         btnAcctCreate = findViewById(R.id.create_acct_btn);
-        btnOrganizer = findViewById(R.id.btn_organizer);
 
         // Navigate to login activity when clicked
         btnLogin.setOnClickListener(v -> {
@@ -92,10 +95,5 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Navigate to organizer dashboard when clicked
-        btnOrganizer.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, OrganizerActivity.class);
-            startActivity(intent);
-        });
     }
 }

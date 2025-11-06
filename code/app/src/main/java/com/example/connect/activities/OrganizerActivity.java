@@ -88,8 +88,8 @@ public class OrganizerActivity extends AppCompatActivity {
         });
 
         btnNavProfile.setOnClickListener(v -> {
-            // TODO: Navigate to Profile
-            Toast.makeText(this, "Profile - Coming soon", Toast.LENGTH_SHORT).show();
+            Intent profileIntent = new Intent(OrganizerActivity.this, ProfileActivity.class);
+            startActivity(profileIntent);
         });
     }
 
