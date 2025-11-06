@@ -7,13 +7,7 @@
     <color name="f3">#507D82</color>
     <color name="f4">#0B2E32</color>
 
-    <color name="f5">#93B185</color> <!-- Button Colour for user pages-->
-
-    <!-- QR code scanner colours -->
-    <color name="zxing_custom_possible_result_points">#c0ffbd</color>
-    <color name="zxing_custom_result_view">#b0000000</color>
-    <color name="zxing_custom_viewfinder_laser">#ff0000</color>
-    <color name="zxing_custom_viewfinder_mask">#60000000</color>
+    <color name="f5">#93B185</color> <!-- Button Colour foruser pages-->
 
 
     <!-- Shade looks green in the preview | Could try D3D3D3 -->

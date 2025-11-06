@@ -30,16 +30,7 @@
         <activity android:name=".activities.ProfileActivity" />
         <activity android:name=".activities.CreateActivity" />
         <activity android:name=".activities.OrganizerActivity" />
-        <activity
-            android:name=".activities.QRTestActivity"
-            android:exported="false" />
-
-        <activity android:name=".activities.QRCodeScanner" />
 
     </application>
-
-    <!-- Permission to Use Camera -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
 </manifest>
