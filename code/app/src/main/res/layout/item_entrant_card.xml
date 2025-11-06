@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvEntrantName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Name**"
+            android:textColor="#000000"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvJoinedDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Joined: MM DD, YYYY"
+            android:textColor="#666666"
+            android:textSize="13sp"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:id="@+id/tvEntrantStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Status: Waiting"
+            android:textColor="#666666"
+            android:textSize="13sp"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/btnDraw"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:text="Draw"
+                android:textColor="#2C4E4E"
+                android:textSize="12sp"
+                android:backgroundTint="#A5D8D8"
+                android:layout_marginEnd="8dp"
+                app:cornerRadius="20dp" />
+
+            <Button
+                android:id="@+id/btnSelected"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:text="Selected"
+                android:textColor="#2C4E4E"
+                android:textSize="12sp"
+                android:backgroundTint="#A5D8D8"
+                android:layout_marginEnd="8dp"
+                app:cornerRadius="20dp" />
+
+            <Button
+                android:id="@+id/btnNotify"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:text="Notify"
+                android:textColor="#2C4E4E"
+                android:textSize="12sp"
+                android:backgroundTint="#A5D8D8"
+                app:cornerRadius="20dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

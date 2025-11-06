@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="24dp"
+    app:cardCornerRadius="24dp"
+    app:cardElevation="8dp"
+    app:cardBackgroundColor="#A5C9C9">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Filter Entrants"
+            android:textColor="#000000"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Time Range Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Time Range:"
+            android:textColor="#000000"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToday"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Today"
+                android:textColor="#2C4E4E"
+                android:textSize="11sp"
+                android:textAllCaps="false"
+                android:minHeight="36dp"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:backgroundTint="#E8F4F4"
+                android:layout_marginEnd="4dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                app:cornerRadius="18dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLast7Days"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Last\n7 days"
+                android:textColor="#2C4E4E"
+                android:textSize="10sp"
+                android:textAllCaps="false"
+                android:minHeight="36dp"
+                android:maxLines="2"
+                android:gravity="center"
+                android:backgroundTint="#E8F4F4"
+                android:layout_marginEnd="4dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                app:cornerRadius="18dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnLast30Days"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Last\n30 days"
+                android:textColor="#2C4E4E"
+                android:textSize="10sp"
+                android:textAllCaps="false"
+                android:minHeight="36dp"
+                android:maxLines="2"
+                android:gravity="center"
+                android:backgroundTint="#E8F4F4"
+                android:layout_marginEnd="4dp"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                app:cornerRadius="18dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAllTime"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="All time"
+                android:textColor="#2C4E4E"
+                android:textSize="10sp"
+                android:textAllCaps="false"
+                android:minHeight="36dp"
+                android:maxLines="1"
+                android:singleLine="true"
+                android:backgroundTint="#E8F4F4"
+                android:paddingStart="2dp"
+                android:paddingEnd="2dp"
+                app:cornerRadius="18dp" />
+        </LinearLayout>
+
+        <!-- Distance from Event Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Distance from Event:"
+            android:textColor="#000000"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
+
+            <SeekBar
+                android:id="@+id/seekBarDistance"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:max="100"
+                android:progress="50"
+                android:progressTint="#5F8A8A"
+                android:thumbTint="#2C4E4E" />
+
+            <TextView
+                android:id="@+id/tvDistanceValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="X Km"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginStart="12dp"
+                android:minWidth="50dp"
+                android:gravity="end" />
+        </LinearLayout>
+
+        <!-- Inside Allowed Zone Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Inside Allowed Zone:"
+            android:textColor="#000000"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <RadioGroup
+            android:id="@+id/radioGroupZone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/rbOnlyWithinBoundary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Only show entrants within the boundary"
+                android:textColor="#000000"
+                android:textSize="13sp"
+                android:paddingStart="8dp" />
+        </RadioGroup>
+
+        <!-- Cancel and Apply Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancel"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Cancel"
+                android:textColor="#2C4E4E"
+                android:textSize="14sp"
+                android:backgroundTint="#FFFFFF"
+                android:layout_marginEnd="12dp"
+                app:cornerRadius="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnApply"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Apply"
+                android:textColor="#2C4E4E"
+                android:textSize="14sp"
+                android:backgroundTint="#FFFFFF"
+                app:cornerRadius="24dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>
