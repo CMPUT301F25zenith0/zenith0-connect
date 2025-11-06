@@ -35,7 +35,7 @@ import java.util.Map;
 public class ProfileActivity extends AppCompatActivity {
 
     private EditText etName, etEmail, etPhone, etDeviceId;
-    private MaterialButton btnSave, btnDelete, btnBack, btnLogout, btnOrgView, btnAdminView;
+    private MaterialButton btnSave, btnDelete, btnBack, btnLogout, btnOrgView;
     private ImageView profileImage;
     private ImageButton edit_image;
 
@@ -77,7 +77,6 @@ public class ProfileActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btn_back);
         btnLogout = findViewById(R.id.btn_logout);
         btnOrgView = findViewById(R.id.btn_org_view);
-        btnAdminView = findViewById(R.id.btn_admin_view);
         profileImage = findViewById(R.id.profile_img);
         edit_image = findViewById(R.id.edit_profile);
     }
@@ -113,16 +112,11 @@ public class ProfileActivity extends AppCompatActivity {
         // Org View button
         if (btnOrgView != null) {
             btnOrgView.setOnClickListener(v -> {
-                Toast.makeText(this, "Organizer view coming soon", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(ProfileActivity.this, OrganizerActivity.class);
+                startActivity(intent);
             });
         }
 
-        // Admin View button
-        if (btnAdminView != null) {
-            btnAdminView.setOnClickListener(v -> {
-                Toast.makeText(this, "Admin view coming soon", Toast.LENGTH_SHORT).show();
-            });
-        }
     }
 
     /**

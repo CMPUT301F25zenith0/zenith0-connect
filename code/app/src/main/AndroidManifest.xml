@@ -30,6 +30,7 @@
         <activity android:name=".activities.ProfileActivity" />
         <activity android:name=".activities.CreateAcctActivity" />
         <activity android:name=".activities.OrganizerActivity" />
+        <activity android:name=".activities.CreateEvent"/>
 
 
         <!-- Utils / Testing -->
