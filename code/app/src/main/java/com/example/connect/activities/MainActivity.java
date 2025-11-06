@@ -14,7 +14,7 @@ import com.example.connect.R;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private Button btnLogin, btnAcctCreate, btnTestQr;
+    private Button btnLogin, btnAcctCreate, btnOrganizer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnLogin = findViewById(R.id.btn_login);
         btnAcctCreate = findViewById(R.id.create_acct_btn);
-        btnTestQr = findViewById(R.id.btn_test_qr); // Add this line
+        btnOrganizer = findViewById(R.id.btn_organizer);
 
         // Navigate to login activity when clicked
         btnLogin.setOnClickListener(v -> {
@@ -37,9 +37,9 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Navigate to QR test activity when clicked
-        btnTestQr.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, QRTestActivity.class);
+        // Navigate to organizer dashboard when clicked
+        btnOrganizer.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, OrganizerActivity.class);
             startActivity(intent);
         });
     }

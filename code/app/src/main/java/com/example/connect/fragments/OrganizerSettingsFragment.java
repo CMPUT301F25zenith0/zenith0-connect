@@ -1,4 +1,6 @@
-package com.example.connect.fragments;
+/*package com.example.connect.fragments;
+
+
 
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -129,3 +131,4 @@ public class OrganizerSettingsFragment extends Fragment {
                 .addOnCompleteListener(__ -> setBusy(false));
     }
 }
+*/
