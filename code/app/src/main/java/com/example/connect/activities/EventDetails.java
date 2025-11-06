@@ -158,10 +158,15 @@ public class EventDetails extends AppCompatActivity {
                         Object priceObj = documentSnapshot.get("price");
                         String price = priceObj != null ? "$" + priceObj.toString() : "Free";
 
-                        // Get and save registration window
+                        // Get and save registration window - FORMAT THE DATES HERE
                         String regStartDate = documentSnapshot.getString("reg_start");
                         String regEndDate = documentSnapshot.getString("reg_stop");
-                        String registrationWindow = "Registration Window: " + regStartDate + " - " + regEndDate;
+
+                        // Format the registration dates
+                        String formattedRegStart = formatRegistrationDate(regStartDate);
+                        String formattedRegEnd = formatRegistrationDate(regEndDate);
+
+                        String registrationWindow = "Registration Window: " + formattedRegStart + " - " + formattedRegEnd;
 
                         // Get and save waiting list count
                         Long waitingListCount = documentSnapshot.getLong("waiting_list");
@@ -238,6 +243,32 @@ public class EventDetails extends AppCompatActivity {
             return (String) dateTimeObj;
         }
         return "Date & Time";
+    }
+
+    /**
+     * Formats a registration date string from ISO format to readable format.
+     * Converts "2025-11-07T00:00:00" to "Nov 07, 2025"
+     *
+     * @param dateString The date string in ISO format (yyyy-MM-dd'T'HH:mm:ss)
+     * @return A formatted date string (MMM dd, yyyy), or the original string if parsing fails
+     */
+    private String formatRegistrationDate(String dateString) {
+        if (dateString == null || dateString.isEmpty()) {
+            return "TBD";
+        }
+
+        try {
+            // Parse the ISO format date
+            SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            Date date = isoFormat.parse(dateString);
+
+            // Format to readable date
+            SimpleDateFormat displayFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
+            return displayFormat.format(date);
+        } catch (Exception e) {
+            // If parsing fails, return the original string
+            return dateString;
+        }
     }
 
     /**

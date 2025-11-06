@@ -1,91 +1,160 @@
 package com.example.connect.network;
 
-import androidx.annotation.NonNull;
+import android.util.Log;
 
-import com.example.connect.constants.AppConstants;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.DocumentReference;
+import com.example.connect.models.Event;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.Transaction;
+import com.google.firebase.firestore.Query;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Handles all Firestore operations for events.
- * This class isolates database access from the UI layer for cleaner architecture.
+ * Repository for managing Event data from Firestore
  */
 public class EventRepository {
 
-    // Reference to Firestore
+    private static final String TAG = "EventRepository";
+    private static final String COLLECTION_EVENTS = "events";
+
     private final FirebaseFirestore db;
 
-    /**
-     * Constructor — injects FirebaseFirestore instance.
-     */
-    public EventRepository(FirebaseFirestore db) {
-        this.db = db;
+    public EventRepository() {
+        this.db = FirebaseFirestore.getInstance();
     }
 
     /**
-     * Helper function to get a document reference for a specific event.
-     * @param eventId The event's Firestore document ID.
-     * @return DocumentReference for that event.
+     * Fetch all events from Firestore
      */
-    private DocumentReference eventRef(@NonNull String eventId) {
-        return db.collection(AppConstants.COL_EVENTS).document(eventId);
+    public void getAllEvents(EventCallback callback) {
+        db.collection(COLLECTION_EVENTS)
+                // Remove or comment out the orderBy temporarily to test
+                // .orderBy("dateTime", Query.Direction.ASCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    Log.d("EventRepository", "Documents retrieved: " + queryDocumentSnapshots.size());
+
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Event event = document.toObject(Event.class);
+                        if (event != null) {
+                            Log.d("EventRepository", "Event loaded: " + event.getName());
+                            events.add(event);
+                        }
+                    }
+                    Log.d("EventRepository", "Total events after parsing: " + events.size());
+                    callback.onSuccess(events);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("EventRepository", "Error fetching events", e);
+                    callback.onFailure(e);
+                });
     }
 
     /**
-     * Updates the drawCount for an event in a Firestore transaction.
-     * This ensures that two organizers updating the same event won't overwrite each other.
-     *
-     * @param eventId         ID of the event to update.
-     * @param requestedCount  The new draw count entered by the organizer.
-     * @param explicitCapacity Optional upper bound (e.g., maxParticipants).
+     * Search events by name
      */
-    public Task<Void> setDrawCountTransactional(
-            @NonNull String eventId,
-            int requestedCount,
-            Integer explicitCapacity
-    ) {
-        // Quick client-side sanity check
-        if (requestedCount < 0) {
-            throw new IllegalArgumentException("Draw count must be non-negative.");
-        }
+    public void searchEventsByName(String searchQuery, EventCallback callback) {
+        db.collection(COLLECTION_EVENTS)
+                .orderBy("name")
+                .startAt(searchQuery)
+                .endAt(searchQuery + "\uf8ff")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Event event = document.toObject(Event.class);
+                        if (event != null) {
+                            events.add(event);
+                        }
+                    }
+                    callback.onSuccess(events);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error searching events", e);
+                    callback.onFailure(e);
+                });
+    }
 
-        // Get the document reference for the event
-        final DocumentReference ref = eventRef(eventId);
+    /**
+     * Filter events by category
+     */
+    public void getEventsByCategory(String category, EventCallback callback) {
+        db.collection(COLLECTION_EVENTS)
+                .whereEqualTo("category", category)
+                .orderBy("date", Query.Direction.ASCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Event event = document.toObject(Event.class);
+                        if (event != null) {
+                            events.add(event);
+                        }
+                    }
+                    callback.onSuccess(events);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error filtering events by category", e);
+                    callback.onFailure(e);
+                });
+    }
 
-        // Run a transaction for atomic update
-        return db.runTransaction((Transaction.Function<Void>) transaction -> {
-            Map<String, Object> data = transaction.get(ref).getData();
-            if (data == null) return null; // Event might have been deleted
+    /**
+     * Filter events by location
+     */
+    public void getEventsByLocation(String location, EventCallback callback) {
+        db.collection(COLLECTION_EVENTS)
+                .whereEqualTo("location", location)
+                .orderBy("date", Query.Direction.ASCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Event event = document.toObject(Event.class);
+                        if (event != null) {
+                            events.add(event);
+                        }
+                    }
+                    callback.onSuccess(events);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error filtering events by location", e);
+                    callback.onFailure(e);
+                });
+    }
 
-            // Default to the requested value
-            int finalCount = requestedCount;
+    /**
+     * Filter events by date range
+     */
+    public void getEventsByDateRange(String startDate, String endDate, EventCallback callback) {
+        db.collection(COLLECTION_EVENTS)
+                .whereGreaterThanOrEqualTo("date", startDate)
+                .whereLessThanOrEqualTo("date", endDate)
+                .orderBy("date", Query.Direction.ASCENDING)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Event> events = new ArrayList<>();
+                    for (DocumentSnapshot document : queryDocumentSnapshots) {
+                        Event event = document.toObject(Event.class);
+                        if (event != null) {
+                            events.add(event);
+                        }
+                    }
+                    callback.onSuccess(events);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error filtering events by date", e);
+                    callback.onFailure(e);
+                });
+    }
 
-            // Fetch capacity (maxParticipants)
-            Integer capacity = explicitCapacity;
-            if (capacity == null) {
-                Object cap = data.get(AppConstants.F_CAPACITY);
-                if (cap instanceof Number) {
-                    capacity = ((Number) cap).intValue();
-                }
-            }
-
-            // Clamp the draw count to capacity if applicable
-            if (capacity != null && capacity > 0) {
-                finalCount = Math.min(finalCount, capacity);
-            }
-
-            // Prepare the update map
-            Map<String, Object> updates = new HashMap<>();
-            updates.put(AppConstants.F_DRAW_COUNT, finalCount);
-
-            // Apply update in transaction
-            transaction.update(ref, updates);
-            return null;
-        });
+    /**
+     * Callback interface for event operations
+     */
+    public interface EventCallback {
+        void onSuccess(List<Event> events);
+        void onFailure(Exception e);
     }
 }

@@ -3,15 +3,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:cardBackgroundColor="#FFFFFF">
+    app:cardBackgroundColor="#FFFFFF"
+    android:focusable="false"
+    android:focusableInTouchMode="false">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false">
 
         <ImageView
             android:id="@+id/eventImage"
@@ -21,7 +27,8 @@
             android:contentDescription="Event Image"
             android:scaleType="centerCrop"
             android:background="#E0E0E0"
-            android:layout_marginBottom="12dp"/>
+            android:layout_marginBottom="12dp"
+            android:focusable="false"/>
 
         <TextView
             android:id="@+id/eventTitle"
@@ -31,7 +38,8 @@
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="#000000"
-            android:layout_marginBottom="4dp"/>
+            android:layout_marginBottom="4dp"
+            android:focusable="false"/>
 
         <TextView
             android:id="@+id/eventDateTime"
@@ -40,7 +48,8 @@
             android:text="Date &amp; Time"
             android:textSize="14sp"
             android:textColor="#666666"
-            android:layout_marginBottom="4dp"/>
+            android:layout_marginBottom="4dp"
+            android:focusable="false"/>
 
         <TextView
             android:id="@+id/eventLocation"
@@ -49,7 +58,8 @@
             android:text="Location"
             android:textSize="14sp"
             android:textColor="#666666"
-            android:layout_marginBottom="4dp"/>
+            android:layout_marginBottom="4dp"
+            android:focusable="false"/>
 
         <TextView
             android:id="@+id/eventPrice"
@@ -58,12 +68,15 @@
             android:text="Price"
             android:textSize="14sp"
             android:textColor="#666666"
-            android:layout_marginBottom="16dp"/>
+            android:layout_marginBottom="16dp"
+            android:focusable="false"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:focusable="false"
+            android:focusableInTouchMode="false">
 
             <Button
                 android:id="@+id/btnViewDetails"
@@ -73,7 +86,9 @@
                 android:text="View Details"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#2C3E3F"
-                android:layout_marginEnd="8dp"/>
+                android:layout_marginEnd="8dp"
+                android:focusable="true"
+                android:clickable="true"/>
 
             <Button
                 android:id="@+id/btnJoinWaitlist"
@@ -82,7 +97,9 @@
                 android:layout_weight="1"
                 android:text="Join Waitlist"
                 android:textColor="#FFFFFF"
-                android:backgroundTint="#2C3E3F"/>
+                android:backgroundTint="#2C3E3F"
+                android:focusable="true"
+                android:clickable="true"/>
 
         </LinearLayout>
 
