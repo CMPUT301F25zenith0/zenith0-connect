@@ -102,7 +102,8 @@ public class EntrantActivity extends AppCompatActivity {
                                 doc.getString("eventName"),
                                 doc.getDate("timestamp"),
                                 doc.getBoolean("read") != null && doc.getBoolean("read"),
-                                doc.getBoolean("declined") != null && doc.getBoolean("declined")
+                                doc.getBoolean("declined") != null && doc.getBoolean("declined"),
+                                doc.getBoolean("accepted") != null && doc.getBoolean("accepted") // added this for accept invitation user story
                         );
                         notifications.add(item);
                     }
@@ -184,6 +185,59 @@ public class EntrantActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * US 01.05.02 - Accept an invitation
+     */
+    private void acceptInvitation(NotificationItem notification) {
+        new AlertDialog.Builder(this)
+                .setTitle("Accept Invitation")
+                .setMessage("Do you want to accept the invitation for " + notification.eventName + "?")
+                .setPositiveButton("Yes, Accept", (dialog, which) -> {
+                    performAccept(notification);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void performAccept(NotificationItem notification) {
+        String eventId = notification.eventId;
+
+        if (eventId == null || eventId.isEmpty()) {
+            Toast.makeText(this, "Error: Event ID not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Log.d(TAG, "Accepting invitation for eventId=" + eventId + " user=" + currentUserId);
+
+        // Add user to accepted list
+        Map<String, Object> acceptedData = new HashMap<>();
+        acceptedData.put("acceptedAt", FieldValue.serverTimestamp());
+
+        db.collection("events").document(eventId)
+                .collection("accepted").document(currentUserId)
+                .set(acceptedData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Added to accepted list");
+
+                    // Update notification
+                    db.collection("accounts").document(currentUserId)
+                            .collection("notifications").document(notification.id)
+                            .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp())
+                            .addOnSuccessListener(aVoid2 -> {
+                                Log.d(TAG, "Notification marked accepted");
+                                notification.accepted = true;
+                                adapter.notifyDataSetChanged();
+                                Toast.makeText(this, "Invitation accepted successfully", Toast.LENGTH_SHORT).show();
+                            })
+                            .addOnFailureListener(e -> Log.e(TAG, " Failed to update notification", e));
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to add to accepted list", e);
+                    Toast.makeText(this, "Error accepting invitation", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+
 
     /**
      * Get current user ID
@@ -202,6 +256,7 @@ public class EntrantActivity extends AppCompatActivity {
      * Data class for notification items
      */
     static class NotificationItem {
+        public boolean accepted;
         String id;
         String title;
         String body;
@@ -213,7 +268,7 @@ public class EntrantActivity extends AppCompatActivity {
         boolean declined;
 
         NotificationItem(String id, String title, String body, String type,
-                         String eventId, String eventName, Date timestamp, boolean read, boolean declined) {
+                         String eventId, String eventName, Date timestamp, boolean read, boolean declined, boolean accepted) {
             this.id = id;
             this.title = title;
             this.body = body;
@@ -267,6 +322,8 @@ public class EntrantActivity extends AppCompatActivity {
             Button btnDecline;
             View indicator;
 
+            Button btnAccept; // adding the accept button
+
             NotificationViewHolder(View itemView) {
                 super(itemView);
                 tvTitle = itemView.findViewById(R.id.tv_notification_title);
@@ -275,6 +332,9 @@ public class EntrantActivity extends AppCompatActivity {
                 tvEventName = itemView.findViewById(R.id.tv_event_name);
                 btnDecline = itemView.findViewById(R.id.btn_decline);
                 indicator = itemView.findViewById(R.id.notification_indicator);
+
+                btnAccept = itemView.findViewById(R.id.btn_accept); // Initialising the constructor for it
+
             }
 
             void bind(NotificationItem item) {
@@ -300,15 +360,20 @@ public class EntrantActivity extends AppCompatActivity {
                 indicator.setVisibility(item.read ? View.INVISIBLE : View.VISIBLE);
 
                 // US 01.05.03 - Show decline button only for "chosen" notifications not yet declined
-                if ("chosen".equals(item.type) && !item.declined) {
+                // made changes to the above user story so that US 01.05.02
+                // Show accept button only for chosen notifications not yet declined or accepted
+                if ("chosen".equals(item.type) && !item.declined && !item.accepted) {
+                    btnAccept.setVisibility(View.VISIBLE);
                     btnDecline.setVisibility(View.VISIBLE);
+
+                    btnAccept.setOnClickListener(v -> acceptInvitation(item));
                     btnDecline.setOnClickListener(v -> declineInvitation(item));
-                } else if (item.declined) {
-                    btnDecline.setVisibility(View.GONE);
-                    tvBody.setText("You declined this invitation."); // optional feedback
                 } else {
+                    btnAccept.setVisibility(View.GONE);
                     btnDecline.setVisibility(View.GONE);
                 }
+
+
 
                 // Set background color based on type
                 int backgroundColor;
