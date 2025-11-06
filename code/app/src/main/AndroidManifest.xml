@@ -11,23 +11,52 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Connect">
+
+        <!-- Launcher (Login / Main entry) -->
         <activity
             android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-
 
         <!-- User activities -->
         <activity android:name=".activities.ProfileActivity" />
         <activity android:name=".activities.EventListActivity" />
 
-        <!-- Organizer activities -->
+        <!-- Details -> back/up goes to Organizer dashboard -->
+        <activity
+            android:name=".activities.EventDetailsActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.OrganizerActivity" />
+
+        <!-- Edit Event -> back/up goes to Organizer dashboard -->
+        <activity
+            android:name=".activities.EditEventActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.OrganizerActivity" />
+
+        <!-- Manage Draw -> back/up goes to Organizer dashboard -->
+        <activity
+            android:name=".activities.ManageDrawActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.OrganizerActivity" />
+
+        <!-- Messages -> back/up goes to Organizer dashboard -->
+        <activity
+            android:name=".activities.MessagesActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.OrganizerActivity" />
+
+        <!-- Map (optional navigation link from organizer bottom nav) -->
+        <activity
+            android:name=".activities.MapActivity"
+            android:exported="false"
+            android:parentActivityName=".activities.OrganizerActivity" />
+
+        <!-- Organizer dashboard -->
         <activity android:name=".activities.OrganizerActivity" />
 
     </application>

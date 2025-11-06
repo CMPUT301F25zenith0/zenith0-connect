@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -17,7 +16,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Back button (icon) -->
+        <!-- Back button with vector icon -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBack"
             android:layout_width="48dp"
@@ -25,7 +24,7 @@
             android:layout_marginStart="12dp"
             android:backgroundTint="#2C4E4E"
             android:contentDescription="Back"
-            app:icon="@android:drawable/ic_media_previous"
+            app:icon="@drawable/ic_arrow_back_24"
             app:iconTint="#FFFFFF"
             app:iconPadding="0dp"
             app:cornerRadius="18dp"
