@@ -7,27 +7,6 @@
     <string name="btn_submit">Submit</string>
     <string name="toast_profile_updated">Profile updated!</string>
     <string name="btn_login">Login</string>
-    <string name="events_empty">No joinable events right now.</string>
-    <string name="events_error_generic">Couldn’t load events. Please try again.</string>
-    <string name="events_title">Events</string>
-    <string name="search_events_hint">Search for any event…</string>
-    <string name="filter_interest">Interest</string>
-    <string name="filter_date">Date</string>
-    <string name="filter_location">Location</string>
-    <string name="btn_view_details">View Details</string>
-    <string name="btn_join_waitlist">Join Waitlist</string>
-
-    <string name="event_date_fmt">Event date: %1$s</string>
-    <string name="event_reg_fmt">Reg closes: %2$s</string>
-    <string name="event_date_time_fmt">%1$s at %2$s</string>
-    <string name="event_location_fmt">Location: %1$s</string>
-    <string name="event_price_fmt">Price: %1$s</string>
-    <string name="event_image_desc">Event poster image</string>
-    <string name="menu">Menu</string>
-    <string name="back">Back</string>
-    <string name="profile">Profile</string>
-
-
 
 
 </resources>
