@@ -7,14 +7,10 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
@@ -44,7 +40,7 @@ import java.util.Map;
  * @version 1.0
  */
 
-public class CreateActivity extends AppCompatActivity {
+public class CreateAcctActivity extends AppCompatActivity {
     // UI Elements
     /** EditText field for user's full legal name */
     /** EditText field for user's display/public name */
@@ -174,13 +170,13 @@ public class CreateActivity extends AppCompatActivity {
                     } else {
                         Log.e("CreateActivity", "User is null after auth");
                         resetButton();
-                        Toast.makeText(CreateActivity.this, "Error creating account", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CreateAcctActivity.this, "Error creating account", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("CreateActivity", "Auth failed: " + e.getMessage(), e);
                     resetButton();
-                    Toast.makeText(CreateActivity.this,
+                    Toast.makeText(CreateAcctActivity.this,
                             "Account creation failed: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
                 });
@@ -221,7 +217,7 @@ public class CreateActivity extends AppCompatActivity {
                 .addOnSuccessListener(aVoid -> {
                     Log.d("CreateActivity", "User data saved successfully!");
                     resetButton();
-                    Toast.makeText(CreateActivity.this,
+                    Toast.makeText(CreateAcctActivity.this,
                             "Account created successfully!",
                             Toast.LENGTH_SHORT).show();
                     finish();
@@ -229,7 +225,7 @@ public class CreateActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     Log.e("CreateActivity", "Failed to save user data: " + e.getMessage(), e);
                     resetButton();
-                    Toast.makeText(CreateActivity.this,
+                    Toast.makeText(CreateAcctActivity.this,
                             "Failed to save user data: " + e.getMessage(),
                             Toast.LENGTH_LONG).show();
                 });

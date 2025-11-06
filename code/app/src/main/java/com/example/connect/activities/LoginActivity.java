@@ -1,11 +1,13 @@
 package com.example.connect.activities;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Patterns;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -25,7 +27,7 @@ import com.google.firebase.auth.FirebaseUser;
  * </p>
  *
  * @author Aakansh Chatterjee
- * @version 1.0
+ * @version 2.0
  */
 
 public class LoginActivity extends AppCompatActivity {
@@ -34,9 +36,15 @@ public class LoginActivity extends AppCompatActivity {
     private EditText etEmail, etPassword;
     private Button btnLogin;
     private ImageButton btnBack;
+    private CheckBox cbRememberMe;
 
     // Firebase
     private FirebaseAuth mAuth;
+
+    // SharedPreferences for Remember Me
+    private SharedPreferences sharedPreferences;
+    private static final String PREFS_NAME = "LoginPrefs";
+    private static final String KEY_REMEMBER_ME = "rememberMe";
 
     /**
      * Called when the activity is first created.
@@ -54,6 +62,9 @@ public class LoginActivity extends AppCompatActivity {
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
 
+        // Initialize SharedPreferences
+        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+
         // Initialize views
         initViews();
 
@@ -70,6 +81,7 @@ public class LoginActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.et_Password);
         btnLogin = findViewById(R.id.login_btn);
         btnBack = findViewById(R.id.back_btn);
+        cbRememberMe = findViewById(R.id.remem_me_check);
     }
 
     /**
@@ -123,6 +135,9 @@ public class LoginActivity extends AppCompatActivity {
                     FirebaseUser user = mAuth.getCurrentUser();
                     Log.d("LoginActivity", "Login successful! UID: " + user.getUid());
 
+                    // Save Remember Me preference
+                    saveRememberMePreference(cbRememberMe.isChecked());
+
                     Toast.makeText(LoginActivity.this,
                             "Welcome back!",
                             Toast.LENGTH_SHORT).show();
@@ -143,6 +158,18 @@ public class LoginActivity extends AppCompatActivity {
                             errorMessage,
                             Toast.LENGTH_LONG).show();
                 });
+    }
+
+    /**
+     * Saves the Remember Me preference to SharedPreferences.
+     *
+     * @param rememberMe true if user wants to be remembered, false otherwise
+     */
+    private void saveRememberMePreference(boolean rememberMe) {
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(KEY_REMEMBER_ME, rememberMe);
+        editor.apply();
+        Log.d("LoginActivity", "Remember Me preference saved: " + rememberMe);
     }
 
     /**
