@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -11,24 +12,23 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Connect">
+
+        <!-- ✅ Start the app with LoginActivity -->
         <activity
-            android:name=".activities.MainActivity"
+            android:name=".activities.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- User activities -->
-        <activity android:name=".activities.LoginActivity" />
-        <activity android:name=".activities.CreateActivity"/>
-
+        <!-- Other activities (no launcher intent-filter) -->
+        <activity android:name=".activities.MainActivity" />
         <activity android:name=".activities.EventListActivity" />
-        <activity android:name=".activities.EventDetails" />
-
-        <!-- Organizer activities -->
+        <activity android:name=".activities.EventDetailsActivity" />
+        <activity android:name=".activities.ProfileActivity" />
+        <activity android:name=".activities.CreateActivity" />
         <activity android:name=".activities.OrganizerActivity" />
         <activity
             android:name=".activities.QRTestActivity"
