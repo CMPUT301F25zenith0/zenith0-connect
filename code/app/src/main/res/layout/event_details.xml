@@ -19,7 +19,7 @@
 
             <!-- Back Arrow -->
             <ImageView
-                android:id="@+id/btn_back"
+                android:id="@+id/back_btn"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_back_arrow"
@@ -37,9 +37,9 @@
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:layout_marginStart="16dp"
-                app:layout_constraintStart_toEndOf="@id/btn_back"
-                app:layout_constraintTop_toTopOf="@id/btn_back"
-                app:layout_constraintBottom_toBottomOf="@id/btn_back" />
+                app:layout_constraintStart_toEndOf="@id/back_btn"
+                app:layout_constraintTop_toTopOf="@id/back_btn"
+                app:layout_constraintBottom_toBottomOf="@id/back_btn" />
 
             <!-- Event Image Placeholder -->
             <ImageView
@@ -166,19 +166,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_waiting_list" />
 
-            <!-- Lottery Criteria -->
-            <TextView
-                android:id="@+id/tv_lottery_crite"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Lottery Criteria"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
-                android:layout_marginTop="24dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/btn_info" />
-
             <!-- Button Container -->
             <LinearLayout
                 android:id="@+id/btnContainer"
@@ -190,7 +177,7 @@
                 android:gravity="center"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_lottery_crite"
+                app:layout_constraintTop_toBottomOf="@id/btn_info"
                 app:layout_constraintBottom_toBottomOf="parent">
 
                 <!-- Join Waiting List Button -->

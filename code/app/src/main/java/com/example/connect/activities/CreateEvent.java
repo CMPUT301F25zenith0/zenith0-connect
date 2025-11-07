@@ -37,6 +37,25 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+/**
+ * Activity for creating and publishing events created in the app.
+ * <p>
+ * This activity provides a comprehensive event creation interface that allows organizers to:
+ * <ul>
+ *   <li>Set event details (name, description, location, price)</li>
+ *   <li>Configure date/time and registration periods</li>
+ *   <li>Set capacity limits and waiting list parameters</li>
+ *   <li>Save drafts or publish events with QR code generation</li>
+ * </ul>
+ * </p>
+ * <p>
+ * Events are stored in Firebase Firestore under the "events" collection.
+ * Upon publication, a QR code is generated for easy event sharing and registration.
+ * </p>
+ *
+ * @author Digaant
+ * @version 1.0
+ */
 public class CreateEvent extends AppCompatActivity {
 
     private static final String TAG = "CreateEvent";
@@ -65,6 +84,16 @@ public class CreateEvent extends AppCompatActivity {
     // Dialog
     private AlertDialog qrDialog;
 
+    /**
+     * Initialize the activity, sets up Firebase authentication, and prepares UI.
+     * <p>
+     * This method verifies user authentication status and redirects to login if necessary.
+     * It also fetches the organizers name from the Firestore accounts collection.
+     * </p>
+     *
+     * @param savedInstanceState Bundle containing the activity's previously saved state, or null
+     */
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,12 +115,21 @@ public class CreateEvent extends AppCompatActivity {
         // Fetch organizer name from accounts collection
         fetchOrganizerName();
 
+
+        // Methods to setup views
         initializeViews();
         initializeDateTimeFormats();
         setupImagePicker();
         setupClickListeners();
     }
 
+    /**
+     * Fetches the organizer's display name from Firestore.
+     * <p>
+     * Attempts to retrieve the display_name field, falling back to full_name if not available.
+     * If neither exists, defaults to "Organizer".
+     * </p>
+     */
     private void fetchOrganizerName() {
         db.collection("accounts").document(currentUserId)
                 .get()
@@ -116,6 +154,12 @@ public class CreateEvent extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Initializes all UI view references from the layout.
+     * <p>
+     * Connects EditTexts, Buttons, ImageViews, and Switches to their corresponding member variables for later use in the activity.
+     * </p>
+     */
     private void initializeViews() {
         // EditTexts
         etEventName = findViewById(R.id.etEventName);
@@ -144,6 +188,15 @@ public class CreateEvent extends AppCompatActivity {
         switchGeolocation = findViewById(R.id.switchGeolocation);
     }
 
+    /**
+     * Initializes date and time formatting objects and sets default calendar values.
+     * <p>
+     * Default event times are set to April 1, 2025, from 10:00 AM to 12:00 PM.
+     * Date format: "MMM d, yyyy"
+     * Time format: "hh:mma"
+     * DateTime format: "yyyy-MM-dd'T'HH:mm:ss"
+     * </p>
+     */
     private void initializeDateTimeFormats() {
         dateFormat = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
         timeFormat = new SimpleDateFormat("hh:mma", Locale.getDefault());
@@ -160,6 +213,12 @@ public class CreateEvent extends AppCompatActivity {
         registrationCloses = Calendar.getInstance();
     }
 
+    /**
+     * Sets up the activity result launcher for image selection.
+     * <p>
+     * Registers a callback that handles the result of the image picker intent, updating the event image view when an image is successfully selected.
+     * </p>
+     */
     private void setupImagePicker() {
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
@@ -172,6 +231,19 @@ public class CreateEvent extends AppCompatActivity {
         );
     }
 
+    /**
+     * Configures click listeners for all interactive UI elements.
+     * <p>
+     * Sets up handlers for:
+     * <ul>
+     *   <li>Navigation (back button)</li>
+     *   <li>Image selection</li>
+     *   <li>Date and time pickers</li>
+     *   <li>Registration period selectors</li>
+     *   <li>Save draft and publish actions</li>
+     * </ul>
+     * </p>
+     */
     private void setupClickListeners() {
         // Back button
         btnBack.setOnClickListener(v -> finish());
@@ -197,11 +269,27 @@ public class CreateEvent extends AppCompatActivity {
         btnPublishQR.setOnClickListener(v -> publishAndGenerateQR());
     }
 
+    /**
+     * Launches the system image picker to select an event image.
+     * <p>
+     * Opens the device's media store to allow selection of an image from the gallery.
+     * </p>
+     */
+
     private void openImagePicker() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
         imagePickerLauncher.launch(intent);
     }
+
+
+    /**
+     * Displays a date picker dialog and updates the specified calendar and button.
+     *
+     * @param calendar The Calendar object to update with the selected date
+     * @param button The Button to display the selected date
+     * @param isStart True if this is for the event start date, false for end date
+     */
 
     private void showDatePicker(Calendar calendar, Button button, boolean isStart) {
         DatePickerDialog datePickerDialog = new DatePickerDialog(
@@ -219,6 +307,14 @@ public class CreateEvent extends AppCompatActivity {
         datePickerDialog.show();
     }
 
+    /**
+     * Displays a time picker dialog and updates the specified calendar and button.
+     *
+     * @param calendar The Calendar object to update with the selected time
+     * @param button The Button to display the selected time
+     * @param isStart True if this is for the event start time, false for end time
+     */
+
     private void showTimePicker(Calendar calendar, Button button, boolean isStart) {
         TimePickerDialog timePickerDialog = new TimePickerDialog(
                 this,
@@ -234,6 +330,18 @@ public class CreateEvent extends AppCompatActivity {
         timePickerDialog.show();
     }
 
+
+    /**
+     * Displays combined date and time picker dialogs for registration periods.
+     * <p>
+     * Shows a date picker first, then automatically displays a time picker.
+     * The button text is updated with the complete date time string and color is changed to black.
+     * </p>
+     *
+     * @param calendar The Calendar object to update
+     * @param button The Button to display the selected date-time
+     * @param label Label indicating the purpose (e.g., "Opens", "Closes")
+     */
     private void showDateTimePicker(Calendar calendar, Button button, String label) {
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
@@ -266,6 +374,20 @@ public class CreateEvent extends AppCompatActivity {
         datePickerDialog.show();
     }
 
+    /**
+     * Validates all required input fields before saving or publishing.
+     * <p>
+     * Checks for:
+     * <ul>
+     *   <li>Non-empty event name</li>
+     *   <li>Non-empty description</li>
+     *   <li>Non-empty location</li>
+     *   <li>Valid date range (end time after start time)</li>
+     * </ul>
+     * </p>
+     *
+     * @return true if all validations pass, false otherwise
+     */
     private boolean validateInputs() {
         if (etEventName.getText().toString().trim().isEmpty()) {
             etEventName.setError("Event name is required");
@@ -293,6 +415,14 @@ public class CreateEvent extends AppCompatActivity {
         return true;
     }
 
+
+    /**
+     * Saves the current event as a draft in Firestore.
+     * <p>
+     * Validates inputs, creates event data with "draft" status, and saves to the
+     * "events" collection. Shows success/failure messages and closes activity on success.
+     * </p>
+     */
     private void saveDraft() {
         if (!validateInputs()) {
             return;
@@ -315,6 +445,20 @@ public class CreateEvent extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Publishes the event and generates a QR code for registration.
+     * <p>
+     * Workflow:
+     * <ol>
+     *   <li>Validates all inputs</li>
+     *   <li>Creates event data with "published" status</li>
+     *   <li>Saves to Firestore "events" collection</li>
+     *   <li>Generates QR code data and saves to event document</li>
+     *   <li>Creates waiting list structure</li>
+     *   <li>Displays QR code dialog for sharing</li>
+     * </ol>
+     * </p>
+     */
     private void publishAndGenerateQR() {
         if (!validateInputs()) {
             return;
@@ -364,8 +508,17 @@ public class CreateEvent extends AppCompatActivity {
     }
 
     /**
-     * Creates the waiting list structure for the event
-     * Structure: waiting_lists/{eventId}/entries/
+     * Creates the waiting list structure in Firestore for the published event.
+     * <p>
+     * Creates a document in the "waiting_lists" collection with:
+     * <ul>
+     *   <li>event_id: Reference to the event</li>
+     *   <li>created_at: Timestamp of creation</li>
+     *   <li>total_capacity: Maximum waiting list size</li>
+     * </ul>
+     * </p>
+     *
+     * @param eventId The unique identifier of the event
      */
     private void createWaitingList(String eventId) {
         // Create a placeholder document in waiting_lists collection
@@ -384,6 +537,15 @@ public class CreateEvent extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Parses and returns the waiting list capacity from user input.
+     * <p>
+     * Extracts numeric characters from the input field and converts to an integer.
+     * Returns 0 if input is empty or invalid.
+     * </p>
+     *
+     * @return The waiting list capacity as an integer, or 0 if invalid
+     */
     private int getWaitingListCapacity() {
         String waitingList = etWaitingList.getText().toString().trim();
         if (!waitingList.isEmpty()) {
@@ -397,6 +559,21 @@ public class CreateEvent extends AppCompatActivity {
         return 0;
     }
 
+    /**
+     * Displays a dialog showing the generated QR code with sharing options.
+     * <p>
+     * The dialog includes:
+     * <ul>
+     *   <li>QR code image (500x500 pixels)</li>
+     *   <li>Copy Link button - Copies the event link to clipboard</li>
+     *   <li>Share button - Opens system share sheet</li>
+     *   <li>Close button - Dismisses dialog and closes activity</li>
+     * </ul>
+     * </p>
+     *
+     * @param eventId The unique identifier of the event
+     * @param qrData The QR code data string to be shared
+     */
     private void showQRDialog(String eventId, String qrData) {
         // Inflate the dialog layout
         LayoutInflater inflater = LayoutInflater.from(this);
@@ -438,6 +615,15 @@ public class CreateEvent extends AppCompatActivity {
         qrDialog.show();
     }
 
+    /**
+     * Copies the event link to the system clipboard.
+     * <p>
+     * Creates a ClipData object with the QR data and places it on the clipboard.
+     * Shows a toast message to confirm the action.
+     * </p>
+     *
+     * @param qrData The event link or QR data to copy
+     */
     private void copyLinkToClipboard(String qrData) {
         ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         ClipData clip = ClipData.newPlainText("Event Link", qrData);
@@ -445,6 +631,15 @@ public class CreateEvent extends AppCompatActivity {
         Toast.makeText(this, "Link copied to clipboard", Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Opens the system share sheet to share the event QR code data.
+     * <p>
+     * Creates an ACTION_SEND intent with the event information and opens
+     * the Android share chooser.
+     * </p>
+     *
+     * @param qrData The event link or QR data to share
+     */
     private void shareQRCode(String qrData) {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType("text/plain");
@@ -453,6 +648,24 @@ public class CreateEvent extends AppCompatActivity {
         startActivity(Intent.createChooser(shareIntent, "Share Event"));
     }
 
+    /**
+     * Creates a comprehensive map of event data for Firestore storage.
+     * <p>
+     * Includes all event information:
+     * <ul>
+     *   <li>Basic details (title, description, location)</li>
+     *   <li>Date/time information (start, end, registration period)</li>
+     *   <li>Capacity limits (draw capacity, waiting list)</li>
+     *   <li>Price and geolocation requirements</li>
+     *   <li>Status (draft or published)</li>
+     *   <li>Organizer information (ID and name)</li>
+     *   <li>Metadata (creation timestamp, image URI)</li>
+     * </ul>
+     * </p>
+     *
+     * @param isDraft True if saving as draft, false if publishing
+     * @return Map containing all event data ready for Firestore storage
+     */
     private Map<String, Object> createEventData(boolean isDraft) {
         Map<String, Object> eventData = new HashMap<>();
 
@@ -515,6 +728,12 @@ public class CreateEvent extends AppCompatActivity {
         return eventData;
     }
 
+    /**
+     * Cleans up resources when the activity is destroyed.
+     * <p>
+     * Dismisses the QR dialog if it's currently showing to prevent window leaks.
+     * </p>
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();

@@ -33,7 +33,7 @@ import java.util.Map;
  * Users can join or leave the event's waiting list from this screen.
  * <p>
  * @author Aakansh Chatterjee
- * @version 1.0
+ * @version 2.0
  */
 
 public class EventDetails extends AppCompatActivity {
@@ -92,7 +92,7 @@ public class EventDetails extends AppCompatActivity {
     private void initializeViews() {
         scrollContent = findViewById(R.id.scroll_content);
         loadingSpinner = findViewById(R.id.spinner);
-        btnBack = findViewById(R.id.btn_back);
+        btnBack = findViewById(R.id.back_btn);
         eventImage = findViewById(R.id.event_image);
         eventTitle = findViewById(R.id.event_title);
         tvOrgName = findViewById(R.id.tv_org_name);
@@ -119,8 +119,7 @@ public class EventDetails extends AppCompatActivity {
 
         // Info button
         btnInfo.setOnClickListener(v -> {
-            // TODO: Show event info dialog in a pop-up or navigate to info screen --> Cannot Leave as toast
-            Toast.makeText(EventDetails.this, "Event Info: " + description, Toast.LENGTH_LONG).show();
+            showEventInfo();
         });
 
         // ------TO BE IMPLEMENTED-----
@@ -153,7 +152,7 @@ public class EventDetails extends AppCompatActivity {
                         String eventName = documentSnapshot.getString("event_title");
                         String organizationName = documentSnapshot.getString("org_name");
                         String location = documentSnapshot.getString("location");
-                        description = documentSnapshot.getString("description");
+                        description = documentSnapshot.getString("description"); // gets used for the pop later
 
                         // Get and save date/time
                         Object dateTimeObj = documentSnapshot.get("date_time");
@@ -226,7 +225,6 @@ public class EventDetails extends AppCompatActivity {
         showContent();
     }
 
-    // At the moment it gets a string --> This can be changed by saving something different in the database
     /**
      * Formats a date/time object into a readable string format.
      * Handles Date objects, Firestore Timestamp objects, and pre-formatted strings.
@@ -240,10 +238,12 @@ public class EventDetails extends AppCompatActivity {
         if (dateTimeObj instanceof Date) {
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a, MMM dd, yyyy", Locale.getDefault());
             return sdf.format((Date) dateTimeObj);
+
         } else if (dateTimeObj instanceof com.google.firebase.Timestamp) {
             Date date = ((com.google.firebase.Timestamp) dateTimeObj).toDate();
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a, MMM dd, yyyy", Locale.getDefault());
             return sdf.format(date);
+
         } else if (dateTimeObj instanceof String) {
             return (String) dateTimeObj;
         }
@@ -261,7 +261,6 @@ public class EventDetails extends AppCompatActivity {
         if (dateString == null || dateString.isEmpty()) {
             return "TBD";
         }
-
         try {
             // Parse the ISO format date
             SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
@@ -447,6 +446,39 @@ public class EventDetails extends AppCompatActivity {
                     Toast.makeText(this, "Error accessing waiting list: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    /**
+     * Displays a dialog with the event description.
+     * A popup with the event details and a close button.
+     */
+    private void showEventInfo() {
+        // Create dialog
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+
+        // Layout for dialog
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_event_info, null);
+        builder.setView(dialogView);
+
+        // Create and show dialog
+        android.app.AlertDialog dialog = builder.create();
+
+        // Make background transparetn
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        // Get views from layout
+        TextView tvDescription = dialogView.findViewById(R.id.tv_event_description);
+        ImageView btnClose = dialogView.findViewById(R.id.btn_close_dialog);
+
+        // Set description
+        tvDescription.setText(description != null && !description.isEmpty() ? description : "No description available");
+
+        // Close button click listener
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
 

@@ -91,7 +91,7 @@ public class ProfileActivity extends AppCompatActivity {
         etDeviceId = findViewById(R.id.et_device);
         btnSave = findViewById(R.id.btn_save);
         btnDelete = findViewById(R.id.btn_delete);
-        btnBack = findViewById(R.id.btn_back);
+        btnBack = findViewById(R.id.back_btn);
         btnLogout = findViewById(R.id.btn_logout);
         btnOrgView = findViewById(R.id.btn_org_view);
         profileImage = findViewById(R.id.profile_img);

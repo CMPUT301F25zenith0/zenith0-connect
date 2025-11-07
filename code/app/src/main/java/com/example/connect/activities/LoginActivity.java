@@ -25,8 +25,9 @@ import com.google.firebase.auth.FirebaseUser;
  * (email and password) to authenticate with Firebase Authentication. It includes
  * input validation, error handling, and user-friendly error messages.
  * </p>
- *
- * @author Aakansh Chatterjee
+ * Aakansh - Login functionality
+ * Vansh - Remember me functonality
+ * @author Aakansh Chatterjee, Vansh Taneja
  * @version 2.0
  */
 
@@ -48,9 +49,8 @@ public class LoginActivity extends AppCompatActivity {
 
     /**
      * Called when the activity is first created.
-     * Initializes the activity, sets up the layout, Firebase authentication,
-     * and configures UI component listeners.
-     *
+     * Initializes the activity, sets up the layout, Firebase authentication, and configures UI component listeners.
+     * <p>
      * @param savedInstanceState Bundle containing the activity's previously saved state,
      *                          or null if there is no saved state
      */
@@ -74,7 +74,7 @@ public class LoginActivity extends AppCompatActivity {
 
     /**
      * Initializes all UI components by finding their references from the layout.
-     * This method links the Java variables to their corresponding XML view elements.
+     * This method links the Java variables to their corresponding XML elements.
      */
     private void initViews() {
         etEmail = findViewById(R.id.et_email);
@@ -86,8 +86,7 @@ public class LoginActivity extends AppCompatActivity {
 
     /**
      * Sets up click listeners for interactive UI components.
-     * Configures the login button to trigger authentication and the back button
-     * to return to the previous screen.
+     * Configures the login button to trigger authentication and the back button to return to the previous screen.
      */
     private void setupClickListeners() {
         btnLogin.setOnClickListener(v -> loginUser());
@@ -162,7 +161,6 @@ public class LoginActivity extends AppCompatActivity {
 
     /**
      * Saves the Remember Me preference to SharedPreferences.
-     *
      * @param rememberMe true if user wants to be remembered, false otherwise
      */
     private void saveRememberMePreference(boolean rememberMe) {
@@ -240,6 +238,9 @@ public class LoginActivity extends AppCompatActivity {
      * @param firebaseError The raw error message from Firebase Authentication,
      *                     or null if no specific error message is available
      * @return A user-friendly error message string appropriate for display in the UI
+     * <p>
+     * AI: Claude was used to produce this
+     * Prompt: Make a small list of basic Firebase errors. Write a small java method that takes the error and returns an easy to understand message
      */
     private String getErrorMessage(String firebaseError) {
         if (firebaseError == null) {

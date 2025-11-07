@@ -21,8 +21,26 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+/**
+ * Activity that displays a list of events with filtering and search capabilities.
+ * <p>
+ * This provides a comprehensive event browsing interface with the following features:
+ * <ul>
+ *   <li>Display all available events in a scrollable list</li>
+ *   <li>Search events by name, location, category, or description</li>
+ *   <li>Filter events by date, interest/category, and location</li>
+ *   <li>Navigation to other app sections (profile, notifications, QR scanner)</li>
+ *   <li>Client-side filtering for responsive user experience</li>
+ * </ul>
+ * </p>
+ *
+ * @author Zenith Team
+ * @version 3.0
+ */
+
 public class EventListActivity extends AppCompatActivity {
 
+    // UI
     private Button scanBtn, profileBtn, homeBtn, myEventsBtn, notificationBtn;
     private Button interestFilterBtn, dateFilterBtn, locationFilterBtn, clearFiltersBtn;
     private EditText searchBar;
@@ -39,6 +57,12 @@ public class EventListActivity extends AppCompatActivity {
     private String selectedLocation = "";
     private String currentSearchQuery = "";
 
+    /**
+     * Called when the activity is first created.
+     * Initializes all UI components, sets up event listeners, and loads events from the repository.
+     *
+     * @param savedInstanceState Bundle containing the activity's previously saved state, if any
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +74,10 @@ public class EventListActivity extends AppCompatActivity {
         loadEvents();
     }
 
+    /**
+     * Initializes all view components and the event repository.
+     * This method finds and assigns all buttons, text fields, and the ListView from the layout.
+     */
     private void initViews() {
         // Initialize navigation buttons
         homeBtn = findViewById(R.id.home_btn);
@@ -72,6 +100,10 @@ public class EventListActivity extends AppCompatActivity {
         eventRepository = new EventRepository();
     }
 
+    /**
+     * Sets up event adapter and initializes the event lists.
+     * Creates empty ArrayLists for storing events and connects the adapter to the ListView.
+     */
     private void setupAdapter() {
         eventList = new ArrayList<>();
         allEventsList = new ArrayList<>(); // Initialize list to store all events
@@ -79,6 +111,19 @@ public class EventListActivity extends AppCompatActivity {
         eventsListView.setAdapter(eventAdapter);
     }
 
+    /**
+     * Configures click listeners for all interactive UI components.
+     * <p>
+     * Sets up the following interactions:
+     * <ul>
+     *   <li>Navigation button clicks (scan, profile, notifications, my events)</li>
+     *   <li>Search bar text changes for real-time filtering</li>
+     *   <li>Filter button clicks for date, interest, and location</li>
+     *   <li>Long press gestures for clearing individual filters</li>
+     *   <li>Clear all filters button</li>
+     * </ul>
+     * </p>
+     */
     private void setupClickListeners() {
         // Navigation buttons
         scanBtn.setOnClickListener(v -> {
@@ -97,7 +142,6 @@ public class EventListActivity extends AppCompatActivity {
         });
 
         notificationBtn.setOnClickListener(v -> {
-            // aalpesh added code here for entrant
             Intent notifIntent = new Intent(EventListActivity.this, NotificationsActivity.class);
             startActivity(notifIntent);
         });
@@ -117,6 +161,7 @@ public class EventListActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
+        // Note - Vaisnavi move this to a method call --> Do not put entire functionality inside the click listener
         // Date filter button - opens DatePickerDialog
         dateFilterBtn.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
@@ -229,10 +274,19 @@ public class EventListActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Loads all events from the repository and stores them for filtering.
+     * <p>
+     * This method makes an asynchronous call to the EventRepository to fetch all events.
+     * On success, events are stored in array adapter and filters are applied.
+     * On failure, an error message is displayed to the user.
+     * </p>
+     */
     private void loadEvents() {
         eventRepository.getAllEvents(new EventRepository.EventCallback() {
             @Override
             public void onSuccess(List<Event> events) {
+                // Log action
                 Log.d("EventListActivity", "Loaded " + events.size() + " events");
 
                 // Store all events for filtering
@@ -251,6 +305,7 @@ public class EventListActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Exception e) {
+                // Log Fail for debugging
                 Log.e("EventListActivity", "Error loading events", e);
                 Toast.makeText(EventListActivity.this,
                         "Error loading events: " + e.getMessage(),
@@ -259,6 +314,20 @@ public class EventListActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Applies all active filters to the event list.
+     * <p>
+     * This chains together all active filters (search, date, interest, location) and updates the displayed list.
+     * Filters are applied in sequence:
+     * <ol>
+     *   <li>Search filter (if query is not empty)</li>
+     *   <li>Date filter (if date is selected)</li>
+     *   <li>Interest/category filter (if interest is selected)</li>
+     *   <li>Location filter (if location is selected)</li>
+     * </ol>
+     * After filtering, the adapter is notified to refresh the ListView.
+     * </p>
+     */
     private void applyAllFilters() {
         if (eventList == null || eventAdapter == null) return;
         
@@ -295,7 +364,18 @@ public class EventListActivity extends AppCompatActivity {
                 "Search: \"" + currentSearchQuery + "\", Date: \"" + selectedDate + 
                 "\", Interest: \"" + selectedInterest + "\", Location: \"" + selectedLocation + "\"");
     }
-    
+
+    /**
+     * Filters events based on a search query.
+     * <p>
+     * Performs case insensitive matching against event name, location, category, and description.
+     * An event is included if any of these fields contain the search query.
+     * </p>
+     *
+     * @param events List of events to filter
+     * @param query Search query string (case-insensitive)
+     * @return Filtered list of events matching the search query
+     */
     private List<Event> filterBySearch(List<Event> events, String query) {
         List<Event> filtered = new ArrayList<>();
         String lowerQuery = query.toLowerCase();
@@ -320,19 +400,38 @@ public class EventListActivity extends AppCompatActivity {
         
         return filtered;
     }
-    
+
+    /**
+     * Filters events based on specific date.
+     * <p>
+     * Checks if the events dateTime field contains the specified date string.
+     * Expected date format is yyyy-MM-dd.
+     * </p>
+     * @param events List of events to filter
+     * @param date Date string to match (format: yyyy-MM-dd)
+     * @return Filtered list of events occurring on the specified date
+     */
     private List<Event> filterByDate(List<Event> events, String date) {
         List<Event> filtered = new ArrayList<>();
-        
         for (Event event : events) {
             if (event.getDateTime() != null && event.getDateTime().contains(date)) {
                 filtered.add(event);
             }
         }
-        
         return filtered;
     }
-    
+
+    /**
+     * Filters events based on interest/category.
+     * <p>
+     * Performs case insensitive partial matching on the event's category field.
+     * An event is included if its category contains the interest string.
+     * </p>
+     *
+     * @param events List of events to filter
+     * @param interest Interest/category string to match (case-insensitive)
+     * @return Filtered list of events matching the interest category
+     */
     private List<Event> filterByInterest(List<Event> events, String interest) {
         List<Event> filtered = new ArrayList<>();
         String lowerInterest = interest.toLowerCase();
@@ -346,7 +445,18 @@ public class EventListActivity extends AppCompatActivity {
         
         return filtered;
     }
-    
+
+    /**
+     * Filters based on location.
+     * <p>
+     * Performs case insensitive partial matching on the event's location field.
+     * An event is included if its location contains the location string.
+     * </p>
+     *
+     * @param events List of events to filter
+     * @param location Location string to match (case insensitive)
+     * @return Filtered list of events at or near the specified location
+     */
     private List<Event> filterByLocation(List<Event> events, String location) {
         List<Event> filtered = new ArrayList<>();
         String lowerLocation = location.toLowerCase();
@@ -360,7 +470,20 @@ public class EventListActivity extends AppCompatActivity {
         
         return filtered;
     }
-    
+
+    /**
+     * Clears all active filters and resets the event list to show all events.
+     * <p>
+     * This method:
+     * <ul>
+     *   <li>Clears the search bar text</li>
+     *   <li>Resets all filter state variables</li>
+     *   <li>Updates filter button labels to default values</li>
+     *   <li>Reapplies filters (showing all events)</li>
+     *   <li>Displays a confirmation toast message</li>
+     * </ul>
+     * </p>
+     */
     private void clearAllFilters() {
         // Clear search
         if (searchBar != null) {
@@ -392,6 +515,12 @@ public class EventListActivity extends AppCompatActivity {
         Toast.makeText(this, "All filters cleared", Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Called when the activity is resumed after being paused.
+     * <p>
+     * Reloads events from the repository to ensure the list is up-to-date when the user returns to this activity.
+     * </p>
+     */
     @Override
     protected void onResume() {
         super.onResume();

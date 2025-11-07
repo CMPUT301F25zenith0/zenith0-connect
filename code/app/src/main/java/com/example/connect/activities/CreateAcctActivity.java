@@ -10,6 +10,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
+import com.example.connect.network.CreateAccountRepo;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -23,11 +24,10 @@ import java.util.Map;
 /**
  * Activity responsible for user account creation and registration.
  * <p>
- * This activity provides a registration interface where new users can create an account
- * by providing their personal information. It handles both Firebase Authentication for
+ * This activity provides a registration interface where new users can create an account,
+ * by providing their personal information. It handles both Firebase Authentication for,
  * secure credential management and Firestore database operations for storing user profile data.
  * </p>
- * <p>
  * The account creation process follows a two-step approach:
  * <ol>
  *   <li>Create authentication credentials using Firebase Auth</li>
@@ -35,55 +35,39 @@ import java.util.Map;
  * </ol>
  * Note: Passwords are managed securely by Firebase Auth and are never stored in Firestore.
  * </p>
- *
  * @author Aakansh Chatterjee
  * @version 1.0
  */
 
 public class CreateAcctActivity extends AppCompatActivity {
     // UI Elements
-    /** EditText field for user's full legal name */
-    /** EditText field for user's display/public name */
-    /** EditText field for user's email address */
-    /** EditText field for user's password */
-    /** EditText field for password confirmation */
-    /** EditText field for user's mobile phone number */
-    /** Material button to trigger account creation */
-    /** Image button to navigate back to previous screen */
     private EditText etFullName, etDisplayName, etEmail, etPassword, etConfirmPassword, etMobileNumber;
     private MaterialButton btnCreateAccount;
     private ImageButton btnBack;
 
-    // Firebase
-    /** Firebase Authentication instance for managing user credentials and authentication */
-    private FirebaseAuth mAuth; // handles user authentication
+    // Repository for handling Firebase operations
+    private CreateAccountRepo accountRepo;
 
-    /** Firestore database instance for storing user profile data */
-    private FirebaseFirestore db; // database reference
-
-    /** Reference to the "accounts" collection in Firestore database */
-    private CollectionReference accountsRef; // Collection reference
 
 
     /**
      * Called when the activity is first created.
-     * Initializes the activity, sets up the layout, Firebase services (Auth and Firestore),
-     * and configures UI component listeners.
-     *
-     * @param savedInstanceState Bundle containing the activity's previously saved state,
-     *                          or null if there is no saved state
+     * Initializes the activity, sets up the layout, Firebase services (Auth and Firestore), and configures UI component listeners.
+     * <p>
+     * @param savedInstanceState Bundle containing the activitys previously saved state, or null if there no saved state
      */
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.create_account_activity); // load the activity
+        setContentView(R.layout.create_account_activity); // Load activity screen
 
-        // Initialize Firebase
-        // Gets the shared single instance for entire app
-        mAuth = FirebaseAuth.getInstance(); // using Firebase Auth for login/sign-up authentication
-        db = FirebaseFirestore.getInstance();
-        accountsRef = db.collection("accounts");  // finding the collection "accounts" in project
+
+        // Initialize repository
+        accountRepo = new CreateAccountRepo(
+                FirebaseAuth.getInstance(),
+                FirebaseFirestore.getInstance()
+        );
 
         // Initialize inputs and buttons
         initViews();
@@ -94,7 +78,7 @@ public class CreateAcctActivity extends AppCompatActivity {
 
     /**
      * Initializes all UI components by finding their references from the layout.
-     * This method links the Java variables to their corresponding XML view elements.
+     * This links the Java variables to their corresponding XML elements.
      */
     private void initViews() {
         etFullName = findViewById(R.id.et_full_name);
@@ -104,14 +88,13 @@ public class CreateAcctActivity extends AppCompatActivity {
         etConfirmPassword = findViewById(R.id.et_confirm_pass);
         etMobileNumber = findViewById(R.id.et_mobile_num);
         btnCreateAccount = findViewById(R.id.btn_create_acct);
-        btnBack = findViewById(R.id.btn_back);
+        btnBack = findViewById(R.id.back_btn);
     }
 
 
     /**
      * Sets up click listeners for interactive UI components.
-     * Configures the back button to return to the previous screen and the create account
-     * button to trigger the account creation process.
+     * Configures the back button to return to the previous screen and the create account button to trigger the account creation process.
      */
     private void setupClickListeners() {
         btnBack.setOnClickListener(v -> onBackPressed());
@@ -156,88 +139,35 @@ public class CreateAcctActivity extends AppCompatActivity {
         btnCreateAccount.setEnabled(false);
         btnCreateAccount.setText("Creating Account...");
 
+        // Logs the action
         Log.d("CreateActivity", "Starting Firebase Auth account creation");
 
-        // Create Firebase Auth user FIRST
-        // mAuth handles security of our password for us --> no need to encrypt / hash it
-        mAuth.createUserWithEmailAndPassword(email, password)
-                .addOnSuccessListener(authResult -> {
-                    FirebaseUser user = mAuth.getCurrentUser();
-                    if (user != null) {
-                        Log.d("CreateActivity", "Auth successful! UID: " + user.getUid());
-                        // Now save additional data to Firestore
-                        saveUserToDatabase(user.getUid(), fullName, displayName, email, mobileNumber);
-                    } else {
-                        Log.e("CreateActivity", "User is null after auth");
+        // Create Firebase Auth user
+        // Use repository to create account
+        accountRepo.registerUser(email, password, fullName, displayName, mobileNumber,
+                new CreateAccountRepo.RegistrationCallback() {
+                    @Override
+                    public void onSuccess() {
                         resetButton();
-                        Toast.makeText(CreateAcctActivity.this, "Error creating account", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(CreateAcctActivity.this,
+                                "Account created successfully!",
+                                Toast.LENGTH_SHORT).show();
+                        finish();
                     }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("CreateActivity", "Auth failed: " + e.getMessage(), e);
-                    resetButton();
-                    Toast.makeText(CreateAcctActivity.this,
-                            "Account creation failed: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                });
-    }
 
-    /**
-     * Saves user profile data to Firestore database.
-     * <p>
-     * This method is called after successful Firebase Auth account creation.
-     * It stores user information in the "accounts" collection using the Firebase Auth UID
-     * as the document ID for easy reference and data synchronization.
-     * </p>
-     * <p>
-     * <strong>Important:</strong> Passwords are NOT stored in Firestore. Firebase Auth
-     * handles password security separately.
-     * </p>
-     *
-     * @param userId       The unique Firebase Auth UID to be used as the document ID
-     * @param fullName     The user's full legal name
-     * @param displayName  The user's display/public name
-     * @param email        The user's email address
-     * @param mobileNumber The user's mobile phone number
-     */
-    private void saveUserToDatabase(String userId, String fullName, String displayName,
-                                    String email, String mobileNumber) {
-        Log.d("CreateActivity", "Saving user data to Firestore");
-
-        // Create user data map (NO PASSWORD - Firebase Auth handles that!)
-        Map<String, Object> user = new HashMap<>();
-        user.put("full_name", fullName);
-        user.put("display_name", displayName);
-        user.put("email", email);
-        // Only add mobile_num if provided (phone number is optional)
-        if (!TextUtils.isEmpty(mobileNumber)) {
-            user.put("mobile_num", mobileNumber);
-        }
-        user.put("created_at", System.currentTimeMillis());
-
-        // Use Firebase Auth UID as document ID
-        accountsRef.document(userId).set(user)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("CreateActivity", "User data saved successfully!");
-                    resetButton();
-                    Toast.makeText(CreateAcctActivity.this,
-                            "Account created successfully!",
-                            Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("CreateActivity", "Failed to save user data: " + e.getMessage(), e);
-                    resetButton();
-                    Toast.makeText(CreateAcctActivity.this,
-                            "Failed to save user data: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
+                    @Override
+                    public void onFailure(String error) {
+                        resetButton();
+                        Toast.makeText(CreateAcctActivity.this,
+                                error,
+                                Toast.LENGTH_LONG).show();
+                    }
                 });
     }
 
     /**
      * Resets the create account button to its default state.
-     * Re-enables the button and restores the original button text after
-     * an account creation attempt completes (successfully or unsuccessfully).
+     * Re-enables the button and restores the original button text after an account creation attempt completes (successfully or unsuccessfully).
      */
     private void resetButton() {
         btnCreateAccount.setEnabled(true);
@@ -255,8 +185,7 @@ public class CreateAcctActivity extends AppCompatActivity {
      *   <li>Verifies password and confirmation password match</li>
      *   <li>Validates mobile number has minimum 10 digits</li>
      * </ul>
-     * If any validation fails, the appropriate error message is displayed on the
-     * corresponding field and focus is moved to that field.
+     * If any validation fails, the appropriate error message is displayed on the corresponding field and focus is moved to that field.
      * </p>
      *
      * @param fullName        The user's full legal name
@@ -319,6 +248,7 @@ public class CreateAcctActivity extends AppCompatActivity {
             return false;
         }
 
+        // Search for ways to make this intake and check for an actual phone number format
         // Phone number is optional, but if provided, validate it
         if (!TextUtils.isEmpty(mobileNumber) && mobileNumber.length() < 10) {
             etMobileNumber.setError("Please enter a valid mobile number (at least 10 digits)");
