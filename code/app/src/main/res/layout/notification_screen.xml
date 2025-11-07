@@ -34,19 +34,32 @@
             android:layout_centerVertical="true"
             android:layout_marginStart="16dp"
             android:layout_toEndOf="@id/noti_btn_back"
-            android:text="Notifications"
+            android:text="My Notifications"
             android:textColor="#000000"
             android:textSize="20sp"
             android:textStyle="bold" />
 
     </RelativeLayout>
 
+    <!-- Subtitle -->
+    <TextView
+        android:id="@+id/subtitle_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/headerSection"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        android:text="View your event invitations and updates"
+        android:textSize="14sp"
+        android:textColor="#FFFFFF" />
+
     <!-- Toggle Section -->
     <LinearLayout
         android:id="@+id/toggleSection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/headerSection"
+        android:layout_below="@id/subtitle_text"
         android:orientation="vertical"
         android:paddingTop="16dp"
         android:paddingBottom="16dp">
@@ -79,9 +92,9 @@
 
     </LinearLayout>
 
-    <!-- ListView for Notifications -->
-    <ListView
-        android:id="@+id/noti_list"
+    <!-- Notifications List -->
+    <FrameLayout
+        android:id="@+id/notificationsFrame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/toggleSection"
@@ -89,9 +102,48 @@
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
         android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:divider="@android:color/transparent"
-        android:dividerHeight="16dp" />
+        android:paddingBottom="8dp">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_notifications"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"/>
+
+        <!-- Empty State -->
+        <LinearLayout
+            android:id="@+id/tv_no_notifications"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📭"
+                android:textSize="64sp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No notifications yet"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="You'll see event updates here"
+                android:textSize="14sp"
+                android:textColor="#E0E0E0"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+    </FrameLayout>
 
     <!-- Bottom Navigation -->
     <LinearLayout
@@ -155,6 +207,5 @@
             android:textColor="#FFFFFF"/>
 
     </LinearLayout>
-
 
 </RelativeLayout>

@@ -26,6 +26,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.switchmaterial.SwitchMaterial;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
@@ -55,6 +58,9 @@ public class CreateEvent extends AppCompatActivity {
 
     // Firebase
     private FirebaseFirestore db;
+    private FirebaseAuth auth;
+    private String currentUserId;
+    private String organizerName;
 
     // Dialog
     private AlertDialog qrDialog;
@@ -64,13 +70,50 @@ public class CreateEvent extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_event);
 
-        // Initialize Firestore
+        // Initialize Firebase
         db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+
+        // Get current user
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Please sign in to create events", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+        currentUserId = currentUser.getUid();
+
+        // Fetch organizer name from accounts collection
+        fetchOrganizerName();
 
         initializeViews();
         initializeDateTimeFormats();
         setupImagePicker();
         setupClickListeners();
+    }
+
+    private void fetchOrganizerName() {
+        db.collection("accounts").document(currentUserId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        organizerName = documentSnapshot.getString("display_name");
+                        if (organizerName == null || organizerName.isEmpty()) {
+                            organizerName = documentSnapshot.getString("full_name");
+                        }
+                        if (organizerName == null || organizerName.isEmpty()) {
+                            organizerName = "Organizer";
+                        }
+                        Log.d(TAG, "Organizer name: " + organizerName);
+                    } else {
+                        organizerName = "Organizer";
+                        Log.w(TAG, "Account document not found for user: " + currentUserId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    organizerName = "Organizer";
+                    Log.e(TAG, "Error fetching organizer name", e);
+                });
     }
 
     private void initializeViews() {
@@ -290,18 +333,24 @@ public class CreateEvent extends AppCompatActivity {
                     String eventId = documentReference.getId();
                     Log.d(TAG, "Event published with ID: " + eventId);
 
-                    // Generate QR code data using your existing QRGeneration class
+                    // Generate QR code data
                     String qrData = QRGeneration.generateEventQRCodeData(eventId);
 
                     // Update event document with QR code data
+                    Map<String, Object> qrUpdate = new HashMap<>();
+                    qrUpdate.put("qr_code_data", qrData);
+
                     db.collection("events").document(eventId)
-                            .update("qr_code_data", qrData)
+                            .set(qrUpdate, com.google.firebase.firestore.SetOptions.merge())
                             .addOnSuccessListener(aVoid -> {
                                 Log.d(TAG, "QR code data saved to event");
                             })
                             .addOnFailureListener(e -> {
-                                Log.e(TAG, "Error saving QR code data", e);
+                                Log.e(TAG, "Error saving QR code data: " + e.getMessage(), e);
                             });
+
+                    // Create waiting list structure
+                    createWaitingList(eventId);
 
                     // Show QR dialog
                     showQRDialog(eventId, qrData);
@@ -312,6 +361,40 @@ public class CreateEvent extends AppCompatActivity {
                     Log.e(TAG, "Error publishing event", e);
                     Toast.makeText(this, "Failed to publish event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    /**
+     * Creates the waiting list structure for the event
+     * Structure: waiting_lists/{eventId}/entries/
+     */
+    private void createWaitingList(String eventId) {
+        // Create a placeholder document in waiting_lists collection
+        Map<String, Object> waitingListData = new HashMap<>();
+        waitingListData.put("event_id", eventId);
+        waitingListData.put("created_at", System.currentTimeMillis());
+        waitingListData.put("total_capacity", getWaitingListCapacity());
+
+        db.collection("waiting_lists").document(eventId)
+                .set(waitingListData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Waiting list created for event: " + eventId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error creating waiting list", e);
+                });
+    }
+
+    private int getWaitingListCapacity() {
+        String waitingList = etWaitingList.getText().toString().trim();
+        if (!waitingList.isEmpty()) {
+            try {
+                String cleanNumber = waitingList.replaceAll("[^0-9]", "");
+                return cleanNumber.isEmpty() ? 0 : Integer.parseInt(cleanNumber);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        return 0;
     }
 
     private void showQRDialog(String eventId, String qrData) {
@@ -325,7 +408,7 @@ public class CreateEvent extends AppCompatActivity {
         MaterialButton btnShareQr = dialogView.findViewById(R.id.btnShareQr);
         MaterialButton btnClose = dialogView.findViewById(R.id.btnClose);
 
-        // Generate and display QR code using your existing QRGeneration class
+        // Generate and display QR code
         Bitmap qrBitmap = QRGeneration.generateEventQRCode(eventId, 500, 500);
         if (qrBitmap != null) {
             imgQr.setImageBitmap(qrBitmap);
@@ -339,23 +422,17 @@ public class CreateEvent extends AppCompatActivity {
         builder.setView(dialogView);
         qrDialog = builder.create();
 
-        // Make dialog background transparent to show card properly
+        // Make dialog background transparent
         if (qrDialog.getWindow() != null) {
             qrDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
 
         // Set up button listeners
-        btnCopyLink.setOnClickListener(v -> {
-            copyLinkToClipboard(qrData);
-        });
-
-        btnShareQr.setOnClickListener(v -> {
-            shareQRCode(qrData);
-        });
-
+        btnCopyLink.setOnClickListener(v -> copyLinkToClipboard(qrData));
+        btnShareQr.setOnClickListener(v -> shareQRCode(qrData));
         btnClose.setOnClickListener(v -> {
             qrDialog.dismiss();
-            finish(); // Go back to previous activity
+            finish();
         });
 
         qrDialog.show();
@@ -413,34 +490,11 @@ public class CreateEvent extends AppCompatActivity {
             eventData.put("draw_capacity", 0);
         }
 
-        String waitingList = etWaitingList.getText().toString().trim();
-        if (!waitingList.isEmpty()) {
-            try {
-                // Handle "10+" format
-                String cleanNumber = waitingList.replaceAll("[^0-9]", "");
-                if (!cleanNumber.isEmpty()) {
-                    eventData.put("waiting_list", Integer.parseInt(cleanNumber));
-                } else {
-                    eventData.put("waiting_list", 0);
-                }
-            } catch (NumberFormatException e) {
-                eventData.put("waiting_list", 0);
-            }
-        } else {
-            eventData.put("waiting_list", 0);
-        }
+        eventData.put("waiting_list", getWaitingListCapacity());
 
         // Price
         String price = etPrice.getText().toString().trim();
-        if (!price.isEmpty()) {
-            try {
-                eventData.put("price", price);
-            } catch (NumberFormatException e) {
-                eventData.put("price", "0");
-            }
-        } else {
-            eventData.put("price", "0");
-        }
+        eventData.put("price", price.isEmpty() ? "0" : price);
 
         // Geolocation requirement
         eventData.put("require_geolocation", switchGeolocation.isChecked());
@@ -448,9 +502,12 @@ public class CreateEvent extends AppCompatActivity {
         // Status and metadata
         eventData.put("status", isDraft ? "draft" : "published");
         eventData.put("created_at", System.currentTimeMillis());
-        eventData.put("org_name", "Admin Group"); // TODO: Replace with actual organizer name from user session
 
-        // Image URI (store as string, you may want to upload to Firebase Storage later)
+        // ✅ ADD ORGANIZER INFO
+        eventData.put("organizer_id", currentUserId);
+        eventData.put("org_name", organizerName != null ? organizerName : "Organizer");
+
+        // Image URI
         if (selectedImageUri != null) {
             eventData.put("image_uri", selectedImageUri.toString());
         }
