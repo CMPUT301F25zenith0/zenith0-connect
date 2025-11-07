@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- for notifications -->
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
-
 
     <application
         android:allowBackup="true"
@@ -36,31 +30,20 @@
         <activity android:name=".activities.ProfileActivity" />
         <activity android:name=".activities.CreateAcctActivity" />
         <activity android:name=".activities.OrganizerActivity" />
-        <activity android:name=".activities.OrganizerMessagesActivity" />
+        <activity android:name=".activities.CreateEvent"/>
 
-        <activity android:name=".activities.QRCodeScanner" />
+
+        <!-- Utils / Testing -->
         <activity
-            android:name=".activities.CreateEvent"
+            android:name=".activities.QRTestActivity"
             android:exported="false" />
 
-        <!-- Notifications for Entrant -->
-        <activity
-            android:name=".activities.NotificationsActivity"
-            android:exported="false"
-            android:label="My Notifications"/>
-
-        <service
-            android:name=".network.NotificationListenerService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="dataSync"/>
+        <activity android:name=".activities.QRCodeScanner" />
 
     </application>
 
     <!-- Permission to Use Camera -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
 </manifest>
