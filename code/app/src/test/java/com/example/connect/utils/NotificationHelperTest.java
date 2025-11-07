@@ -109,4 +109,26 @@ public class NotificationHelperTest {
         assertEquals("waiting_list_announcement", sent.get(0).type);
         assertTrue(sent.get(0).body.contains("EventZ"));
     }
+
+    @Test
+    public void testNotifyChosenEntrants_EmptyList() {
+        List<String> users = new ArrayList<>();
+        List<TestNotificationHelper.NotificationData> sent = helper.notifyChosenEntrants(users, "EventEmpty");
+        assertTrue(sent.isEmpty()); // logic: no notifications should be created
+    }
+
+    @Test
+    public void testNotifyNotChosenEntrants_EmptyList() {
+        List<String> users = new ArrayList<>();
+        List<TestNotificationHelper.NotificationData> sent = helper.notifyNotChosenEntrants(users, "EventEmpty");
+        assertTrue(sent.isEmpty());
+    }
+
+    @Test
+    public void testNotifyAllWaitingListEntrants_EmptyList() {
+        List<String> users = new ArrayList<>();
+        List<TestNotificationHelper.NotificationData> sent = helper.notifyAllWaitingListEntrants(users, "EventEmpty");
+        assertTrue(sent.isEmpty());
+    }
+
 }

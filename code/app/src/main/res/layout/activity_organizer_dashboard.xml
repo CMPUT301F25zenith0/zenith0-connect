@@ -58,17 +58,17 @@
             style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
             android:layout_weight="1"
-            android:minHeight="48dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
             android:text="Total Events"
             android:textColor="#E8F4F4"
             android:textSize="11sp"
-            app:cornerRadius="8dp"
+            android:minHeight="48dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:layout_marginEnd="8dp"
             app:strokeColor="#E8F4F4"
-            app:strokeWidth="1dp" />
+            app:strokeWidth="1dp"
+            app:cornerRadius="8dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnOpen"
@@ -148,7 +148,8 @@
         app:layout_constraintTop_toBottomOf="@id/tvListOfEvents"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/item_event_card"/>
 
     <!-- Bottom Navigation (kept as buttons per your layout) -->
     <LinearLayout

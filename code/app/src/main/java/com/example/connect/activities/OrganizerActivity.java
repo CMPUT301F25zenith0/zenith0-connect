@@ -1,403 +1,279 @@
 package com.example.connect.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.connect.R;
-import com.example.connect.utils.NotificationHelper;
-import com.google.firebase.firestore.FieldValue;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.google.android.material.button.MaterialButton;
 
 /**
- * This is the Java for the organizer dashboard, it has the functionality for Notify All Entrants and for Notifying Waiting List.
+ * Activity serving as the main dashboard for event organizers
+ * <p>
+ * This activity provides organizers with a comprehensive interface to manage their events:
+ * <ul>
+ *   <li>View all events organized by the user</li>
+ *   <li>Create new events</li>
+ *   <li>Filter events by status (all, open, closed, drawn)</li>
+ *   <li>Navigate to messages, map, and profile sections</li>
+ *   <li>Access event details and management features</li>
+ * </ul>
+ * </p>
+ * <p>
+ * The dashboard uses a RecyclerView to display events and provides filter tabs
+ * to quickly switch between different event states.
+ * </p>
+ *
+ * @author Digaant Chokkra
+ * @version 2.0
+
  */
 public class OrganizerActivity extends AppCompatActivity {
-    private static final String TAG = "OrganizerActivityTag";
 
-    private FirebaseFirestore db;
-    private NotificationHelper notificationHelper;
+    // UI Components
+    private MaterialButton btnNewEvent;
+    private MaterialButton btnTotalEvents, btnOpen, btnClosed, btnDrawn;
+    private RecyclerView recyclerViewEvents;
+    private MaterialButton btnNavDashboard, btnNavMessage, btnNavMap, btnNavProfile;
 
-    private Spinner spinnerEntrants;
-    private EditText etEventId, etEventName, etMessage;
-    private Button btnNotifyChosen, btnNotifyNotChosen, btnNotifyWaitingList;
-    private Button btnMarkChosen, btnMarkNotChosen, btnAddToWaitingList;
+    private String currentFilter = "all"; // Track current filter
 
-    private List<String> entrantUids = new ArrayList<>();
-    private List<String> entrantNames = new ArrayList<>();
-    String eventId = "TEST_EVENT"; // Default for testing
-
+    /**
+     * Called when the activity is first created.
+     * <p>
+     * Initializes the organizer dashboard by:
+     * <ol>
+     *   <li>Setting up all UI components</li>
+     *   <li>Configuring click listeners for navigation and filtering</li>
+     *   <li>Setting up the RecyclerView for event display</li>
+     *   <li>Applying the default "Total Events" filter</li>
+     * </ol>
+     * </p>
+     *
+     * @param savedInstanceState Bundle containing the activity's previously saved state, if any
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_organizer);
+        setContentView(R.layout.activity_organizer_dashboard);
 
-        db = FirebaseFirestore.getInstance();
-        notificationHelper = new NotificationHelper();
-
-        // Initialize views
-//        spinnerEntrants = findViewById(R.id.spinner_entrants);
-        etEventId = findViewById(R.id.et_event_id);
-        etEventName = findViewById(R.id.et_event_name);
-//        etMessage = findViewById(R.id.et_message);
-
-        // Notification buttons
-        btnNotifyChosen = findViewById(R.id.btn_notify_chosen);
-//        btnNotifyNotChosen = findViewById(R.id.btn_notify_not_chosen);
-        btnNotifyWaitingList = findViewById(R.id.btn_notify_waiting_list);
-
-//        // Management buttons
-//        btnMarkChosen = findViewById(R.id.btn_mark_chosen);
-//        btnMarkNotChosen = findViewById(R.id.btn_mark_not_chosen);
-//        btnAddToWaitingList = findViewById(R.id.btn_add_to_waiting_list);
-
-        // Load entrants
-        loadEntrants();
-
-        // Set up click listeners
+        initializeViews();
         setupClickListeners();
+        setupRecyclerView();
+
+        // Set default filter to Total Events
+        selectFilter(btnTotalEvents, "all");
     }
 
+    /**
+     * Initializes all view components from the layout.
+     * <p>
+     * Finds and assigns references to:
+     * <ul>
+     *   <li>Action buttons (new event)</li>
+     *   <li>Filter tab buttons</li>
+     *   <li>RecyclerView for events</li>
+     *   <li>Bottom navigation buttons</li>
+     * </ul>
+     * </p>
+     */
+    private void initializeViews() {
+        // Top buttons
+        btnNewEvent = findViewById(R.id.btnNewEvent);
+
+        // Filter tabs
+        btnTotalEvents = findViewById(R.id.btnTotalEvents);
+        btnOpen = findViewById(R.id.btnOpen);
+        btnClosed = findViewById(R.id.btnClosed);
+        btnDrawn = findViewById(R.id.btnDrawn);
+
+        // RecyclerView
+        recyclerViewEvents = findViewById(R.id.recyclerViewEvents);
+
+        // Bottom navigation
+        btnNavDashboard = findViewById(R.id.btnNavDashboard);
+        btnNavMessage = findViewById(R.id.btnNavMessage);
+        btnNavMap = findViewById(R.id.btnNavMap);
+        btnNavProfile = findViewById(R.id.btnNavProfile);
+    }
+
+    /**
+     * Configures click listeners for all interactive UI components.
+     */
     private void setupClickListeners() {
-        // Mark user as chosen (for testing/manual selection)
-//        btnMarkChosen.setOnClickListener(v -> {
-//            int selectedIndex = spinnerEntrants.getSelectedItemPosition();
-//            if (selectedIndex >= 0) {
-//                String selectedUid = entrantUids.get(selectedIndex);
-//                markUserAsChosen(selectedUid);
-//            }
-//        });
-//
-//        // Mark user as not chosen (for testing/manual selection)
-//        btnMarkNotChosen.setOnClickListener(v -> {
-//            int selectedIndex = spinnerEntrants.getSelectedItemPosition();
-//            if (selectedIndex >= 0) {
-//                String selectedUid = entrantUids.get(selectedIndex);
-//                markUserAsNotChosen(selectedUid);
-//            }
-//        });
-//
-//        // Add user to waiting list (for testing)
-//        btnAddToWaitingList.setOnClickListener(v -> {
-//            int selectedIndex = spinnerEntrants.getSelectedItemPosition();
-//            if (selectedIndex >= 0) {
-//                String selectedUid = entrantUids.get(selectedIndex);
-//                addToWaitingList(selectedUid);
-//            }
-//        });
-
-        // US 02.05.01 & US 01.04.01 - Notify chosen entrants
-        btnNotifyChosen.setOnClickListener(v -> {
-            String eventIdStr = etEventId.getText().toString().trim();
-            String eventName = etEventName.getText().toString().trim();
-
-            if (eventIdStr.isEmpty() || eventName.isEmpty()) {
-                Toast.makeText(this, "Please enter event ID and name", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Atomic counters for both groups
-            AtomicInteger totalNotifications = new AtomicInteger(0);
-            AtomicInteger completedGroups = new AtomicInteger(0);
-
-            getChosenEntrants(eventIdStr, chosenIds -> {
-                getNotChosenEntrants(eventIdStr, notChosenIds -> {
-
-                    int tempTotalGroups = 0;
-                    if (!chosenIds.isEmpty()) tempTotalGroups++;
-                    if (!notChosenIds.isEmpty()) tempTotalGroups++;
-
-                    if (tempTotalGroups == 0) {
-                        Toast.makeText(this, "No entrants found", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    // ✅ Make it final so it can be used in inner class
-                    final int totalGroups = tempTotalGroups;
-
-                    NotificationHelper.NotificationCallback combinedCallback =
-                            new NotificationHelper.NotificationCallback() {
-                                @Override
-                                public void onSuccess(String message) {
-                                    int sent = extractNumber(message);
-                                    totalNotifications.addAndGet(sent);
-
-                                    if (completedGroups.incrementAndGet() == totalGroups) {
-                                        runOnUiThread(() -> Toast.makeText(
-                                                OrganizerActivity.this,
-                                                "Sent " + totalNotifications.get() + " notifications successfully!",
-                                                Toast.LENGTH_LONG
-                                        ).show());
-                                    }
-                                }
-
-                                @Override
-                                public void onFailure(String error) {
-                                    if (completedGroups.incrementAndGet() == totalGroups) {
-                                        runOnUiThread(() -> Toast.makeText(
-                                                OrganizerActivity.this,
-                                                "Some notifications failed: " + error,
-                                                Toast.LENGTH_LONG
-                                        ).show());
-                                    }
-                                }
-                            };
-
-                    // Send to chosen entrants
-                    if (!chosenIds.isEmpty()) {
-                        notificationHelper.notifyChosenEntrants(eventIdStr, chosenIds, eventName, combinedCallback);
-                    }
-
-                    // Send to not-chosen entrants
-                    if (!notChosenIds.isEmpty()) {
-                        notificationHelper.notifyNotChosenEntrants(eventIdStr, notChosenIds, eventName, combinedCallback);
-                    }
-
-                });
-            });
+        // Navigate to CreateEvent
+        btnNewEvent.setOnClickListener(v -> {
+            Intent intent = new Intent(OrganizerActivity.this, CreateEvent.class);
+            startActivity(intent);
         });
 
-        // US 02.07.01 - Notify all waiting list entrants
-        btnNotifyWaitingList.setOnClickListener(v -> {
-            String eventIdStr = etEventId.getText().toString().trim();
-            String eventName = etEventName.getText().toString().trim();
-//            String message = etMessage.getText().toString().trim();
+        // Filter tabs
+        btnTotalEvents.setOnClickListener(v -> selectFilter(btnTotalEvents, "all"));
+        btnOpen.setOnClickListener(v -> selectFilter(btnOpen, "open"));
+        btnClosed.setOnClickListener(v -> selectFilter(btnClosed, "closed"));
+        btnDrawn.setOnClickListener(v -> selectFilter(btnDrawn, "drawn"));
 
-            if (eventIdStr.isEmpty() || eventName.isEmpty()) {
-                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            notificationHelper.notifyAllWaitingListEntrants(
-                    eventIdStr,
-                    eventName,
-                    new NotificationHelper.NotificationCallback() {
-                        @Override
-                        public void onSuccess(String msg) {
-                            runOnUiThread(() ->
-                                    Toast.makeText(OrganizerActivity.this,
-                                            msg, Toast.LENGTH_SHORT).show()
-                            );
-                        }
-
-                        @Override
-                        public void onFailure(String error) {
-                            runOnUiThread(() ->
-                                    Toast.makeText(OrganizerActivity.this,
-                                            "Error: " + error, Toast.LENGTH_LONG).show()
-                            );
-                        }
-                    }
-            );
+        // Bottom navigation
+        btnNavDashboard.setOnClickListener(v -> {
+            // Already on dashboard
+            Toast.makeText(this, "Already on Dashboard", Toast.LENGTH_SHORT).show();
         });
-    }
 
-    int extractNumber(String message) {
-        try {
-            Pattern pattern = Pattern.compile("\\d+");
-            Matcher matcher = pattern.matcher(message);
-            if (matcher.find()) {
-                return Integer.parseInt(matcher.group());
-            }
-        } catch (Exception e) {
-            Log.e("OrganizerActivity", "Failed to extract number from message: " + message, e);
-        }
-        return 0;
-    }
+        btnNavMessage.setOnClickListener(v -> {
+            // Navigate to notification manager
+            Intent organizerNotifsIntent = new Intent(OrganizerActivity.this, OrganizerMessagesActivity.class);
+            startActivity(organizerNotifsIntent);
+        });
 
+        btnNavMap.setOnClickListener(v -> {
+            // TODO: Navigate to Map
+            Toast.makeText(this, "Map - Coming soon", Toast.LENGTH_SHORT).show();
+        });
 
-    /**
-     * Load all accounts/entrants from Firestore for the spinner
-     */
-    private void loadEntrants() {
-        Log.d(TAG, "Loading entrants from Firestore...");
-        db.collection("accounts").get().addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) {
-                Log.e(TAG, "Failed to load entrants", task.getException());
-                return;
-            }
-
-            entrantUids.clear();
-            entrantNames.clear();
-
-            int totalDocs = task.getResult().size();
-            Log.d(TAG, "Total documents in accounts collection: " + totalDocs);
-
-            for (QueryDocumentSnapshot doc : task.getResult()) {
-                String name = doc.getString("full_name");
-                String uid = doc.getId();
-                if (name != null) {
-                    entrantNames.add(name);
-                    entrantUids.add(uid);
-                    Log.d(TAG, "Added entrant: " + name + " UID: " + uid);
-                } else {
-                    Log.w(TAG, "Skipped document with UID " + uid + " because name is null");
-                }
-            }
-
-            Log.d(TAG, "Total entrants added: " + entrantNames.size());
-//
-//            ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-//                    android.R.layout.simple_spinner_item, entrantNames);
-//            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-//            spinnerEntrants.setAdapter(adapter);
-//            Log.d(TAG, "Spinner adapter set.");
+        btnNavProfile.setOnClickListener(v -> {
+            Intent profileIntent = new Intent(OrganizerActivity.this, ProfileActivity.class);
+            profileIntent.putExtra("from_organizer", true); // Mark that it's opened from organizer view
+            startActivity(profileIntent);
+            // Don't finish() here - let user navigate back if needed
         });
     }
 
     /**
-     * Get list of chosen entrant IDs from Firestore
+     * TODO
+     * Configures the RecyclerView for displaying events.
+     * <p>
+     * Sets up a LinearLayoutManager for vertical scrolling of events.
+     * The adapter will be connected once event data is retrieved from Firestore.
+     * </p>
      */
-    private void getChosenEntrants(String eventId, EntrantListCallback callback) {
-        db.collection("events").document(eventId)
-                .collection("chosen")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<String> chosenIds = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        chosenIds.add(doc.getId());
-                    }
-                    Log.d(TAG, "Found " + chosenIds.size() + " chosen entrants");
-                    callback.onEntrantsLoaded(chosenIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get chosen entrants", e);
-                    Toast.makeText(this, "Failed to load chosen entrants", Toast.LENGTH_SHORT).show();
-                    callback.onEntrantsLoaded(new ArrayList<>());
-                });
+    private void setupRecyclerView() {
+        // Set layout manager
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerViewEvents.setLayoutManager(layoutManager);
+
+        // TODO: Set up adapter with event data from Firestore
+        // EventAdapter adapter = new EventAdapter(eventsList);
+        // recyclerViewEvents.setAdapter(adapter);
     }
 
     /**
-     * Get list of not chosen entrant IDs from Firestore
+     * TODO
+     * Applies a filter to the event list and updates the UI accordingly.
+     * <p>
+     * This method:
+     * <ol>
+     *   <li>Resets all filter buttons to default appearance</li>
+     *   <li>Highlights the selected filter button</li>
+     *   <li>Updates the current filter state</li>
+     *   <li>Triggers event filtering based on the selection</li>
+     * </ol>
+     * </p>
+     *
+     * @param selectedButton The MaterialButton that was clicked
+     * @param filter The filter type to apply ("all", "open", "closed", or "drawn")
      */
-    private void getNotChosenEntrants(String eventId, EntrantListCallback callback) {
-        db.collection("events").document(eventId)
-                .collection("notChosen")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<String> notChosenIds = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        notChosenIds.add(doc.getId());
-                    }
-                    Log.d(TAG, "Found " + notChosenIds.size() + " not-chosen entrants");
-                    callback.onEntrantsLoaded(notChosenIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get not-chosen entrants", e);
-                    Toast.makeText(this, "Failed to load not-chosen entrants", Toast.LENGTH_SHORT).show();
-                    callback.onEntrantsLoaded(new ArrayList<>());
-                });
+    private void selectFilter(MaterialButton selectedButton, String filter) {
+        // Reset all buttons to default state
+        resetFilterButtons();
+
+        // Highlight selected button
+        selectedButton.setBackgroundColor(getResources().getColor(R.color.filter_selected, null));
+        selectedButton.setTextColor(getResources().getColor(android.R.color.white, null));
+
+        // Update current filter
+        currentFilter = filter;
+
+        // TODO: Filter events based on selection
+        filterEvents(filter);
     }
 
     /**
-     * Mark a user as chosen in Firestore
+     * Resets all filter buttons to their default appearance.
+     * <p>
+     * Sets all filter buttons (Total Events, Open, Closed, Drawn) to:
+     * <ul>
+     *   <li>Transparent background</li>
+     *   <li>Default text color</li>
+     *   <li>Outlined style (via XML)</li>
+     * </ul>
+     * This method is called before highlighting the newly selected filter.
+     * </p>
      */
-    private void markUserAsChosen(String uid) {
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to mark user as chosen: " + selectedName + " UID: " + uid);
+    private void resetFilterButtons() {
+        // Reset all filter buttons to default outlined style
+        int defaultColor = getResources().getColor(R.color.filter_default, null);
+        int defaultTextColor = getResources().getColor(R.color.filter_text_default, null);
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
+        // Note: For MaterialButton with outlined style, we set strokeColor instead of background
+        btnTotalEvents.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnTotalEvents.setTextColor(defaultTextColor);
 
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
+        btnOpen.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnOpen.setTextColor(defaultTextColor);
+
+        btnClosed.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnClosed.setTextColor(defaultTextColor);
+
+        btnDrawn.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnDrawn.setTextColor(defaultTextColor);
+    }
+
+    /**
+     * TODO
+     * Filters the displayed events based on the specified filter type.
+     * <p>
+     * Filter types and their meanings:
+     * <ul>
+     *   <li><b>all</b> - Shows all events regardless of status</li>
+     *   <li><b>open</b> - Shows only events that are currently accepting registrations</li>
+     *   <li><b>closed</b> - Shows only events that are no longer accepting registrations</li>
+     *   <li><b>drawn</b> - Shows only events where lottery/selection has been performed</li>
+     * </ul>
+     * </p>
+     * <p>
+     * <b>Note:</b> Currently displays toast messages. Firestore query implementation pending.
+     * </p>
+     *
+     * @param filter The filter type
+     */
+    private void filterEvents(String filter) {
+        // TODO: Implement Firestore query based on filter
+        switch (filter) {
+            case "all":
+                // Load all events
+                Toast.makeText(this, "Showing all events", Toast.LENGTH_SHORT).show();
+                break;
+            case "open":
+                // Load only open events
+                Toast.makeText(this, "Showing open events", Toast.LENGTH_SHORT).show();
+                break;
+            case "closed":
+                // Load only closed events
+                Toast.makeText(this, "Showing closed events", Toast.LENGTH_SHORT).show();
+                break;
+            case "drawn":
+                // Load only drawn events
+                Toast.makeText(this, "Showing drawn events", Toast.LENGTH_SHORT).show();
+                break;
         }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("chosen")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully marked as chosen: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " marked as chosen!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to mark as chosen: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to mark as chosen: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
     }
 
     /**
-     * Mark a user as not chosen in Firestore
+     * Called when the activity is resumed after being paused.
+     * <p>
+     * Refreshes the event list with the currently active filter to ensure
+     * the displayed data is up-to-date when the organizer returns to the dashboard.
+     * </p>
      */
-    private void markUserAsNotChosen(String uid) {
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to mark user as NOT chosen: " + selectedName + " UID: " + uid);
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
-
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
-        }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("notChosen")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully marked as NOT chosen: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " marked as NOT chosen!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to mark as NOT chosen: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to mark as NOT chosen: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Add a user to waiting list in Firestore
-     */
-    private void addToWaitingList(String uid) {
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to add user to waiting list: " + selectedName + " UID: " + uid);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
-
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
-        }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("waitingList")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully added to waiting list: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " added to waiting list!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to add to waiting list: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to add to waiting list: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Callback interface for loading entrant lists
-     */
-    private interface EntrantListCallback {
-        void onEntrantsLoaded(List<String> entrantIds);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh event list when returning to this activity
+        filterEvents(currentFilter);
     }
 }

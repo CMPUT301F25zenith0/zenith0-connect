@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit tests for NotificationListenerService logic (pure Java, no Android dependencies)
+ * Unit tests for NotificationListenerService logic
  */
 public class NotificationListenerServiceTest {
 

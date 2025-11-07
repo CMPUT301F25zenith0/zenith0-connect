@@ -3,14 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:padding="16dp">
 
         <!-- Unread Indicator -->
@@ -18,70 +17,96 @@
             android:id="@+id/notification_indicator"
             android:layout_width="4dp"
             android:layout_height="match_parent"
-            android:background="#2196F3"
+            android:background="#92B8A0"
+            android:layout_alignParentStart="true"
             android:layout_marginEnd="12dp"/>
 
-        <!-- Content -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <!-- Info Icon -->
+        <ImageView
+            android:id="@+id/ic_info"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_toEndOf="@id/notification_indicator"
+            android:src="@drawable/ic_info"
+            app:tint="#000000"/>
+
+        <!-- Close Icon -->
+        <ImageView
+            android:id="@+id/ic_close"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:src="@drawable/ic_close"
+            app:tint="#000000"/>
+
+        <!-- Title -->
+        <TextView
+            android:id="@+id/tv_notification_title"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_below="@id/ic_info"
+            android:layout_toEndOf="@id/notification_indicator"
+            android:layout_marginTop="8dp"
+            android:text="Notification Title"
+            android:textColor="#000000"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-            <!-- Title -->
-            <TextView
-                android:id="@+id/tv_notification_title"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Notification Title"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#333333"/>
+        <!-- Event Name -->
+        <TextView
+            android:id="@+id/tv_event_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_notification_title"
+            android:layout_toEndOf="@id/notification_indicator"
+            android:layout_marginTop="4dp"
+            android:text="Event: Community Basketball"
+            android:textSize="12sp"
+            android:textColor="#666666"
+            android:visibility="gone"/>
 
-            <!-- Event Name -->
-            <TextView
-                android:id="@+id/tv_event_name"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Event: Community Basketball"
-                android:textSize="12sp"
-                android:textColor="#666666"
-                android:layout_marginTop="4dp"
-                android:visibility="gone"/>
+        <!-- Body Text -->
+        <TextView
+            android:id="@+id/tv_notification_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_event_name"
+            android:layout_toEndOf="@id/notification_indicator"
+            android:layout_marginTop="4dp"
+            android:text="Notification body text goes here"
+            android:textColor="#666666"
+            android:textSize="14sp" />
 
-            <!-- Body -->
-            <TextView
-                android:id="@+id/tv_notification_body"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Notification body text goes here"
-                android:textSize="14sp"
-                android:textColor="#666666"
-                android:layout_marginTop="8dp"/>
+        <!-- Time -->
+        <TextView
+            android:id="@+id/tv_notification_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tv_notification_body"
+            android:layout_toEndOf="@id/notification_indicator"
+            android:layout_marginTop="8dp"
+            android:text="Nov 05, 2025 at 2:30 PM"
+            android:textSize="12sp"
+            android:textColor="#999999"/>
 
-            <!-- Time -->
-            <TextView
-                android:id="@+id/tv_notification_time"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Nov 05, 2025 at 2:30 PM"
-                android:textSize="12sp"
-                android:textColor="#999999"
-                android:layout_marginTop="8dp"/>
+        <!-- Decline Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_decline"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_below="@id/tv_notification_time"
+            android:layout_toEndOf="@id/notification_indicator"
+            android:layout_marginTop="12dp"
+            android:text="Decline Invitation"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textAllCaps="false"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:visibility="gone"
+            app:backgroundTint="#F44336"
+            app:cornerRadius="20dp" />
 
-            <!-- Decline Button (US 01.05.03) -->
-            <Button
-                android:id="@+id/btn_decline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Decline Invitation"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#F44336"
-                android:layout_marginTop="12dp"
-                android:visibility="gone"/>
-
-        </LinearLayout>
-
-    </LinearLayout>
+    </RelativeLayout>
 
 </androidx.cardview.widget.CardView>
