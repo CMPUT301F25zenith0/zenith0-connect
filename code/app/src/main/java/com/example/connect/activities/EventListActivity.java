@@ -287,18 +287,22 @@ public class EventListActivity extends AppCompatActivity {
             filtered = dateFiltered;
         }
 
-        // Apply interest filter
+        // Apply interest filter (now compares with title and description)
         if (!selectedInterest.isEmpty()) {
             String lowerInterest = selectedInterest.toLowerCase();
             List<Event> interestFiltered = new java.util.ArrayList<>();
             for (Event event : filtered) {
-                if (event.getCategory() != null && 
-                    event.getCategory().toLowerCase().contains(lowerInterest)) {
+                String title = event.getName() != null ? event.getName().toLowerCase() : "";
+                String description = event.getDescription() != null ? event.getDescription().toLowerCase() : "";
+
+                // Match interest text with title OR description
+                if (title.contains(lowerInterest) || description.contains(lowerInterest)) {
                     interestFiltered.add(event);
                 }
             }
             filtered = interestFiltered;
         }
+
 
         // Apply location filter
         if (!selectedLocation.isEmpty()) {
