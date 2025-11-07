@@ -13,11 +13,17 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Activity for displaying detailed information about a specific event.
@@ -118,7 +124,6 @@ public class EventDetails extends AppCompatActivity {
         });
 
         // ------TO BE IMPLEMENTED-----
-        /*
         // Join waiting list button
         btnJoinList.setOnClickListener(v -> {
             joinWaitingList();
@@ -128,7 +133,7 @@ public class EventDetails extends AppCompatActivity {
         btnLeaveList.setOnClickListener(v -> {
             leaveWaitingList();
         });
-         */
+
     }
 
     /**
@@ -176,7 +181,7 @@ public class EventDetails extends AppCompatActivity {
                         // Display the details
                         displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow, waitingListText);
 
-                        // TODO: Load event image --> need to figure out where to store images Firestore cannot forr us
+                        // TODO: Load event image --> need to figure out where to store images Firestore cannot for us
                         // You can use Glide or Picasso to load images:
                         // String imageUrl = documentSnapshot.getString("imageUrl");
                         // Glide.with(this).load(imageUrl).into(eventImage);
@@ -272,51 +277,176 @@ public class EventDetails extends AppCompatActivity {
     }
 
     /**
-     * Adds the current user to the event's waiting list in Firestore.
+     * Adds the current (logged in) user to the event's waiting list in Firestore.
+     * Checks draw_capacity before adding to prevent exceeding the limit.
      * Updates the waiting list count and displays a success message.
      * <p>
-     * TODO: Implement full functionality including:
+     * - Verifying draw capacity hasn't been reached
      * - Adding user ID to waiting list collection
-     * - Incrementing waiting list count
      * - Handling errors and edge cases
      */
     private void joinWaitingList() {
         if (eventId == null) return;
 
-        // TODO: Implement join waiting list logic
-        // This should:
-        // 1. Add current user to the waiting list in Firestore
-        // 2. Update the waiting list count
-        // 3. Show success message
+        // Get current user ID from Firebase Auth
+        String userId = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
 
-        Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+        // Edge case should never occur --> If it does, it tells us there is a mix up in the database
+        if (userId == null) {
+            Toast.makeText(this, "Please sign in to join the waiting list", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // Reload event details to update count
-        loadEventDetails(eventId);
+        // Get the event's draw_capacity
+        db.collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(eventDoc -> {
+                    // Checks if the event actually exists --> edge case, if the user was able to open this detail page, the event exits
+                    if (!eventDoc.exists()) {
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Check if user is the organizer --> organizer cannot join their own event as a user
+                    String organizerId = eventDoc.getString("organizer_id");
+                    if (organizerId != null && organizerId.equals(userId)) {
+                        Toast.makeText(this, "Organizers cannot join their own event", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Get draw_capacity from event document
+                    Long drawCapacity = eventDoc.getLong("draw_capacity");
+                    if (drawCapacity == null) {
+                        Toast.makeText(this, "Draw capacity not set for this event", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Check the waiting list
+                    db.collection("waiting_lists")
+                            .document(eventId)
+                            .get()
+                            .addOnSuccessListener(documentSnapshot -> {
+                                // Checks if the waiting list entries exists
+                                if (documentSnapshot.exists()) {
+                                    // Get current entries
+                                    List<String> entries = (List<String>) documentSnapshot.get("entries");
+                                    // Get count of entrier directly from waiting list --> no use of outside counter
+                                    int currentSize = entries != null ? entries.size() : 0;
+
+                                    // Check if capacity is reached
+                                    if (currentSize >= drawCapacity) {
+                                        Toast.makeText(this, "Waiting list is full", Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+
+                                    // Check if user is already in the waiting list
+                                    if (entries != null && entries.contains(userId)) {
+                                        Toast.makeText(this, "You're already on the waiting list", Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+
+                                    // Event already has a waiting list, add user to entries
+                                    db.collection("waiting_lists")
+                                            .document(eventId)
+                                            .update("entries", FieldValue.arrayUnion(userId))
+                                            .addOnSuccessListener(aVoid -> {
+                                                Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+                                                loadEventDetails(eventId);
+                                            })
+                                            // Display the error message --> easier when doing UI testing
+                                            .addOnFailureListener(e -> {
+                                                Toast.makeText(this, "Error joining waiting list: " + e.getMessage(),
+                                                        Toast.LENGTH_SHORT).show();
+                                            });
+                                } else {
+                                    // Waitlist doesnt exist so create new waiting list document with this user as first entry
+                                    // First entry, no need to check capcaity
+                                    Map<String, Object> waitlistData = new HashMap<>();
+                                    List<String> entries = new ArrayList<>();
+                                    entries.add(userId);
+                                    waitlistData.put("entries", entries);
+
+                                    db.collection("waiting_lists")
+                                            .document(eventId)
+                                            .set(waitlistData)
+                                            .addOnSuccessListener(aVoid -> {
+                                                Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+                                                loadEventDetails(eventId);
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                Toast.makeText(this, "Error creating waiting list: " + e.getMessage(),
+                                                        Toast.LENGTH_SHORT).show();
+                                            });
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error accessing waiting list: " + e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error accessing event details: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
     }
+
 
     /**
      * Removes the current user from the event's waiting list in Firestore.
      * Updates the waiting list count and displays a success message.
      * <p>
-     * TODO: Implement full functionality including:
      * - Removing user ID from waiting list collection
-     * - Decrementing waiting list count
      * - Handling errors and edge cases
      */
     private void leaveWaitingList() {
         if (eventId == null) return;
 
-        // TODO: Implement leave waiting list logic
-        // This should:
-        // 1. Remove current user from the waiting list in Firestore
-        // 2. Update the waiting list count
-        // 3. Show success message
+        // Get current user ID from Firebase Auth
+        String userId = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
 
-        Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
+        // Edge Case --> shouldnt happen
+        if (userId == null) {
+            Toast.makeText(this, "Please sign in to leave the waiting list", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // Reload event details to update count
-        loadEventDetails(eventId);
+        // Reference to waiting list document for this event
+        db.collection("waiting_lists")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Get current entries
+                        List<String> entries = (List<String>) documentSnapshot.get("entries");
+
+                        // Check if user actually in the waiting list
+                        if (entries == null || !entries.contains(userId)) {
+                            Toast.makeText(this, "You're not on the waiting list", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        // Remove user from the waiting list
+                        db.collection("waiting_lists")
+                                .document(eventId)
+                                .update("entries", FieldValue.arrayRemove(userId))
+                                .addOnSuccessListener(aVoid -> {
+                                    Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
+                                    loadEventDetails(eventId);
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(this, "Error leaving waiting list: " + e.getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                });
+                    } else {
+                        // Waiting list doesn't exist
+                        Toast.makeText(this, "Waiting list does not exist", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error accessing waiting list: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
     }
 
 
