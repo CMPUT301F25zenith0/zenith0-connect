@@ -117,18 +117,7 @@ public class EventDetails extends AppCompatActivity {
             Toast.makeText(EventDetails.this, "Event Info: " + description, Toast.LENGTH_LONG).show();
         });
 
-        // ------TO BE IMPLEMENTED-----
-        /*
-        // Join waiting list button
-        btnJoinList.setOnClickListener(v -> {
-            joinWaitingList();
-        });
 
-        // Leave waiting list button
-        btnLeaveList.setOnClickListener(v -> {
-            leaveWaitingList();
-        });
-         */
     }
 
     /**

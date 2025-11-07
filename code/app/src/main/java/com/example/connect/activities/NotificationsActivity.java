@@ -346,7 +346,7 @@ public class NotificationsActivity extends AppCompatActivity {
         return null;
     }
 
-    // ============== Data Class ==============
+
 
     /**
      * Data class for notification items
@@ -376,7 +376,7 @@ public class NotificationsActivity extends AppCompatActivity {
         }
     }
 
-    // ============== RecyclerView Adapter ==============
+
 
     /**
      * RecyclerView Adapter for displaying notifications

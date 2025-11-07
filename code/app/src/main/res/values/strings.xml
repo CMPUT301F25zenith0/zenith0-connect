@@ -33,6 +33,14 @@
     <string name="action_manage_draw">Manage Draw</string>
     <string name="action_export_csv">Export As CSV</string>
 
-
+    <string name="filter_interest">Interest</string>
+    <string name="filter_date">Date</string>
+    <string name="filter_location">Location</string>
+    <string name="search_events_hint">Search events</string>
+    <string name="events_empty">No events found</string>
+    <string name="events_error_generic">Error loading events</string>
+    <string name="menu">Menu</string>
+    <string name="profile">Profile</string>
+    <string name="back">Back</string>
 
 </resources>

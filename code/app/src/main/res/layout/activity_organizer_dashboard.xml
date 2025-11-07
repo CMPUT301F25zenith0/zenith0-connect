@@ -26,20 +26,6 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnUserView"
-        android:layout_width="wrap_content"
-        android:layout_height="48dp"
-        android:text="User View"
-        android:textColor="#FFFFFF"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:layout_marginEnd="8dp"
-        android:backgroundTint="#8FAF8F"
-        app:cornerRadius="8dp"
-        app:layout_constraintBaseline_toBaselineOf="@id/tvDashboardTitle"
-        app:layout_constraintEnd_toStartOf="@id/btnNewEvent"/>
-
-    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnNewEvent"
         android:layout_width="wrap_content"
         android:layout_height="48dp"
