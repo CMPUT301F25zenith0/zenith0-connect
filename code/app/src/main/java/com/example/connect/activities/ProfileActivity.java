@@ -21,6 +21,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.EmailAuthProvider;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -254,7 +256,13 @@ public class ProfileActivity extends AppCompatActivity {
         Map<String, Object> updates = new HashMap<>();
         updates.put("full_name", name);
         updates.put("email", email);
-        updates.put("mobile_num", phone);
+        // Only add mobile_num if provided (phone number is optional)
+        if (!TextUtils.isEmpty(phone)) {
+            updates.put("mobile_num", phone);
+        } else {
+            // If phone is empty, set it to null or remove the field
+            updates.put("mobile_num", null);
+        }
         updates.put("updated_at", System.currentTimeMillis());
 
         // Update Firestore
@@ -317,50 +325,293 @@ public class ProfileActivity extends AppCompatActivity {
 
     /**
      * Delete user profile from Firestore and Firebase Auth account.
+     * Handles re-authentication if required by Firebase.
      */
     private void deleteProfile() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (user != null) {
-            String userId = user.getUid();
-
-            // First, delete the Firestore document
-            FirebaseFirestore.getInstance()
-                    .collection("accounts")
-                    .document(userId)
-                    .delete()
-                    .addOnSuccessListener(aVoid -> {
-                        // After Firestore deletion succeeds, delete the Firebase Auth account
-                        user.delete()
-                                .addOnSuccessListener(aVoid2 -> {
-                                    // Clear "Remember Me" preference
-                                    SharedPreferences sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-                                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                                    editor.putBoolean("rememberMe", false);
-                                    editor.remove("email");
-                                    editor.remove("password");
-                                    editor.apply();
-
-                                    Toast.makeText(this, "Account deleted successfully", Toast.LENGTH_SHORT).show();
-
-                                    // Navigate to login screen
-                                    Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
-                                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                                    startActivity(intent);
-                                    finish();
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(this, "Failed to delete account: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                });
-                    })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(this, "Failed to delete user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+        if (currentUser == null) {
+            Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();
+            return;
         }
+
+        // Store userId before any deletion (important!)
+        final String userIdToDelete = userId;
+        if (userIdToDelete == null || userIdToDelete.isEmpty()) {
+            Toast.makeText(this, "Error: User ID not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Disable delete button to prevent multiple clicks
+        btnDelete.setEnabled(false);
+        btnDelete.setText("Deleting...");
+
+        // Delete Firestore FIRST, then Auth account
+        // This ensures we have the userId available
+        deleteFirestoreDocument(userIdToDelete, () -> {
+            // After Firestore is deleted, delete Auth account
+            deleteAuthAccount();
+        });
+    }
+
+    /**
+     * Delete Firebase Auth account. If re-authentication is required, prompt for password.
+     */
+    private void deleteAuthAccount() {
+        if (currentUser == null) {
+            Log.e("ProfileActivity", "Current user is null");
+            btnDelete.setEnabled(true);
+            btnDelete.setText("Delete Profile");
+            return;
+        }
+
+        // Try to delete the Auth account directly
+        currentUser.delete()
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            // Auth account deleted successfully
+                            Log.d("ProfileActivity", "Firebase Auth account deleted successfully");
+                            // Firestore should already be deleted, just clean up
+                            cleanupAndNavigate();
+                        } else {
+                            Exception exception = task.getException();
+                            String errorMsg = exception != null ? exception.getMessage() : "Unknown error";
+                            Log.e("ProfileActivity", "Error deleting Auth account: " + errorMsg, exception);
+
+                            // Check if re-authentication is required
+                            if (errorMsg != null && errorMsg.contains("requires recent authentication")) {
+                                // Prompt user to re-authenticate
+                                promptReAuthentication();
+                            } else {
+                                // Other error - Firestore should already be deleted, just clean up
+                                Log.w("ProfileActivity", "Auth deletion failed: " + errorMsg);
+                                Toast.makeText(ProfileActivity.this,
+                                        "Auth deletion failed: " + errorMsg + ". Profile data may still be deleted.",
+                                        Toast.LENGTH_LONG).show();
+                                cleanupAndNavigate();
+                            }
+                        }
+                    }
+                });
+    }
+
+    /**
+     * Prompt user to enter password for re-authentication.
+     */
+    private void promptReAuthentication() {
+        // Create a dialog to get password
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Re-authentication Required");
+        builder.setMessage("Please enter your password to confirm account deletion:");
+
+        // Create password input field
+        final EditText passwordInput = new EditText(this);
+        passwordInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        passwordInput.setHint("Password");
+        passwordInput.setPadding(50, 20, 50, 20);
+        builder.setView(passwordInput);
+
+        builder.setPositiveButton("Confirm", (dialog, which) -> {
+            String password = passwordInput.getText().toString().trim();
+            if (password.isEmpty()) {
+                Toast.makeText(this, "Password cannot be empty", Toast.LENGTH_SHORT).show();
+                btnDelete.setEnabled(true);
+                btnDelete.setText("Delete Profile");
+                return;
+            }
+            // Re-authenticate with password
+            reAuthenticateAndDelete(password);
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> {
+            btnDelete.setEnabled(true);
+            btnDelete.setText("Delete Profile");
+            dialog.dismiss();
+        });
+
+        builder.setOnCancelListener(dialog -> {
+            btnDelete.setEnabled(true);
+            btnDelete.setText("Delete Profile");
+        });
+
+        builder.show();
+    }
+
+    /**
+     * Re-authenticate user with password, then delete Auth account.
+     */
+    private void reAuthenticateAndDelete(String password) {
+        if (currentUser == null || currentUser.getEmail() == null) {
+            Toast.makeText(this, "Unable to re-authenticate: user email not found", Toast.LENGTH_SHORT).show();
+            btnDelete.setEnabled(true);
+            btnDelete.setText("Delete Profile");
+            return;
+        }
+
+        // Create credential with email and password
+        AuthCredential credential = EmailAuthProvider.getCredential(currentUser.getEmail(), password);
+
+        // Re-authenticate
+        currentUser.reauthenticate(credential)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Log.d("ProfileActivity", "Re-authentication successful, deleting Auth account");
+                            // Now try deleting Auth account again
+                            deleteAuthAccountAfterReAuth();
+                        } else {
+                            Exception exception = task.getException();
+                            String errorMsg = exception != null ? exception.getMessage() : "Unknown error";
+                            Log.e("ProfileActivity", "Re-authentication failed: " + errorMsg, exception);
+                            btnDelete.setEnabled(true);
+                            btnDelete.setText("Delete Profile");
+                            Toast.makeText(ProfileActivity.this,
+                                    "Re-authentication failed: " + (errorMsg.contains("password") ? "Incorrect password" : errorMsg),
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+    }
+
+    /**
+     * Delete Auth account after successful re-authentication.
+     */
+    private void deleteAuthAccountAfterReAuth() {
+        if (currentUser == null) {
+            Log.e("ProfileActivity", "Current user is null after re-auth");
+            btnDelete.setEnabled(true);
+            btnDelete.setText("Delete Profile");
+            return;
+        }
+
+        currentUser.delete()
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Log.d("ProfileActivity", "Firebase Auth account deleted successfully after re-auth");
+                            // Firestore should already be deleted, just clean up
+                            cleanupAndNavigate();
+                        } else {
+                            Exception exception = task.getException();
+                            String errorMsg = exception != null ? exception.getMessage() : "Unknown error";
+                            Log.e("ProfileActivity", "Auth deletion failed after re-auth: " + errorMsg, exception);
+                            btnDelete.setEnabled(true);
+                            btnDelete.setText("Delete Profile");
+                            Toast.makeText(ProfileActivity.this,
+                                    "Failed to delete account: " + errorMsg,
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+    }
+
+    /**
+     * Delete Firestore document with callback.
+     * @param userIdToDelete The user ID to delete
+     * @param onComplete Callback to execute after Firestore deletion
+     */
+    private void deleteFirestoreDocument(String userIdToDelete, Runnable onComplete) {
+        Log.d("ProfileActivity", "Attempting to delete Firestore document for userId: " + userIdToDelete);
+        Log.d("ProfileActivity", "Collection path: accounts/" + userIdToDelete);
+        
+        // First check if document exists (optional, but helps with debugging)
+        db.collection("accounts").document(userIdToDelete)
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<com.google.firebase.firestore.DocumentSnapshot>() {
+                    @Override
+                    public void onComplete(Task<com.google.firebase.firestore.DocumentSnapshot> getTask) {
+                        if (getTask.isSuccessful()) {
+                            com.google.firebase.firestore.DocumentSnapshot doc = getTask.getResult();
+                            if (doc != null && doc.exists()) {
+                                Log.d("ProfileActivity", "Document exists, proceeding with deletion");
+                            } else {
+                                Log.w("ProfileActivity", "Document does not exist in Firestore for userId: " + userIdToDelete);
+                            }
+                        }
+                        
+                        // Proceed with deletion regardless
+                        performFirestoreDeletion(userIdToDelete, onComplete);
+                    }
+                });
+    }
+    
+    /**
+     * Perform the actual Firestore deletion.
+     */
+    private void performFirestoreDeletion(String userIdToDelete, Runnable onComplete) {
+        db.collection("accounts").document(userIdToDelete)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("ProfileActivity", "✅ Firestore document deleted successfully for userId: " + userIdToDelete);
+                    runOnUiThread(() -> {
+                        // Show success message (optional)
+                        Log.d("ProfileActivity", "Firestore deletion completed successfully");
+                    });
+                    
+                    // Execute callback (which will delete Auth account)
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    String errorMsg = e != null ? e.getMessage() : "Unknown error";
+                    Log.e("ProfileActivity", "❌ Error deleting Firestore document for userId: " + userIdToDelete, e);
+                    Log.e("ProfileActivity", "Error type: " + (e != null ? e.getClass().getName() : "null"));
+                    Log.e("ProfileActivity", "Error message: " + errorMsg);
+                    
+                    // Check for permission errors
+                    if (errorMsg != null && errorMsg.contains("PERMISSION_DENIED")) {
+                        Log.e("ProfileActivity", "⚠️ PERMISSION DENIED - Check Firestore security rules!");
+                        runOnUiThread(() -> {
+                            Toast.makeText(ProfileActivity.this,
+                                    "Permission denied. Check Firestore security rules allow delete on accounts/{userId}",
+                                    Toast.LENGTH_LONG).show();
+                        });
+                    } else {
+                        runOnUiThread(() -> {
+                            Toast.makeText(ProfileActivity.this,
+                                    "Error deleting profile data: " + errorMsg,
+                                    Toast.LENGTH_LONG).show();
+                        });
+                    }
+                    
+                    // Still execute callback even if Firestore deletion fails
+                    // (Auth deletion might still work)
+                    if (onComplete != null) {
+                        onComplete.run();
+                    }
+                });
+    }
+
+    /**
+     * Clean up preferences and navigate to main screen (login and create account options).
+     */
+    private void cleanupAndNavigate() {
+        // Clear "Remember Me" preference
+        SharedPreferences sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean("rememberMe", false);
+        editor.remove("email");
+        editor.remove("password");
+        editor.apply();
+
+        // Sign out from Firebase (if not already signed out)
+        mAuth.signOut();
+
+        Toast.makeText(ProfileActivity.this, "Account deleted successfully", Toast.LENGTH_SHORT).show();
+
+        // Navigate to MainActivity (shows both Login and Create Account options)
+        Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 
     /**
      * Validate user input fields.
+     * Phone number is optional, but if provided, it must be valid.
      */
     private boolean validateInputs(String name, String email, String phone) {
         if (TextUtils.isEmpty(name)) {
@@ -381,14 +632,9 @@ public class ProfileActivity extends AppCompatActivity {
             return false;
         }
 
-        if (TextUtils.isEmpty(phone)) {
-            etPhone.setError("Phone number is required");
-            etPhone.requestFocus();
-            return false;
-        }
-
-        if (phone.length() < 10) {
-            etPhone.setError("Please enter a valid phone number");
+        // Phone number is optional, but if provided, validate it
+        if (!TextUtils.isEmpty(phone) && phone.length() < 10) {
+            etPhone.setError("Please enter a valid phone number (at least 10 digits)");
             etPhone.requestFocus();
             return false;
         }

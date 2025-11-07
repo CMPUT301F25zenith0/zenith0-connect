@@ -209,7 +209,10 @@ public class CreateAcctActivity extends AppCompatActivity {
         user.put("full_name", fullName);
         user.put("display_name", displayName);
         user.put("email", email);
-        user.put("mobile_num", mobileNumber);
+        // Only add mobile_num if provided (phone number is optional)
+        if (!TextUtils.isEmpty(mobileNumber)) {
+            user.put("mobile_num", mobileNumber);
+        }
         user.put("created_at", System.currentTimeMillis());
 
         // Use Firebase Auth UID as document ID
@@ -316,16 +319,9 @@ public class CreateAcctActivity extends AppCompatActivity {
             return false;
         }
 
-        // Check if mobile number is empty
-        if (TextUtils.isEmpty(mobileNumber)) {
-            etMobileNumber.setError("Mobile number is required");
-            etMobileNumber.requestFocus();
-            return false;
-        }
-
-        // Check mobile number length (basic validation)
-        if (mobileNumber.length() < 10) {
-            etMobileNumber.setError("Please enter a valid mobile number");
+        // Phone number is optional, but if provided, validate it
+        if (!TextUtils.isEmpty(mobileNumber) && mobileNumber.length() < 10) {
+            etMobileNumber.setError("Please enter a valid mobile number (at least 10 digits)");
             etMobileNumber.requestFocus();
             return false;
         }
