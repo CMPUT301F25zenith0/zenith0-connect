@@ -73,7 +73,7 @@ This page outlines the individual contributions made by each team member and lin
 | Document | Description |
 |-----------|-------------|
 | [📝 Meetings ](meetings.md) | Regular meetings to go over project details, and update status |
-| [🧾 Development Log] | Summary of daily or weekly progress |
+| [🧾 Development Log](https://github.com/CMPUT301F25zenith0/zenith0-connect/tree/main) | Github Development Logs |
 | [📊 Presentation & Report Materials] | Slides, summary reports, and presentation details |
 
 ---
