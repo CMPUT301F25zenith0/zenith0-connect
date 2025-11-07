@@ -5,37 +5,33 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.View;
-import android.widget.ImageButton;
-import android.widget.ProgressBar;
-import android.widget.TextView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.connect.R;
-import com.example.connect.adapters.EventListAdapter;
+import com.example.connect.adapters.EventAdapter;
 import com.example.connect.models.Event;
 import com.example.connect.network.EventRepository;
-import com.google.android.material.chip.Chip;
-import com.google.android.material.textfield.TextInputEditText;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
 public class EventListActivity extends AppCompatActivity {
 
-    private RecyclerView recycler;
-    private View progress;
-    private TextView empty;
-    private TextInputEditText searchEditText;
-    private ImageButton btnMenu, btnProfile;
-    private Chip chipInterest, chipDate, chipLocation, chipClearFilters;
+    private Button scanBtn, profileBtn, homeBtn, myEventsBtn, notificationBtn;
+    private Button interestFilterBtn, dateFilterBtn, locationFilterBtn, clearFiltersBtn;
+    private EditText searchBar;
+    private ListView eventsListView;
 
-    private EventListAdapter adapter;
-    private final EventRepository repo = new EventRepository();
+    private EventAdapter eventAdapter;
+    private List<Event> eventList;
+    private List<Event> allEventsList; // Store all events for client-side filtering
+    private EventRepository eventRepository;
 
     // Filter state variables
     private String selectedDate = "";
@@ -46,323 +42,361 @@ public class EventListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_event_list);
+        setContentView(R.layout.event_list);
 
-        recycler = findViewById(R.id.events_recycler);
-        progress = findViewById(R.id.events_progress);
-        empty = findViewById(R.id.events_empty);
-        searchEditText = findViewById(R.id.search_edit_text);
-        btnMenu = findViewById(R.id.btn_menu);
-        btnProfile = findViewById(R.id.btn_profile);
-        chipInterest = findViewById(R.id.chip_interest);
-        chipDate = findViewById(R.id.chip_date);
-        chipLocation = findViewById(R.id.chip_location);
-        chipClearFilters = findViewById(R.id.chip_clear_filters);
-
-        if (recycler == null) {
-            Log.e("EventListActivity", "RecyclerView not found!");
-            finish();
-            return;
-        }
-
-        recycler.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new EventListAdapter(new EventListAdapter.Listener() {
-            @Override public void onDetails(Event e) {
-                Intent intent = new Intent(EventListActivity.this, EventDetails.class);
-                intent.putExtra("EVENT_ID", e.getEventId());
-                startActivity(intent);
-            }
-            @Override public void onJoin(Event e) {
-                Toast.makeText(EventListActivity.this, "Join waitlist functionality coming soon", Toast.LENGTH_SHORT).show();
-            }
-        });
-        recycler.setAdapter(adapter);
-
+        initViews();
+        setupAdapter();
         setupClickListeners();
-        loadJoinable();
+        loadEvents();
+    }
+
+    private void initViews() {
+        // Initialize navigation buttons
+        homeBtn = findViewById(R.id.home_btn);
+        myEventsBtn = findViewById(R.id.myevents_btn);
+        scanBtn = findViewById(R.id.scan_btn);
+        profileBtn = findViewById(R.id.profile_btn);
+        notificationBtn = findViewById(R.id.notificaton_btn);
+
+        // Initialize filter buttons
+        interestFilterBtn = findViewById(R.id.interest_filter_btn);
+        dateFilterBtn = findViewById(R.id.date_filter_btn);
+        locationFilterBtn = findViewById(R.id.location_filter_btn);
+        clearFiltersBtn = findViewById(R.id.clear_filters_btn);
+
+        // Initialize search bar and list view
+        searchBar = findViewById(R.id.search_Bar);
+        eventsListView = findViewById(R.id.events_ListView);
+
+        // Initialize repository
+        eventRepository = new EventRepository();
+    }
+
+    private void setupAdapter() {
+        eventList = new ArrayList<>();
+        allEventsList = new ArrayList<>(); // Initialize list to store all events
+        eventAdapter = new EventAdapter(this, eventList);
+        eventsListView.setAdapter(eventAdapter);
     }
 
     private void setupClickListeners() {
-        // Menu button
-        if (btnMenu != null) {
-            btnMenu.setOnClickListener(v -> {
-                Log.d("EventListActivity", "Menu button clicked");
-            });
-        }
+        // Navigation buttons
+        scanBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(EventListActivity.this, QRCodeScanner.class);
+            startActivity(intent);
+        });
 
-        // Profile button
-        if (btnProfile != null) {
-            btnProfile.setOnClickListener(v -> {
-                Intent profileIntent = new Intent(EventListActivity.this, ProfileActivity.class);
-                startActivity(profileIntent);
-            });
-        }
+        myEventsBtn.setOnClickListener(v -> {
+            // TODO - Navigate to my events page
+            Toast.makeText(this, "My Events - Coming Soon", Toast.LENGTH_SHORT).show();
+        });
 
-        // Search filter
-        if (searchEditText != null) {
-            searchEditText.addTextChangedListener(new TextWatcher() {
-                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-                @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    currentSearchQuery = s.toString().trim();
+        profileBtn.setOnClickListener(v -> {
+            Intent profileIntent = new Intent(EventListActivity.this, ProfileActivity.class);
+            startActivity(profileIntent);
+        });
+
+        notificationBtn.setOnClickListener(v -> {
+            // aalpesh added code here for entrant
+            Intent notifIntent = new Intent(EventListActivity.this, NotificationsActivity.class);
+            startActivity(notifIntent);
+        });
+
+        // Search functionality - client-side filtering
+        searchBar.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                currentSearchQuery = s.toString().trim();
+                applyAllFilters();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+        // Date filter button - opens DatePickerDialog
+        dateFilterBtn.setOnClickListener(v -> {
+            Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+            android.app.DatePickerDialog picker = new android.app.DatePickerDialog(
+                    EventListActivity.this,
+                    (view, selectedYear, selectedMonth, selectedDay) -> {
+                        // Format date as yyyy-MM-dd
+                        String formattedDate = String.format("%04d-%02d-%02d", 
+                                selectedYear, selectedMonth + 1, selectedDay);
+                        selectedDate = formattedDate;
+                        
+                        // Update button text to show selected date
+                        dateFilterBtn.setText("Date: " + formattedDate);
+                        
+                        // Apply filters
+                        applyAllFilters();
+                    },
+                    year, month, day
+            );
+            picker.show();
+        });
+
+        // Long press on date filter to clear
+        dateFilterBtn.setOnLongClickListener(v -> {
+            selectedDate = "";
+            dateFilterBtn.setText("Date");
+            applyAllFilters();
+            return true;
+        });
+
+        // Interest filter button - opens dialog for user input
+        interestFilterBtn.setOnClickListener(v -> {
+            final EditText input = new EditText(EventListActivity.this);
+            input.setHint("Enter an interest (e.g., Music, Tech, Sports)");
+
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(EventListActivity.this);
+            builder.setTitle("Filter by Interest");
+            builder.setView(input);
+
+            builder.setPositiveButton("Apply", (dialog, which) -> {
+                String userInterest = input.getText().toString().trim();
+                if (!userInterest.isEmpty()) {
+                    selectedInterest = userInterest;
+                    interestFilterBtn.setText("Interest: " + userInterest);
                     applyAllFilters();
+                } else {
+                    Toast.makeText(EventListActivity.this, "Please enter an interest", Toast.LENGTH_SHORT).show();
                 }
-                @Override public void afterTextChanged(Editable s) {}
             });
 
-            searchEditText.setOnEditorActionListener((v, actionId, event) -> {
-                android.view.inputmethod.InputMethodManager imm =
-                        (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
-                if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-                return true;
-            });
-        }
+            builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+            builder.show();
+        });
 
-        // Date filter chip
-        if (chipDate != null) {
-            chipDate.setOnClickListener(v -> {
-                Calendar calendar = Calendar.getInstance();
-                int year = calendar.get(Calendar.YEAR);
-                int month = calendar.get(Calendar.MONTH);
-                int day = calendar.get(Calendar.DAY_OF_MONTH);
+        // Long press on interest filter to clear
+        interestFilterBtn.setOnLongClickListener(v -> {
+            selectedInterest = "";
+            interestFilterBtn.setText("Interest");
+            applyAllFilters();
+            return true;
+        });
 
-                android.app.DatePickerDialog picker = new android.app.DatePickerDialog(
-                        EventListActivity.this,
-                        (view, selectedYear, selectedMonth, selectedDay) -> {
-                            String selectedDateStr = String.format("%04d-%02d-%02d", 
-                                    selectedYear, selectedMonth + 1, selectedDay);
-                            selectedDate = selectedDateStr;
-                            chipDate.setText(selectedDateStr);
-                            chipDate.setChecked(true);
-                            applyAllFilters();
-                        },
-                        year, month, day
-                );
-                picker.show();
-            });
+        // Location filter button - opens dialog for user input
+        locationFilterBtn.setOnClickListener(v -> {
+            final EditText input = new EditText(EventListActivity.this);
+            input.setHint("Enter a location");
 
-            chipDate.setOnLongClickListener(v -> {
-                selectedDate = "";
-                chipDate.setText("Date");
-                chipDate.setChecked(false);
-                applyAllFilters();
-                return true;
-            });
-        }
+            android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(EventListActivity.this);
+            builder.setTitle("Filter by Location");
+            builder.setView(input);
 
-        // Interest filter chip
-        if (chipInterest != null) {
-            chipInterest.setOnClickListener(v -> {
-                final android.widget.EditText input = new android.widget.EditText(EventListActivity.this);
-                input.setHint("Enter an interest (e.g., Music, Tech, Sports)");
-
-                android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(EventListActivity.this);
-                builder.setTitle("Filter by Interest");
-                builder.setView(input);
-
-                builder.setPositiveButton("Apply", (dialog, which) -> {
-                    String userInterest = input.getText().toString().trim();
-                    if (!userInterest.isEmpty()) {
-                        selectedInterest = userInterest;
-                        chipInterest.setText(userInterest);
-                        chipInterest.setChecked(true);
-                        applyAllFilters();
-                    } else {
-                        Toast.makeText(EventListActivity.this, "Please enter an interest", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-                builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
-                builder.show();
+            builder.setPositiveButton("Apply", (dialog, which) -> {
+                String userLocation = input.getText().toString().trim();
+                if (!userLocation.isEmpty()) {
+                    selectedLocation = userLocation;
+                    locationFilterBtn.setText("Location: " + userLocation);
+                    applyAllFilters();
+                } else {
+                    Toast.makeText(EventListActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
+                }
             });
 
-            chipInterest.setOnLongClickListener(v -> {
-                selectedInterest = "";
-                chipInterest.setText("Interest");
-                chipInterest.setChecked(false);
-                applyAllFilters();
-                return true;
-            });
-        }
+            builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
+            builder.show();
+        });
 
-        // Location filter chip
-        if (chipLocation != null) {
-            chipLocation.setOnClickListener(v -> {
-                final android.widget.EditText input = new android.widget.EditText(EventListActivity.this);
-                input.setHint("Enter a location");
+        // Long press on location filter to clear
+        locationFilterBtn.setOnLongClickListener(v -> {
+            selectedLocation = "";
+            locationFilterBtn.setText("Location");
+            applyAllFilters();
+            return true;
+        });
 
-                android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(EventListActivity.this);
-                builder.setTitle("Filter by Location");
-                builder.setView(input);
-
-                builder.setPositiveButton("Apply", (dialog, which) -> {
-                    String userLocation = input.getText().toString().trim();
-                    if (!userLocation.isEmpty()) {
-                        selectedLocation = userLocation;
-                        chipLocation.setText(userLocation);
-                        chipLocation.setChecked(true);
-                        applyAllFilters();
-                    } else {
-                        Toast.makeText(EventListActivity.this, "Please enter a location", Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-                builder.setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss());
-                builder.show();
-            });
-
-            chipLocation.setOnLongClickListener(v -> {
-                selectedLocation = "";
-                chipLocation.setText("Location");
-                chipLocation.setChecked(false);
-                applyAllFilters();
-                return true;
-            });
-        }
-
-        // Clear filters chip
-        if (chipClearFilters != null) {
-            chipClearFilters.setOnClickListener(v -> {
+        // Clear all filters button
+        if (clearFiltersBtn != null) {
+            clearFiltersBtn.setOnClickListener(v -> {
                 clearAllFilters();
             });
         }
+
+        // Long press home button to clear all filters
+        homeBtn.setOnLongClickListener(v -> {
+            clearAllFilters();
+            return true;
+        });
     }
 
-    private void loadJoinable() {
-        if (progress != null) progress.setVisibility(View.VISIBLE);
-        if (empty != null) empty.setVisibility(View.GONE);
-
-        repo.getAllEvents(new EventRepository.EventCallback() {
+    private void loadEvents() {
+        eventRepository.getAllEvents(new EventRepository.EventCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                runOnUiThread(() -> {
-                    if (progress != null) progress.setVisibility(View.GONE);
-                    if (adapter != null) adapter.submit(events);
-                    if (empty != null) empty.setVisibility(events == null || events.isEmpty() ? View.VISIBLE : View.GONE);
-                    applyAllFilters();
-                });
+                Log.d("EventListActivity", "Loaded " + events.size() + " events");
+
+                // Store all events for filtering
+                allEventsList.clear();
+                allEventsList.addAll(events);
+                
+                // Apply all active filters
+                applyAllFilters();
+
+                if (events.isEmpty()) {
+                    Toast.makeText(EventListActivity.this, "No events found", Toast.LENGTH_SHORT).show();
+                } else {
+                    Log.d("EventListActivity", "Loaded " + events.size() + " events");
+                }
             }
 
             @Override
             public void onFailure(Exception e) {
-                runOnUiThread(() -> {
-                    if (progress != null) progress.setVisibility(View.GONE);
-                    if (empty != null) {
-                        String errorMsg = getString(R.string.events_error_generic);
-                        if (e != null && e.getMessage() != null) errorMsg += "\n" + e.getMessage();
-                        empty.setText(errorMsg);
-                        empty.setVisibility(View.VISIBLE);
-                    }
-                    Log.e("EventsRepo", "Failed to load events", e);
-                });
+                Log.e("EventListActivity", "Error loading events", e);
+                Toast.makeText(EventListActivity.this,
+                        "Error loading events: " + e.getMessage(),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void applyAllFilters() {
-        if (adapter == null) return;
-
+        if (eventList == null || eventAdapter == null) return;
+        
+        eventList.clear();
+        
         // Start with all events
-        List<Event> filtered = adapter.getAllEvents();
-
+        List<Event> filteredEvents = new ArrayList<>(allEventsList);
+        
         // Apply search filter
         if (!currentSearchQuery.isEmpty()) {
-            String lowerQuery = currentSearchQuery.toLowerCase();
-            List<Event> searchFiltered = new java.util.ArrayList<>();
-            for (Event event : filtered) {
-                if (matchesSearch(event, lowerQuery)) {
-                    searchFiltered.add(event);
-                }
-            }
-            filtered = searchFiltered;
+            filteredEvents = filterBySearch(filteredEvents, currentSearchQuery);
         }
-
+        
         // Apply date filter
         if (!selectedDate.isEmpty()) {
-            List<Event> dateFiltered = new java.util.ArrayList<>();
-            for (Event event : filtered) {
-                if (event.getDateTime() != null && event.getDateTime().contains(selectedDate)) {
-                    dateFiltered.add(event);
-                }
-            }
-            filtered = dateFiltered;
+            filteredEvents = filterByDate(filteredEvents, selectedDate);
         }
-
-        // Apply interest filter (now compares with title and description)
+        
+        // Apply interest/category filter
         if (!selectedInterest.isEmpty()) {
-            String lowerInterest = selectedInterest.toLowerCase();
-            List<Event> interestFiltered = new java.util.ArrayList<>();
-            for (Event event : filtered) {
-                String title = event.getName() != null ? event.getName().toLowerCase() : "";
-                String description = event.getDescription() != null ? event.getDescription().toLowerCase() : "";
-
-                // Match interest text with title OR description
-                if (title.contains(lowerInterest) || description.contains(lowerInterest)) {
-                    interestFiltered.add(event);
-                }
-            }
-            filtered = interestFiltered;
+            filteredEvents = filterByInterest(filteredEvents, selectedInterest);
         }
-
-
+        
         // Apply location filter
         if (!selectedLocation.isEmpty()) {
-            String lowerLocation = selectedLocation.toLowerCase();
-            List<Event> locationFiltered = new java.util.ArrayList<>();
-            for (Event event : filtered) {
-                if (event.getLocation() != null && 
-                    event.getLocation().toLowerCase().contains(lowerLocation)) {
-                    locationFiltered.add(event);
-                }
-            }
-            filtered = locationFiltered;
+            filteredEvents = filterByLocation(filteredEvents, selectedLocation);
         }
-
-        // Update adapter with filtered results
-        adapter.submitList(filtered);
+        
+        // Update the displayed list
+        eventList.addAll(filteredEvents);
+        eventAdapter.notifyDataSetChanged();
+        
+        Log.d("EventListActivity", "Filtered to " + eventList.size() + " events. " +
+                "Search: \"" + currentSearchQuery + "\", Date: \"" + selectedDate + 
+                "\", Interest: \"" + selectedInterest + "\", Location: \"" + selectedLocation + "\"");
     }
-
-    private boolean matchesSearch(Event event, String query) {
-        return (event.getName() != null && event.getName().toLowerCase().contains(query)) ||
-               (event.getLocation() != null && event.getLocation().toLowerCase().contains(query)) ||
-               (event.getCategory() != null && event.getCategory().toLowerCase().contains(query)) ||
-               (event.getDescription() != null && event.getDescription().toLowerCase().contains(query));
+    
+    private List<Event> filterBySearch(List<Event> events, String query) {
+        List<Event> filtered = new ArrayList<>();
+        String lowerQuery = query.toLowerCase();
+        
+        for (Event event : events) {
+            boolean matchesName = event.getName() != null && 
+                event.getName().toLowerCase().contains(lowerQuery);
+            
+            boolean matchesLocation = event.getLocation() != null && 
+                event.getLocation().toLowerCase().contains(lowerQuery);
+            
+            boolean matchesCategory = event.getCategory() != null && 
+                event.getCategory().toLowerCase().contains(lowerQuery);
+            
+            boolean matchesDescription = event.getDescription() != null && 
+                event.getDescription().toLowerCase().contains(lowerQuery);
+            
+            if (matchesName || matchesLocation || matchesCategory || matchesDescription) {
+                filtered.add(event);
+            }
+        }
+        
+        return filtered;
     }
-
+    
+    private List<Event> filterByDate(List<Event> events, String date) {
+        List<Event> filtered = new ArrayList<>();
+        
+        for (Event event : events) {
+            if (event.getDateTime() != null && event.getDateTime().contains(date)) {
+                filtered.add(event);
+            }
+        }
+        
+        return filtered;
+    }
+    
+    private List<Event> filterByInterest(List<Event> events, String interest) {
+        List<Event> filtered = new ArrayList<>();
+        String lowerInterest = interest.toLowerCase();
+        
+        for (Event event : events) {
+            if (event.getCategory() != null && 
+                event.getCategory().toLowerCase().contains(lowerInterest)) {
+                filtered.add(event);
+            }
+        }
+        
+        return filtered;
+    }
+    
+    private List<Event> filterByLocation(List<Event> events, String location) {
+        List<Event> filtered = new ArrayList<>();
+        String lowerLocation = location.toLowerCase();
+        
+        for (Event event : events) {
+            if (event.getLocation() != null && 
+                event.getLocation().toLowerCase().contains(lowerLocation)) {
+                filtered.add(event);
+            }
+        }
+        
+        return filtered;
+    }
+    
     private void clearAllFilters() {
-        if (searchEditText != null) {
-            searchEditText.setText("");
+        // Clear search
+        if (searchBar != null) {
+            searchBar.setText("");
         }
         currentSearchQuery = "";
-
+        
+        // Clear date filter
         selectedDate = "";
-        if (chipDate != null) {
-            chipDate.setText("Date");
-            chipDate.setChecked(false);
+        if (dateFilterBtn != null) {
+            dateFilterBtn.setText("Date");
         }
-
+        
+        // Clear interest filter
         selectedInterest = "";
-        if (chipInterest != null) {
-            chipInterest.setText("Interest");
-            chipInterest.setChecked(false);
+        if (interestFilterBtn != null) {
+            interestFilterBtn.setText("Interest");
         }
-
+        
+        // Clear location filter
         selectedLocation = "";
-        if (chipLocation != null) {
-            chipLocation.setText("Location");
-            chipLocation.setChecked(false);
+        if (locationFilterBtn != null) {
+            locationFilterBtn.setText("Location");
         }
-
-        if (adapter != null) {
-            adapter.clearFilters();
-        }
-
+        
+        // Apply filters (will show all events now)
+        applyAllFilters();
+        
         Toast.makeText(this, "All filters cleared", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadJoinable();
+        // Refresh events when returning to this activity
+        loadEvents();
     }
 
 
