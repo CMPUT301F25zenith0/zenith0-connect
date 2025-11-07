@@ -91,7 +91,11 @@ public class OrganizerActivity extends AppCompatActivity {
 
         btnNavMessage.setOnClickListener(v -> {
             // TODO: Navigate to Messages
-            Toast.makeText(this, "Messages - Coming soon", Toast.LENGTH_SHORT).show();
+            // aalpesh making messages to notify
+            Intent organizerNotifsIntent = new Intent(OrganizerActivity.this, OrganizerMessagesActivity.class);
+            startActivity(organizerNotifsIntent);
+//            Toast.makeText(this, "Messages - Coming soon", Toast.LENGTH_SHORT).show();
+
         });
 
         btnNavMap.setOnClickListener(v -> {
