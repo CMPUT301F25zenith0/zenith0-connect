@@ -137,7 +137,7 @@
                 android:id="@+id/tv_waiting_list"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Waiting List Count: 9 Entrants"
+                android:text="Waiting List Capacity: 9 Entrants"
                 android:textColor="#2F4F4F"
                 android:textSize="14sp"
                 android:textAlignment="center"
