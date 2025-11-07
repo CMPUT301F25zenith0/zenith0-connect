@@ -161,7 +161,7 @@ public class EventListActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
-        // Note - Vaisnavi move this to a method call --> Do not put entire functionality inside the click listener
+        // Note - Vashnavi move this to a method call --> Do not put entire functionality inside the click listener
         // Date filter button - opens DatePickerDialog
         dateFilterBtn.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
@@ -173,13 +173,13 @@ public class EventListActivity extends AppCompatActivity {
                     EventListActivity.this,
                     (view, selectedYear, selectedMonth, selectedDay) -> {
                         // Format date as yyyy-MM-dd
-                        String formattedDate = String.format("%04d-%02d-%02d", 
+                        String formattedDate = String.format("%04d-%02d-%02d",
                                 selectedYear, selectedMonth + 1, selectedDay);
                         selectedDate = formattedDate;
-                        
+
                         // Update button text to show selected date
-                        dateFilterBtn.setText("Date: " + formattedDate);
-                        
+                        dateFilterBtn.setText("Date\n " + formattedDate);
+
                         // Apply filters
                         applyAllFilters();
                     },
@@ -209,7 +209,7 @@ public class EventListActivity extends AppCompatActivity {
                 String userInterest = input.getText().toString().trim();
                 if (!userInterest.isEmpty()) {
                     selectedInterest = userInterest;
-                    interestFilterBtn.setText("Interest: " + userInterest);
+                    interestFilterBtn.setText("Interest\n " + userInterest);
                     applyAllFilters();
                 } else {
                     Toast.makeText(EventListActivity.this, "Please enter an interest", Toast.LENGTH_SHORT).show();
@@ -350,7 +350,7 @@ public class EventListActivity extends AppCompatActivity {
         if (!selectedInterest.isEmpty()) {
             filteredEvents = filterByInterest(filteredEvents, selectedInterest);
         }
-        
+
         // Apply location filter
         if (!selectedLocation.isEmpty()) {
             filteredEvents = filterByLocation(filteredEvents, selectedLocation);
@@ -435,16 +435,26 @@ public class EventListActivity extends AppCompatActivity {
     private List<Event> filterByInterest(List<Event> events, String interest) {
         List<Event> filtered = new ArrayList<>();
         String lowerInterest = interest.toLowerCase();
-        
+
         for (Event event : events) {
-            if (event.getCategory() != null && 
-                event.getCategory().toLowerCase().contains(lowerInterest)) {
+            boolean matchesCategory = event.getCategory() != null &&
+                    event.getCategory().toLowerCase().contains(lowerInterest);
+
+            boolean matchesTitle = event.getName() != null &&
+                    event.getName().toLowerCase().contains(lowerInterest);
+
+            boolean matchesDescription = event.getDescription() != null &&
+                    event.getDescription().toLowerCase().contains(lowerInterest);
+
+            if (matchesCategory || matchesTitle || matchesDescription) {
                 filtered.add(event);
             }
         }
-        
+
         return filtered;
     }
+
+
 
     /**
      * Filters based on location.
