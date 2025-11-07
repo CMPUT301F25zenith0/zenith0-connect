@@ -110,6 +110,7 @@
             android:paddingTop="8dp"
             android:background="@color/f3"
             app:singleSelection="false"
+            android:textSize="12sp"
             app:chipSpacingHorizontal="8dp">
 
             <com.google.android.material.chip.Chip
@@ -154,7 +155,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 style="@style/Widget.MaterialComponents.Chip.Action"
-                android:text="Clear Filters"
+                android:text="X"
                 android:textColor="@color/white"
                 app:chipBackgroundColor="@color/f3"
                 app:chipStrokeColor="@color/white"
