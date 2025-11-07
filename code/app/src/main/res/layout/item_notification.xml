@@ -106,6 +106,16 @@
             android:visibility="gone"
             app:backgroundTint="#F44336"
             app:cornerRadius="20dp" />
+        <!-- Accept invitation-->
+        <Button
+            android:id="@+id/btn_accept"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Accept"
+            android:backgroundTint="@color/green"
+            android:textColor="@android:color/white"
+            android:layout_marginStart="8dp"/>
+
 
     </RelativeLayout>
 

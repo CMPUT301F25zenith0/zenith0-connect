@@ -280,6 +280,19 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     /**
+     * US 01.05.04 - Accept an invitation
+     */
+    private void acceptInvitation(NotificationItem notification) {
+        new AlertDialog.Builder(this)
+                .setTitle("Accept Invitation")
+                .setMessage("Do you want to accept this invitation for " + notification.eventName + "?")
+                .setPositiveButton("Yes, Accept", (dialog, which) -> performAccept(notification))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+
+    /**
      * Perform the decline operation in Firestore
      */
     void performDecline(NotificationItem notification) {
@@ -297,7 +310,7 @@ public class NotificationsActivity extends AppCompatActivity {
                 .collection("chosen").document(currentUserId)
                 .delete()
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "✅ Removed from chosen list");
+                    Log.d(TAG, " Removed from chosen list");
 
                     // Add to declined list
                     Map<String, Object> declinedData = new HashMap<>();
@@ -308,32 +321,88 @@ public class NotificationsActivity extends AppCompatActivity {
                             .collection("declined").document(currentUserId)
                             .set(declinedData)
                             .addOnSuccessListener(aVoid2 -> {
-                                Log.d(TAG, "✅ Added to declined list");
+                                Log.d(TAG, " Added to declined list");
 
                                 // Update notification
                                 db.collection("accounts").document(currentUserId)
                                         .collection("notifications").document(notification.id)
                                         .update("declined", true, "declinedAt", FieldValue.serverTimestamp())
                                         .addOnSuccessListener(aVoid3 -> {
-                                            Log.d(TAG, "✅ Notification marked declined");
+                                            Log.d(TAG, " Notification marked declined");
                                             notification.declined = true;
                                             adapter.notifyDataSetChanged(); // instantly refresh UI
                                             Toast.makeText(this, "Invitation declined successfully", Toast.LENGTH_SHORT).show();
                                         })
-                                        .addOnFailureListener(e -> Log.e(TAG, "❌ Failed to update notification", e));
+                                        .addOnFailureListener(e -> Log.e(TAG, "Failed to update notification", e));
                             })
                             .addOnFailureListener(e -> {
-                                Log.e(TAG, "❌ Failed to add to declined list", e);
+                                Log.e(TAG, "Failed to add to declined list", e);
                                 Toast.makeText(this,
                                         "Error declining invitation (declined list)",
                                         Toast.LENGTH_SHORT).show();
                             });
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "❌ Failed to remove from chosen list", e);
+                    Log.e(TAG, "Failed to remove from chosen list", e);
                     Toast.makeText(this, "Error declining invitation (chosen list)", Toast.LENGTH_SHORT).show();
                 });
     }
+
+    /**
+     * Perform the Accept operation in Firestore
+     */
+    void performAccept(NotificationItem notification) {
+        String eventId = notification.eventId;
+
+        if (eventId == null || eventId.isEmpty()) {
+            Toast.makeText(this, "Error: Event ID not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Log.d(TAG, "Accepting invitation for eventId=" + eventId + " user=" + currentUserId);
+
+        // Remove from chosen (since user accepted)
+        db.collection("events").document(eventId)
+                .collection("chosen").document(currentUserId)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Removed from chosen list");
+
+                    // Add user to accepted list
+                    Map<String, Object> acceptedData = new HashMap<>();
+                    acceptedData.put("acceptedAt", FieldValue.serverTimestamp());
+                    acceptedData.put("status", "accepted");
+
+                    db.collection("events").document(eventId)
+                            .collection("accepted").document(currentUserId)
+                            .set(acceptedData)
+                            .addOnSuccessListener(aVoid2 -> {
+                                Log.d(TAG, "Added to accepted list");
+
+                                // Update notification
+                                db.collection("accounts").document(currentUserId)
+                                        .collection("notifications").document(notification.id)
+                                        .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp())
+                                        .addOnSuccessListener(aVoid3 -> {
+                                            Log.d(TAG, " Notification marked accepted");
+                                            Toast.makeText(this, "Invitation accepted successfully", Toast.LENGTH_SHORT).show();
+
+                                            // Refresh UI (optional)
+                                            adapter.notifyDataSetChanged();
+                                        })
+                                        .addOnFailureListener(e -> Log.e(TAG, "Failed to update notification", e));
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, " Failed to add to accepted list", e);
+                                Toast.makeText(this, "Error accepting invitation (accepted list)", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to remove from chosen list", e);
+                    Toast.makeText(this, "Error accepting invitation (chosen list)", Toast.LENGTH_SHORT).show();
+                });
+    }
+
 
     /**
      * Get current user ID
@@ -413,7 +482,7 @@ public class NotificationsActivity extends AppCompatActivity {
          */
         class NotificationViewHolder extends RecyclerView.ViewHolder {
             TextView tvTitle, tvBody, tvTime, tvEventName;
-            Button btnDecline;
+            Button btnDecline, btnAccept; // added the accept button
             View indicator;
             ImageView icClose; // 🔹 Added this
 
@@ -424,6 +493,7 @@ public class NotificationsActivity extends AppCompatActivity {
                 tvTime = itemView.findViewById(R.id.tv_notification_time);
                 tvEventName = itemView.findViewById(R.id.tv_event_name);
                 btnDecline = itemView.findViewById(R.id.btn_decline);
+                btnAccept = itemView.findViewById(R.id.btn_accept); // added the accept button
                 indicator = itemView.findViewById(R.id.notification_indicator);
                 icClose = itemView.findViewById(R.id.ic_close); // 🔹 initialize close icon
 
@@ -436,6 +506,7 @@ public class NotificationsActivity extends AppCompatActivity {
                     }
                 });
             }
+
 
             void bind(NotificationItem item) {
                 tvTitle.setText(item.title);
@@ -460,15 +531,23 @@ public class NotificationsActivity extends AppCompatActivity {
                 indicator.setVisibility(item.read ? View.INVISIBLE : View.VISIBLE);
 
                 // US 01.05.03 - Show decline button only for "chosen" notifications not yet declined
+                // MOdified the follwoing to add the accept invitation one.
                 if ("chosen".equals(item.type) && !item.declined) {
                     btnDecline.setVisibility(View.VISIBLE);
+                    btnAccept.setVisibility(View.VISIBLE);
+
                     btnDecline.setOnClickListener(v -> declineInvitation(item));
+                    btnAccept.setOnClickListener(v -> acceptInvitation(item));
+
                 } else if (item.declined) {
                     btnDecline.setVisibility(View.GONE);
-                    tvBody.setText("You declined this invitation."); // optional feedback
+                    btnAccept.setVisibility(View.GONE);
+                    tvBody.setText("You declined this invitation.");
                 } else {
                     btnDecline.setVisibility(View.GONE);
+                    btnAccept.setVisibility(View.GONE);
                 }
+
 
                 // Set background color based on type
                 int backgroundColor;
