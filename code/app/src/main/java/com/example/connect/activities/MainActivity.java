@@ -1,20 +1,12 @@
 package com.example.connect.activities;
 
-import android.Manifest;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.service.notification.NotificationListenerService;
 import android.util.Log;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
 import com.google.firebase.auth.FirebaseAuth;
@@ -25,18 +17,16 @@ import com.google.firebase.auth.FirebaseUser;
  * Checks if user should be auto-logged in based on Remember Me preference.
  * If not, displays login and account creation options.
  *
- * @author Aakansh Chatterjee, Aalpesh Dayal
+ * @author Aakansh Chatterjee
  * @version 2.0
  */
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "MainActivity";
 
-    private Button btnLogin, btnAcctCreate;
+    private Button btnLogin, btnAcctCreate, btnTestQr;
     private FirebaseAuth mAuth;
     private SharedPreferences sharedPreferences;
     private static final String PREFS_NAME = "LoginPrefs";
     private static final String KEY_REMEMBER_ME = "rememberMe";
-    static final int NOTIFICATION_PERMISSION_CODE = 123;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,13 +40,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Check auto-login
         checkAutoLogin();
-        // start the notification listener
-        startNotificationListener();
-        // Request notification permission for Android 13+
-        requestNotificationPermission();
-
-        // Create notification channels
-        createNotificationChannels();
     }
 
     /**
@@ -99,6 +82,7 @@ public class MainActivity extends AppCompatActivity {
     private void setupMainActivityUI() {
         btnLogin = findViewById(R.id.btn_login);
         btnAcctCreate = findViewById(R.id.create_acct_btn);
+        btnTestQr = findViewById(R.id.btn_test_qr);
 
         // Navigate to login activity when clicked
         btnLogin.setOnClickListener(v -> {
@@ -112,90 +96,10 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-    }
-
-
-    /**
-     * Start the notification listener service
-     */
-    private void startNotificationListener() {
-        try {
-            Intent serviceIntent = new Intent(this, NotificationListenerService.class);
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
-            }
-
-            Log.d(TAG, "Notification listener service started");
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to start notification listener service", e);
-        }
-    }
-
-    /**
-     * Request notification permission for Android 13+
-     */
-    private void requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                        NOTIFICATION_PERMISSION_CODE);
-            }
-        }
-    }
-
-    /**
-     * Create notification channels for Android 8+
-     */
-    private void createNotificationChannels() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                // Channel for event notifications
-                NotificationChannel eventChannel = new NotificationChannel(
-                        "default",
-                        "Event Notifications",
-                        NotificationManager.IMPORTANCE_HIGH
-                );
-                eventChannel.setDescription("Notifications about event lottery results");
-                manager.createNotificationChannel(eventChannel);
-
-                // Channel for the foreground service
-                NotificationChannel serviceChannel = new NotificationChannel(
-                        "notification_service",
-                        "Notification Service",
-                        NotificationManager.IMPORTANCE_LOW
-                );
-                serviceChannel.setDescription("Keeps the app listening for event notifications");
-                serviceChannel.setShowBadge(false);
-                manager.createNotificationChannel(serviceChannel);
-
-                Log.d(TAG, "Notification channels created");
-            }
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == NOTIFICATION_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "Notification permission granted");
-            } else {
-                Log.w(TAG, "Notification permission denied - notifications may not work");
-            }
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // Note: We don't stop the service here because we want it to keep running
-        // to receive notifications even when the activity is closed
+        // Navigate to QR test activity when clicked
+        btnTestQr.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, QRTestActivity.class);
+            startActivity(intent);
+        });
     }
 }
