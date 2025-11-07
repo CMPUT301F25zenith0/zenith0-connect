@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:id="@+id/scroll_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#5F9EA0"
+        android:fillViewport="true"
+        android:visibility="gone">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp">
+
+            <!-- Back Arrow -->
+            <ImageView
+                android:id="@+id/back_btn"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_back_arrow"
+                android:contentDescription="Back"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <!-- Event Details Title -->
+            <TextView
+                android:id="@+id/event_detail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Event Details"
+                android:textColor="#2F4F4F"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginStart="16dp"
+                app:layout_constraintStart_toEndOf="@id/back_btn"
+                app:layout_constraintTop_toTopOf="@id/back_btn"
+                app:layout_constraintBottom_toBottomOf="@id/back_btn" />
+
+            <!-- Event Image Placeholder -->
+            <ImageView
+                android:id="@+id/event_image"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="32dp"
+                android:background="@drawable/login_illustration"
+                android:padding="24dp"
+                android:contentDescription="Event Image"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/event_detail" />
+
+            <!-- Event Title -->
+            <TextView
+                android:id="@+id/event_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Event Title"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/event_image" />
+
+            <!-- Organization Name -->
+            <TextView
+                android:id="@+id/tv_org_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Organization Name"
+                android:textColor="#2F4F4F"
+                android:textSize="14sp"
+                android:layout_marginTop="24dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/event_title" />
+
+            <!-- Date & Time -->
+            <TextView
+                android:id="@+id/tv_date_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date &amp; Time"
+                android:textColor="#2F4F4F"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_org_name" />
+
+            <!-- Location -->
+            <TextView
+                android:id="@+id/tv_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Location"
+                android:textColor="#2F4F4F"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_date_time" />
+
+            <!-- Price -->
+            <TextView
+                android:id="@+id/tv_price"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Price"
+                android:textColor="#2F4F4F"
+                android:textSize="14sp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_location" />
+
+            <!-- Registration Window -->
+            <TextView
+                android:id="@+id/tv_reg_window"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Registration Window: October 15 - October 20"
+                android:textColor="#2F4F4F"
+                android:textSize="14sp"
+                android:textAlignment="center"
+                android:background="@drawable/btn_primary"
+                android:padding="16dp"
+                android:layout_marginTop="24dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_price" />
+
+            <!-- Waiting List Count -->
+            <TextView
+                android:id="@+id/tv_waiting_list"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Waiting List Capacity: 9 Entrants"
+                android:textColor="#2F4F4F"
+                android:textSize="14sp"
+                android:textAlignment="center"
+                android:background="@drawable/btn_primary"
+                android:padding="16dp"
+                android:layout_marginTop="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_reg_window" />
+
+            <!-- Info Button -->
+            <Button
+                android:id="@+id/btn_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Info"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:background="@drawable/btn_primary"
+                android:paddingStart="32dp"
+                android:paddingEnd="32dp"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                android:layout_marginTop="16dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tv_waiting_list" />
+
+            <!-- Button Container -->
+            <LinearLayout
+                android:id="@+id/btnContainer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="16dp"
+                android:gravity="center"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/btn_info"
+                app:layout_constraintBottom_toBottomOf="parent">
+
+                <!-- Join Waiting List Button -->
+                <Button
+                    android:id="@+id/btn_join_list"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Join Waiting List"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:background="@drawable/btn_primary"
+                    android:padding="12dp"
+                    android:layout_marginEnd="8dp" />
+
+                <!-- Leave Waiting List Button -->
+                <Button
+                    android:id="@+id/btn_leave_list"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Leave Waiting List"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:background="@drawable/btn_primary"
+                    android:padding="12dp"
+                    android:layout_marginStart="8dp" />
+            </LinearLayout>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </ScrollView>
+
+    <!-- Loading Spinner -->
+    <ProgressBar
+        android:id="@+id/spinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="visible" />
+
+</FrameLayout>

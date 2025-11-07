@@ -3,8 +3,44 @@
     <string name="hint_name">Name</string>
     <string name="hint_email">Email</string>
     <string name="hint_phone">Phone</string>
+    <string name="hint_password">Password</string>
     <string name="btn_submit">Submit</string>
     <string name="toast_profile_updated">Profile updated!</string>
     <string name="btn_login">Login</string>
+    <string name="title_organizer_dashboard">Organizer Dashboard</string>
+    <string name="menu_new_event">New Event</string>
+
+    <string name="filter_total_events">Total Events</string>
+    <string name="filter_open">Open</string>
+    <string name="filter_closed">Closed</string>
+    <string name="filter_drawn">Drawn</string>
+
+    <string name="label_list_of_events">List of Events</string>
+    <string name="empty_events">No events yet</string>
+
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_message">Message</string>
+    <string name="nav_map">Map</string>
+    <string name="nav_profile">Profile</string>
+
+    <string name="desc_poster">Event poster</string>
+    <string name="sample_event_title">Event Title</string>
+    <string name="sample_event_status">Status: Open</string>
+    <string name="sample_event_desc">Description</string>
+
+    <string name="action_edit_event">Edit Event</string>
+    <string name="action_details">Details</string>
+    <string name="action_manage_draw">Manage Draw</string>
+    <string name="action_export_csv">Export As CSV</string>
+
+    <string name="filter_interest">Interest</string>
+    <string name="filter_date">Date</string>
+    <string name="filter_location">Location</string>
+    <string name="search_events_hint">Search events</string>
+    <string name="events_empty">No events found</string>
+    <string name="events_error_generic">Error loading events</string>
+    <string name="menu">Menu</string>
+    <string name="profile">Profile</string>
+    <string name="back">Back</string>
 
 </resources>

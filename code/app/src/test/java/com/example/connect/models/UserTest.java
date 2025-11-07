@@ -10,7 +10,7 @@ public class UserTest {
 
     @Test
     public void testUserCreationAndGetters() {
-        User u = new User("John Doe", "john@example.com", "1234567890");
+        User u = new User("John Doe", "john@example.com", "1234567890","");
         assertEquals("John Doe", u.getName());
         assertEquals("john@example.com", u.getEmail());
         assertEquals("1234567890", u.getPhone());
