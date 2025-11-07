@@ -11,9 +11,9 @@
 ---
 
 ## 🎯 Meeting Objectives
-- [ ] Review completion of Project 2 milestone requirements  
-- [ ] Clarify connections between Project 2 and Project 3 requirements  
-- [ ] Discuss Project 3 milestone expectations and upcoming deliverables  
+- [x] Review completion of Project 2 milestone requirements  
+- [x] Clarify connections between Project 2 and Project 3 requirements  
+- [x] Discuss Project 3 milestone expectations and upcoming deliverables  
 
 ---
 
@@ -57,15 +57,13 @@
 | Task | Assigned To | Notes | Due Date | Status |
 |------|--------------|-------|----------|--------|
 | Move GitHub issues into backlog | Aakansh Chatterjee | Organize existing issues into proper backlog | 2025-10-29 | ✅ Done |
-| Work on UML | A******** | Creating the UML diagram for the entire app | 2025-10-30 | ☐ Not Started |
-| Create barebones project in repo | Aalpesh Dayal | Create the app project in java, pushed into main repo branch | 2025-11-02 | ✅ Done |
-| Assigning Issues | A******** | Assign issues weekly to individuals, to be completed and mergered togather into main project | 2025-10-30 | 🕐 In Progress |
+| Host Meeting and Create Code Framewok| Aalpesh | Creating the UML diagram for the entire app | 2025-10-29 | 🕐 In Progress |
+
 
 ---
 
 ## 📅 Next Steps
 - Continue transition from Project 2 to Project 3  
-- Complete UML design and review in next meeting  
 - Ensure GitHub backlog tasks are finalized before next lab  
 - Create project
 - Assign issues for completion
@@ -80,5 +78,5 @@
 
 ---
 
-> _Last updated: 2025-10-29_  
+> _Last updated: 2025-11-7_  
 > _Prepared by: Aakansh Chatterjee_
