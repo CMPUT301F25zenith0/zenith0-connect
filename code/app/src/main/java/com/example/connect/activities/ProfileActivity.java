@@ -62,9 +62,24 @@ public class ProfileActivity extends AppCompatActivity {
 
         userId = currentUser.getUid();
         initViews();
+        setupViewMode(); // Check if opened from organizer view
         setupClickListeners();
         loadUserProfile();
         setupDeviceId();
+    }
+
+    /**
+     * Setup view mode based on how ProfileActivity was opened
+     * If opened from OrganizerActivity, show "User View" button instead of "Org View"
+     */
+    private void setupViewMode() {
+        // Check if opened from OrganizerActivity
+        boolean fromOrganizer = getIntent().getBooleanExtra("from_organizer", false);
+
+        if (fromOrganizer && btnOrgView != null) {
+            // Change button text to "User View" when in organizer mode
+            btnOrgView.setText("User View");
+        }
     }
 
     private void initViews() {
@@ -109,11 +124,23 @@ public class ProfileActivity extends AppCompatActivity {
             });
         }
 
-        // Org View button
+        // Org View / User View button - behavior depends on context
         if (btnOrgView != null) {
             btnOrgView.setOnClickListener(v -> {
-                Intent intent = new Intent(ProfileActivity.this, OrganizerActivity.class);
-                startActivity(intent);
+                // Check if opened from organizer view
+                boolean fromOrganizer = getIntent().getBooleanExtra("from_organizer", false);
+
+                if (fromOrganizer) {
+                    // If in organizer view, go back to user event list (main dashboard)
+                    Intent intent = new Intent(ProfileActivity.this, EventListActivity.class);
+                    intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(intent);
+                    finish(); // Close profile and organizer activities
+                } else {
+                    // Normal user view, go to organizer view
+                    Intent intent = new Intent(ProfileActivity.this, OrganizerActivity.class);
+                    startActivity(intent);
+                }
             });
         }
 

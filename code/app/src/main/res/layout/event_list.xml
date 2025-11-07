@@ -69,6 +69,9 @@
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#2C3E3F"
                 android:layout_marginEnd="8dp"
+                android:textAllCaps="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
             <Button
@@ -79,6 +82,9 @@
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#2C3E3F"
                 android:layout_marginEnd="8dp"
+                android:textAllCaps="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
             <Button
@@ -88,6 +94,9 @@
                 android:text="Location"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#2C3E3F"
+                android:textAllCaps="false"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
 
         </LinearLayout>

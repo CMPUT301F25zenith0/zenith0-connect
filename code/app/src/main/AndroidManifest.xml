@@ -31,6 +31,8 @@
         <activity android:name=".activities.CreateAcctActivity" />
         <activity android:name=".activities.OrganizerActivity" />
         <activity android:name=".activities.CreateEvent"/>
+        <activity android:name=".activities.OrganizerMessagesActivity"/>
+
 
 
         <!-- Utils / Testing -->
