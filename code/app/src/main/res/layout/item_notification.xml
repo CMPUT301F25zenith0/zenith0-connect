@@ -107,6 +107,26 @@
             app:backgroundTint="#F44336"
             app:cornerRadius="20dp" />
 
+        <!-- Accept Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_accept"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_below="@id/tv_notification_time"
+            android:layout_toEndOf="@id/notification_indicator"
+            android:layout_marginTop="12dp"
+            android:layout_marginStart="8dp"
+            android:text="Accept Invitation"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textAllCaps="false"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:visibility="gone"
+            app:backgroundTint="#4CAF50"
+            app:cornerRadius="20dp" />
+
+
     </RelativeLayout>
 
 </androidx.cardview.widget.CardView>
