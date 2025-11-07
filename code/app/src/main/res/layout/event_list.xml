@@ -54,53 +54,84 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
+
         <!-- Filter Chips -->
-        <LinearLayout
-            android:id="@+id/filterChipsContainer"
+        <HorizontalScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:scrollbars="none">
 
-            <Button
-                android:id="@+id/interest_filter_btn"
+            <LinearLayout
+                android:id="@+id/filterChipsContainer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Interest"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#2C3E3F"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                android:orientation="horizontal"
+                android:paddingEnd="16dp">
 
-            <Button
-                android:id="@+id/date_filter_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Date"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#2C3E3F"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                <!-- Interest Filter -->
+                <Button
+                    android:id="@+id/interest_filter_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Interest"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#2C3E3F"
+                    android:layout_marginEnd="8dp"
+                    android:singleLine="false"
+                    android:ellipsize="none"
+                    android:gravity="center"
+                    android:padding="8dp"/>
 
-            <Button
-                android:id="@+id/location_filter_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Location"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#2C3E3F"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                <!-- Date Filter -->
+                <Button
+                    android:id="@+id/date_filter_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Date"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#2C3E3F"
+                    android:layout_marginEnd="8dp"
+                    android:singleLine="false"
+                    android:ellipsize="none"
+                    android:gravity="center"
+                    android:padding="8dp"/>
 
-            <Button
-                android:id="@+id/clear_filters_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Clear Filters"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#D32F2F"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                <!-- Location Filter -->
+                <Button
+                    android:id="@+id/location_filter_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Location"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="#2C3E3F"
+                    android:layout_marginEnd="8dp"
+                    android:singleLine="false"
+                    android:ellipsize="none"
+                    android:gravity="center"
+                    android:padding="8dp"/>
 
-        </LinearLayout>
+                <!-- Clear Filters -->
+                <Button
+                    android:id="@+id/clear_filters_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:backgroundTint="#D32F2F"
+                    android:text="Clear"
+                    android:textColor="#FFFFFF"
+                    android:singleLine="false"
+                    android:ellipsize="none"
+                    android:gravity="center"
+                    android:padding="8dp"/>
+
+            </LinearLayout>
+        </HorizontalScrollView>
+
+
+
 
     </LinearLayout>
 

@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -70,6 +71,11 @@ public class EventListActivity extends AppCompatActivity {
 
         // Initialize repository
         eventRepository = new EventRepository();
+
+        // adding the clear filter button
+        clearFiltersBtn.setVisibility(View.VISIBLE);
+        clearFiltersBtn.setEnabled(true);
+
     }
 
     private void setupAdapter() {
@@ -133,7 +139,7 @@ public class EventListActivity extends AppCompatActivity {
                         selectedDate = formattedDate;
                         
                         // Update button text to show selected date
-                        dateFilterBtn.setText("Date: " + formattedDate);
+                        dateFilterBtn.setText("Date\n " + formattedDate);
                         
                         // Apply filters
                         applyAllFilters();
@@ -164,7 +170,7 @@ public class EventListActivity extends AppCompatActivity {
                 String userInterest = input.getText().toString().trim();
                 if (!userInterest.isEmpty()) {
                     selectedInterest = userInterest;
-                    interestFilterBtn.setText("Interest: " + userInterest);
+                    interestFilterBtn.setText("Interest\n " + userInterest);
                     applyAllFilters();
                 } else {
                     Toast.makeText(EventListActivity.this, "Please enter an interest", Toast.LENGTH_SHORT).show();
@@ -332,21 +338,30 @@ public class EventListActivity extends AppCompatActivity {
         
         return filtered;
     }
-    
+
     private List<Event> filterByInterest(List<Event> events, String interest) {
         List<Event> filtered = new ArrayList<>();
         String lowerInterest = interest.toLowerCase();
-        
+
         for (Event event : events) {
-            if (event.getCategory() != null && 
-                event.getCategory().toLowerCase().contains(lowerInterest)) {
+            boolean matchesCategory = event.getCategory() != null &&
+                    event.getCategory().toLowerCase().contains(lowerInterest);
+
+            boolean matchesTitle = event.getName() != null &&
+                    event.getName().toLowerCase().contains(lowerInterest);
+
+            boolean matchesDescription = event.getDescription() != null &&
+                    event.getDescription().toLowerCase().contains(lowerInterest);
+
+            if (matchesCategory || matchesTitle || matchesDescription) {
                 filtered.add(event);
             }
         }
-        
+
         return filtered;
     }
-    
+
+
     private List<Event> filterByLocation(List<Event> events, String location) {
         List<Event> filtered = new ArrayList<>();
         String lowerLocation = location.toLowerCase();
@@ -385,7 +400,14 @@ public class EventListActivity extends AppCompatActivity {
         if (locationFilterBtn != null) {
             locationFilterBtn.setText("Location");
         }
-        
+
+        // clear button feature
+        if (clearFiltersBtn != null) {
+            clearFiltersBtn.setVisibility(View.VISIBLE);
+            clearFiltersBtn.setEnabled(true);
+        }
+
+
         // Apply filters (will show all events now)
         applyAllFilters();
         
@@ -396,7 +418,11 @@ public class EventListActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         // Refresh events when returning to this activity
-        loadEvents();
+        if (allEventsList.isEmpty()) {
+            loadEvents();
+        } else {
+            applyAllFilters();
+        }
     }
 
 
