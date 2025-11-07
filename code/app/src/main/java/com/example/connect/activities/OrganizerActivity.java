@@ -19,6 +19,7 @@ public class OrganizerActivity extends AppCompatActivity {
 
     // UI Components
     private MaterialButton btnNewEvent;
+    private MaterialButton btnUserView;
     private MaterialButton btnTotalEvents, btnOpen, btnClosed, btnDrawn;
     private RecyclerView recyclerViewEvents;
     private MaterialButton btnNavDashboard, btnNavMessage, btnNavMap, btnNavProfile;
@@ -41,6 +42,7 @@ public class OrganizerActivity extends AppCompatActivity {
     private void initializeViews() {
         // Top buttons
         btnNewEvent = findViewById(R.id.btnNewEvent);
+        btnUserView = findViewById(R.id.btnUserView);
 
         // Filter tabs
         btnTotalEvents = findViewById(R.id.btnTotalEvents);
@@ -59,6 +61,16 @@ public class OrganizerActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // User View button - Navigate directly to EventListActivity (User Main Dashboard)
+        if (btnUserView != null) {
+            btnUserView.setOnClickListener(v -> {
+                Intent eventListIntent = new Intent(OrganizerActivity.this, EventListActivity.class);
+                eventListIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(eventListIntent);
+                finish(); // Close organizer view when switching to user view
+            });
+        }
+
         // New Event button - Navigate to CreateEvent
         btnNewEvent.setOnClickListener(v -> {
             Intent intent = new Intent(OrganizerActivity.this, CreateEvent.class);
@@ -89,7 +101,9 @@ public class OrganizerActivity extends AppCompatActivity {
 
         btnNavProfile.setOnClickListener(v -> {
             Intent profileIntent = new Intent(OrganizerActivity.this, ProfileActivity.class);
+            profileIntent.putExtra("from_organizer", true); // Mark that it's opened from organizer view
             startActivity(profileIntent);
+            // Don't finish() here - let user navigate back if needed
         });
     }
 

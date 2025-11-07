@@ -29,6 +29,7 @@ public class EventListActivity extends AppCompatActivity {
 
     private EventAdapter eventAdapter;
     private List<Event> eventList;
+    private List<Event> allEventsList; // Store all events for client-side filtering
     private EventRepository eventRepository;
 
     @Override
@@ -65,6 +66,7 @@ public class EventListActivity extends AppCompatActivity {
 
     private void setupAdapter() {
         eventList = new ArrayList<>();
+        allEventsList = new ArrayList<>(); // Initialize list to store all events
         eventAdapter = new EventAdapter(this, eventList);
         eventsListView.setAdapter(eventAdapter);
 
@@ -92,18 +94,14 @@ public class EventListActivity extends AppCompatActivity {
             Toast.makeText(this, "Notifications - Coming Soon", Toast.LENGTH_SHORT).show();
         });
 
-        // Search functionality
+        // Search functionality - client-side filtering
         searchBar.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.length() > 0) {
-                    searchEvents(s.toString());
-                } else {
-                    loadEvents();
-                }
+                filterEvents(s.toString().trim());
             }
 
             @Override
@@ -134,23 +132,26 @@ public class EventListActivity extends AppCompatActivity {
         eventRepository.getAllEvents(new EventRepository.EventCallback() {
             @Override
             public void onSuccess(List<Event> events) {
-                // ADD THIS LINE FOR DEBUGGING
                 Log.d("EventListActivity", "Loaded " + events.size() + " events");
 
-                eventList.clear();
-                eventList.addAll(events);
-                eventAdapter.notifyDataSetChanged();
+                // Store all events for filtering
+                allEventsList.clear();
+                allEventsList.addAll(events);
+                
+                // Apply current search filter (if any)
+                String currentSearch = searchBar.getText() != null ? searchBar.getText().toString().trim() : "";
+                filterEvents(currentSearch);
 
                 if (events.isEmpty()) {
                     Toast.makeText(EventListActivity.this, "No events found", Toast.LENGTH_SHORT).show();
                 } else {
-                    // ADD THIS LINE TOO
-                    Toast.makeText(EventListActivity.this, "Loaded " + events.size() + " events", Toast.LENGTH_SHORT).show();
+                    Log.d("EventListActivity", "Loaded " + events.size() + " events");
                 }
             }
 
             @Override
             public void onFailure(Exception e) {
+                Log.e("EventListActivity", "Error loading events", e);
                 Toast.makeText(EventListActivity.this,
                         "Error loading events: " + e.getMessage(),
                         Toast.LENGTH_SHORT).show();
@@ -159,24 +160,44 @@ public class EventListActivity extends AppCompatActivity {
     }
 
     /**
-     * Search events by name
+     * Filter events client-side based on search query
+     * Searches in event name, location, category, and description
      */
-    private void searchEvents(String query) {
-        eventRepository.searchEventsByName(query, new EventRepository.EventCallback() {
-            @Override
-            public void onSuccess(List<Event> events) {
-                eventList.clear();
-                eventList.addAll(events);
-                eventAdapter.notifyDataSetChanged();
+    private void filterEvents(String query) {
+        eventList.clear();
+        
+        if (query.isEmpty()) {
+            // If search is empty, show all events
+            eventList.addAll(allEventsList);
+        } else {
+            // Filter events case-insensitively
+            String lowerQuery = query.toLowerCase();
+            for (Event event : allEventsList) {
+                // Check if search query matches event name
+                boolean matchesName = event.getName() != null && 
+                    event.getName().toLowerCase().contains(lowerQuery);
+                
+                // Check if search query matches location
+                boolean matchesLocation = event.getLocation() != null && 
+                    event.getLocation().toLowerCase().contains(lowerQuery);
+                
+                // Check if search query matches category
+                boolean matchesCategory = event.getCategory() != null && 
+                    event.getCategory().toLowerCase().contains(lowerQuery);
+                
+                // Check if search query matches description
+                boolean matchesDescription = event.getDescription() != null && 
+                    event.getDescription().toLowerCase().contains(lowerQuery);
+                
+                // Add event if it matches any field
+                if (matchesName || matchesLocation || matchesCategory || matchesDescription) {
+                    eventList.add(event);
+                }
             }
-
-            @Override
-            public void onFailure(Exception e) {
-                Toast.makeText(EventListActivity.this,
-                        "Error searching events: " + e.getMessage(),
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
+        }
+        
+        eventAdapter.notifyDataSetChanged();
+        Log.d("EventListActivity", "Filtered to " + eventList.size() + " events for query: \"" + query + "\"");
     }
 
     @Override

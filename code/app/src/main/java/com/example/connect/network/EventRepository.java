@@ -39,7 +39,9 @@ public class EventRepository {
                     for (DocumentSnapshot document : queryDocumentSnapshots) {
                         Event event = document.toObject(Event.class);
                         if (event != null) {
-                            Log.d("EventRepository", "Event loaded: " + event.getName());
+                            // Explicitly set the event ID from document ID
+                            event.setEventId(document.getId());
+                            Log.d("EventRepository", "Event loaded: " + event.getName() + " (ID: " + event.getEventId() + ")");
                             events.add(event);
                         }
                     }
