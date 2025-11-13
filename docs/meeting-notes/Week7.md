@@ -81,12 +81,12 @@
 
 | Task | Assigned To | Notes | Due Date | Status |
 |------|--------------|-------|----------|--------|
-| Fix Javadoc compilation issues | Vansh & Aakansh | Review errors and consult TA if needed | 2025-11-18 | 🕐 In Progress |
+| Fix Javadoc compilation issues | All Members | Review errors and consult TA if needed | 2025-11-18 | 🕐 In Progress |
 | Write missing test cases | All Members | Each member tests their own implemented functions | 2025-11-18 | ☐ Not Started |
 | Review and update database structure | Aalpesh | Implement waiting list as a collection and check for integration issues | 2025-11-18 | 🕐 In Progress |
 | Update branches and close unused ones | All Members | Sync with main branch and clean up old branches | 2025-11-18 | 🕐 In Progress |
 | Brainstorm ideas for “Special Addition” feature | All Members | Discuss at next meeting | 2025-11-18 | ☐ Not Started |
-| Implement AI-based search/filter (if feasible) | Vansh | Research integration approach and feasibility | 2025-11-22 | ☐ Not Started |
+
 
 ---
 
