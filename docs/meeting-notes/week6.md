@@ -3,7 +3,7 @@
 
 **Date:** 2025-11-06  
 **Time:** 5:30 - 6:00pm
-**Attendees:** Vansh Taneja, Jagjot Brar, Aakansh Chatterjee, Sai Vaishnavi Jattu, Aalpesh Dayal, Digaant Chokkra  
+**Attendees:** Vansh Taneja, Jagjot Brar, Aakansh Chatterjee, Sai Vashnavi Jattu, Aalpesh Dayal, Digaant Chokkra  
 **Meeting Lead:** Harshit (TA)
 **Recorder:** Aakansh Chatterjee  
 **Location/Platform:** In-person during Lab
@@ -63,7 +63,7 @@
 | Task | Assigned To | Notes | Due Date | Status |
 |------|--------------|-------|----------|--------|
 | Merge remaining features into the main codebase | Vansh & Aakasnh | Ensure compatibility and functionality | 2025-11-07 | 🕐 In Progress |
-| Create UML diagram after feature integration | Jagjot Brar & Sai Vaishnavi Jattu | Use collaborative online tool | 2025-11-7 | 🕐 In Progress|
+| Create UML diagram after feature integration | Jagjot Brar & Sai Vashnavi Jattu | Use collaborative online tool | 2025-11-7 | 🕐 In Progress|
 | Write backend test cases for all major classes and methods | Each Member | Prioritize critical functionality | 2025-11-07 | 🕐 In Progress |
 | Push final Milestone 3 code to main branch | All Members | Submit before 5 PM deadline on Friday | 2025-11-07 | 🕐 In Progress |
 | Add User Stories to UI storyboard | jagjot | Add the user story ID's to the specific movements in the story board. Specifying the user story implementation| 2025-11-07 | ✅ Done |
