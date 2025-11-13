@@ -3,7 +3,7 @@
 
 **Date:** 2025-11-04  
 **Time:** 7:00 - 7:30 PM  
-**Attendees:** Jagjot Brar, Aakansh Chatterjee, Sai Vaishnavi Jattu, Aalpesh Dayal, Digaant Chokkra  
+**Attendees:** Jagjot Brar, Aakansh Chatterjee, Sai Vashnavi Jattu, Aalpesh Dayal, Digaant Chokkra  
 **Meeting Lead:** Jagjot Brar  
 **Recorder:** Aakansh Chatterjee  
 **Location/Platform:** Discord Call
@@ -44,7 +44,7 @@
 | Complete assigned user story implementations | All Members | Finish all in-progress issues (75% complete) | 2025-11-06 | 🕐 In Progress |
 | Merge feature branches into main branch | All Members | Merge after review on Thursday morning | 2025-11-06 | ☐ Not Started |
 | Conduct paired code review session | Aakansh & Vansh| Review merged code for consistency, errors and documentation | 2025-11-06 | ☐ Not Started |
-| Start UML diagram creation | Sai Vaishnavi & Aalpesh | Begin UML once merges are complete | 2025-11-06 | ☐ Not Started |
+| Start UML diagram creation | Sai Vashnavi & Aalpesh | Begin UML once merges are complete | 2025-11-06 | ☐ Not Started |
 | Finalize documentation, UI, and UML | All Members | Complete before submission | 2025-11-07 | ☐ Not Started |
 
 ---
