@@ -7,8 +7,8 @@ This page showcases the final UI designs for the application, demonstrating the 
 
 [Figma Link](https://www.figma.com/design/mhHKO6VMWJjie2viA3m7rc/App-UI?node-id=0-1&t=ZvJWi04sCoDymUa7-1)
 
-[User UI Frames](./User%20APP%20UI.pdf)
-[Organizer UI Frames](./Organizer%20APP%20UI.pdf)
+[User UI Frames](./App%20UI%20V.2.pdf)
+[Organizer UI Frames](./Organizer%20App%20UI%20V.2.pdf)
 [Admin UI Frames](./Admin%20APP%20UI.pdf)
 
 ---

@@ -3,7 +3,7 @@
 
 **Date:** 2025-10-30  
 **Time:** 5:00 - 5:30 & 6:00 - 6:30  
-**Attendees:** Vansh Taneja, Jagjot Brar, Aakansh Chatterjee, Sai Vaishnavi Jattu, Aalpesh Dayal, Digaant Chokkra  
+**Attendees:** Vansh Taneja, Jagjot Brar, Aakansh Chatterjee, Sai Vashnavi Jattu, Aalpesh Dayal, Digaant Chokkra  
 **Meeting Lead:** Aakansh Chatterjee
 **Recorder:** Aakansh Chatterjee  
 **Location/Platform:** In-person during Lab
@@ -74,14 +74,14 @@
 | Update and finalize Milestone 3 code in the main branch | All Members | Ensure functionality and stability before submission |
 | Confirm Admin access functionality in login system | Vansh Taneja | Verify proper admin validation and documentation |
 | Update “How to Run the App” documentation | Aakansh Chatterjee | Add setup instructions, dependencies, and troubleshooting |
-| Create and update UML diagrams | Jagjot Brar & Sai Vaishnavi Jattu | Use online UML tools to map system structure |
+| Create and update UML diagrams | Jagjot Brar & Sai Vashnavi Jattu | Use online UML tools to map system structure |
 | Write and validate backend test cases | Each Member | Cover edge cases and key functionalities |
 | Maintain regular commits with meaningful messages | All Members | Keep main branch updated and reviewed |
 
 | Task | Assigned To | Notes | Due Date | Status |
 |------|--------------|-------|----------|--------|
 | Create Codebase Framework | Everyone | Meet and create the starting codebase framework for the project | 2024-11-2| 🕐 In Progress |
-| Create and Update UML Diagrams | Vaishnavi, Jagjot, Aalpesh | Create the UMl diagram on the latest working codebase, updates as needed | 2025-11-7 | ☐ Not Started |
+| Create and Update UML Diagrams | Vashnavi, Jagjot, Aalpesh | Create the UMl diagram on the latest working codebase, updates as needed | 2025-11-7 | ☐ Not Started |
 | Assign Individual Issues/Task For Implementation | Aakansh | After moving all issue into backlog, assign issues to parts of the team based issue relativity and difficulty | [2025-11-1] | 🕐 In Progress |
 ---
 ---

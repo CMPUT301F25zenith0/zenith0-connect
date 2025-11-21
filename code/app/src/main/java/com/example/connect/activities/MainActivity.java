@@ -8,7 +8,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.service.notification.NotificationListenerService;
+import com.example.connect.network.NotificationListenerService;
 import android.util.Log;
 import android.widget.Button;
 

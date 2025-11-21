@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * NotificationHelper actually writes notifications notifyChosenEntrants
+ * NotificationHelper writes notifications to user accounts
  */
 public class NotificationHelper {
 
@@ -22,6 +22,9 @@ public class NotificationHelper {
         Log.d(TAG, "NotificationHelper initialized, Firestore instance created");
     }
 
+    /**
+     * Notify users who were chosen for an event
+     */
     public void notifyChosenEntrants(String eventId, List<String> chosenEntrantIds,
                                      String eventName, NotificationCallback callback) {
         Log.d(TAG, "notifyChosenEntrants called | eventId=" + eventId +
@@ -38,9 +41,11 @@ public class NotificationHelper {
         String type = "chosen";
 
         sendNotificationsToUsers(chosenEntrantIds, title, body, type, eventId, eventName, callback);
-        markEntrantsAsNotified(eventId, chosenEntrantIds, "chosen");
     }
 
+    /**
+     * Notify users who were NOT chosen for an event
+     */
     public void notifyNotChosenEntrants(String eventId, List<String> notChosenEntrantIds,
                                         String eventName, NotificationCallback callback) {
         Log.d(TAG, "notifyNotChosenEntrants called | eventId=" + eventId +
@@ -58,111 +63,122 @@ public class NotificationHelper {
         String type = "not_chosen";
 
         sendNotificationsToUsers(notChosenEntrantIds, title, body, type, eventId, eventName, callback);
-        markEntrantsAsNotified(eventId, notChosenEntrantIds, "notChosen");
     }
 
-    public void notifyAllWaitingListEntrants(String eventId, String eventName, NotificationCallback callback) {
-        Log.d(TAG, "notifyAllWaitingListEntrants called | eventId=" + eventId + " | eventName=" + eventName);
+    /**
+     * Notify all users in the waiting list for an event
+     */
+    public void notifyAllWaitingListEntrants(String eventId, List<String> waitingListIds,
+                                             String eventName, NotificationCallback callback) {
+        Log.d(TAG, "notifyAllWaitingListEntrants called | eventId=" + eventId +
+                " | entrants=" + waitingListIds.size() + " | eventName=" + eventName);
 
-        db.collection("events").document(eventId)
-                .collection("waitingList")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    int count = querySnapshot.size();
-                    Log.d(TAG, "Fetched waitingList with " + count + " documents for event " + eventId);
+        if (waitingListIds.isEmpty()) {
+            Log.w(TAG, "No entrants provided for waiting list notification");
+            callback.onFailure("No entrants to notify");
+            return;
+        }
 
-                    List<String> entrantIds = new ArrayList<>();
-                    for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
-                        entrantIds.add(doc.getId());
-                    }
+        String title = eventName + " - Update";
+        String body = "Thank you for your interest in " + eventName +
+                ". You have been placed in the waiting list for this event.";
+        String type = "waiting_list_announcement";
 
-                    if (entrantIds.isEmpty()) {
-                        Log.w(TAG, "No entrants found in waiting list for event: " + eventId);
-                        callback.onFailure("No entrants found in waiting list");
-                        return;
-                    }
-
-                    String title = eventName + " - Update";
-                    String body = "Thank you for your interest in " + eventName +
-                            ". You have been placed in the waiting list for this event.";
-
-                    String type = "waiting_list_announcement";
-
-                    sendNotificationsToUsers(entrantIds, title, body, type, eventId, eventName, callback);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get waiting list for eventId=" + eventId, e);
-                    callback.onFailure("Failed to retrieve waiting list: " + e.getMessage());
-                });
+        sendNotificationsToUsers(waitingListIds, title, body, type, eventId, eventName, callback);
     }
 
+    /**
+     * Send notifications to a list of users, respecting their notification preferences
+     */
     private void sendNotificationsToUsers(List<String> userIds, String title, String body,
                                           String type, String eventId, String eventName,
                                           NotificationCallback callback) {
-        Log.d(TAG, "sendNotificationsToUsers started | totalUsers=" + userIds.size() +
-                " | type=" + type + " | eventId=" + eventId);
 
-        final int[] completed = {0};
-        final int[] successful = {0};
+        if (userIds.isEmpty()) {
+            callback.onFailure("No users to notify");
+            return;
+        }
+
+        // Use atomic counters to track progress
         final int totalUsers = userIds.size();
+        final int[] processedCount = {0};
+        final int[] notifiedCount = {0};
+        final int[] skippedCount = {0};
 
-        for (int i = 0; i < totalUsers; i++) {
-            String userId = userIds.get(i);
-            Log.d(TAG, "Preparing notification for user " + (i + 1) + "/" + totalUsers + " | userId=" + userId);
+        for (String userId : userIds) {
+            db.collection("accounts").document(userId).get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        // Check if notifications are enabled (default to true if not set)
+                        boolean notificationsEnabled = documentSnapshot.getBoolean("notificationsEnabled") != null
+                                ? documentSnapshot.getBoolean("notificationsEnabled")
+                                : true;
 
-            Map<String, Object> notification = new HashMap<>();
-            notification.put("title", title);
-            notification.put("body", body);
-            notification.put("type", type);
-            notification.put("eventId", eventId);
-            notification.put("eventName", eventName);
-            notification.put("timestamp", FieldValue.serverTimestamp());
-            notification.put("read", false);
+                        if (!notificationsEnabled) {
+                            Log.d(TAG, "Skipping user " + userId + " — notifications disabled");
+                            skippedCount[0]++;
+                            processedCount[0]++;
 
-            db.collection("accounts").document(userId)
-                    .collection("notifications")
-                    .add(notification)
-                    .addOnSuccessListener(docRef -> {
-                        Log.d(TAG, "✅ Notification sent successfully to userId=" + userId +
-                                " | docId=" + docRef.getId());
-                        synchronized (successful) {
-                            successful[0]++;
-                            completed[0]++;
-                            Log.d(TAG, "Progress: " + completed[0] + "/" + totalUsers +
-                                    " completed | " + successful[0] + " successful");
-                            if (completed[0] == totalUsers) {
-                                Log.d(TAG, "All sends completed | totalSuccess=" + successful[0]);
-                                callback.onSuccess("Sent " + successful[0] + " notifications successfully!");
+                            // Check if all users processed
+                            if (processedCount[0] == totalUsers) {
+                                String message = "Notifications sent to " + notifiedCount[0] +
+                                        " users, skipped " + skippedCount[0] + " users";
+                                Log.d(TAG, message);
+                                callback.onSuccess(message);
                             }
+                            return;
                         }
+
+                        // User has notifications enabled - send notification
+                        Map<String, Object> notificationData = new HashMap<>();
+                        notificationData.put("title", title);
+                        notificationData.put("body", body);
+                        notificationData.put("type", type);
+                        notificationData.put("eventId", eventId);
+                        notificationData.put("eventName", eventName);
+                        notificationData.put("timestamp", FieldValue.serverTimestamp());
+                        notificationData.put("read", false);
+
+                        db.collection("accounts").document(userId)
+                                .collection("notifications")
+                                .add(notificationData)
+                                .addOnSuccessListener(docRef -> {
+                                    Log.d(TAG, "✅ Notification saved for user: " + userId);
+                                    notifiedCount[0]++;
+                                    processedCount[0]++;
+
+                                    // Check if all users processed
+                                    if (processedCount[0] == totalUsers) {
+                                        String message = "Notifications sent to " + notifiedCount[0] +
+                                                " users, skipped " + skippedCount[0] + " users";
+                                        Log.d(TAG, message);
+                                        callback.onSuccess(message);
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "❌ Failed to write notification for user: " + userId, e);
+                                    processedCount[0]++;
+
+                                    // Check if all users processed
+                                    if (processedCount[0] == totalUsers) {
+                                        String message = "Notifications sent to " + notifiedCount[0] +
+                                                " users, skipped " + skippedCount[0] + " users";
+                                        Log.d(TAG, message);
+                                        callback.onSuccess(message);
+                                    }
+                                });
                     })
                     .addOnFailureListener(e -> {
-                        Log.e(TAG, "❌ Failed to send notification to userId=" + userId, e);
-                        synchronized (completed) {
-                            completed[0]++;
-                            Log.d(TAG, "Progress: " + completed[0] + "/" + totalUsers + " completed");
-                            if (completed[0] == totalUsers) {
-                                Log.d(TAG, "All sends completed | totalSuccess=" + successful[0]);
-                                callback.onSuccess("Sent " + successful[0] + " notifications successfully!");
-                            }
+                        Log.e(TAG, "❌ Failed to get user preference for: " + userId, e);
+                        processedCount[0]++;
+
+                        // Check if all users processed
+                        if (processedCount[0] == totalUsers) {
+                            String message = "Notifications sent to " + notifiedCount[0] +
+                                    " users, skipped " + skippedCount[0] + " users (some errors occurred)";
+                            Log.d(TAG, message);
+                            callback.onSuccess(message);
                         }
                     });
-        }
-    }
-
-    private void markEntrantsAsNotified(String eventId, List<String> entrantIds,
-                                        String collectionName) {
-        Log.d(TAG, "markEntrantsAsNotified called | eventId=" + eventId +
-                " | count=" + entrantIds.size() + " | collection=" + collectionName);
-
-        for (String userId : entrantIds) {
-            Log.d(TAG, "Marking entrant as notified | userId=" + userId);
-            db.collection("events").document(eventId)
-                    .collection(collectionName).document(userId)
-                    .update("notified", true, "notifiedAt", FieldValue.serverTimestamp())
-                    .addOnSuccessListener(aVoid -> Log.d(TAG, "✅ Marked as notified: " + userId))
-                    .addOnFailureListener(e ->
-                            Log.e(TAG, "❌ Failed to mark user as notified: " + userId, e));
         }
     }
 
