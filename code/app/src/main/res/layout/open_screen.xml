@@ -5,8 +5,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#020617"
+    android:background="@color/white"
     tools:context=".WelcomeActivity">
+
+    <!-- Title -->
 
     <!-- Illustration Row -->
     <TextView
@@ -16,9 +18,9 @@
         android:layout_marginTop="16dp"
         android:gravity="center"
         android:paddingTop="32dp"
-        android:text="Zenith-Connect\nDraw Lobby"
+        android:text="Welcome to\nZenith-Connect"
         android:textAlignment="center"
-        android:textColor="#FBBF24"
+        android:textColor="@color/black"
         android:textSize="28sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -54,8 +56,8 @@
         android:layout_width="0dp"
         android:layout_height="56dp"
         android:text="Log In"
-        android:textColor="@color/black"
-        android:backgroundTint="#22C55E"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/f4"
         app:layout_constraintTop_toBottomOf="@id/illustrationRow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -69,7 +71,7 @@
         android:layout_height="56dp"
         android:text="Create Account"
         android:textColor="@color/black"
-        android:backgroundTint="#FBBF24"
+        android:backgroundTint="@color/f1"
         app:layout_constraintTop_toBottomOf="@id/btn_login"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

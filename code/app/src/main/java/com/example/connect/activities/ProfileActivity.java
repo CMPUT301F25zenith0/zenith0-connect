@@ -1,5 +1,6 @@
 package com.example.connect.activities;
 
+
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -12,8 +13,10 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
 
 import com.example.connect.R;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -26,8 +29,10 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+
 import java.util.HashMap;
 import java.util.Map;
+
 
 /**
  * Activity for viewing and updating user profile information.
@@ -39,15 +44,18 @@ import java.util.Map;
  */
 public class ProfileActivity extends AppCompatActivity {
 
+
     private EditText etName, etEmail, etPhone, etDeviceId;
     private MaterialButton btnSave, btnDelete, btnBack, btnLogout, btnOrgView;
     private ImageView profileImage;
     private ImageButton edit_image;
 
+
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private FirebaseUser currentUser;
     private String userId;
+
 
     /**
      * Initialize the activity when it starts.
@@ -61,16 +69,19 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_profile);
 
+
         // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         currentUser = mAuth.getCurrentUser();
+
 
         if (currentUser == null) {
             Toast.makeText(this, "Please log in to view profile", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
+
 
         userId = currentUser.getUid();
         initViews();
@@ -95,6 +106,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+
     /**
      * Initialize all UI components by finding their views from the layout.
      * Gets references to all EditTexts, Buttons, and ImageViews.
@@ -109,40 +121,10 @@ public class ProfileActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.back_btn);
         btnLogout = findViewById(R.id.btn_logout);
         btnOrgView = findViewById(R.id.btn_org_view);
-        profileImage = findViewById(R.id.ivProfile); // Updated ID
-        edit_image = findViewById(R.id.fabChangePhoto); // Updated ID
-
-        // Light Mode Switch
-        com.google.android.material.materialswitch.MaterialSwitch switchLightMode = findViewById(R.id.switchLightMode);
-        setupLightModeSwitch(switchLightMode);
+        profileImage = findViewById(R.id.profile_img);
+        edit_image = findViewById(R.id.edit_profile);
     }
 
-    /**
-     * Set up the Light Mode switch.
-     * Loads the current preference and sets the listener to toggle the theme.
-     */
-    private void setupLightModeSwitch(com.google.android.material.materialswitch.MaterialSwitch switchLightMode) {
-        SharedPreferences prefs = getSharedPreferences("ThemePrefs", MODE_PRIVATE);
-        boolean isLightMode = prefs.getBoolean("isLightMode", false);
-
-        if (switchLightMode != null) {
-            switchLightMode.setChecked(isLightMode);
-
-            switchLightMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.putBoolean("isLightMode", isChecked);
-                editor.apply();
-
-                if (isChecked) {
-                    androidx.appcompat.app.AppCompatDelegate
-                            .setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO);
-                } else {
-                    androidx.appcompat.app.AppCompatDelegate
-                            .setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES);
-                }
-            });
-        }
-    }
 
     /**
      * Set up click listeners for all buttons and interactive elements.
@@ -150,33 +132,41 @@ public class ProfileActivity extends AppCompatActivity {
      * profile image editing, and switching between user/organizer views.
      */
     private void setupClickListeners() {
-        // Back button handled by toolbar navigation now
-        com.google.android.material.appbar.MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        if (toolbar != null) {
-            toolbar.setNavigationOnClickListener(v -> finish());
-        }
-
+        // All the buttons required
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
         }
+
+
+
 
         if (btnLogout != null) {
             btnLogout.setOnClickListener(v -> confirmLogout());
         }
 
+
+
+
         if (btnSave != null) {
             btnSave.setOnClickListener(v -> saveProfile());
         }
 
+
+
+
         if (btnDelete != null) {
             btnDelete.setOnClickListener(v -> confirmDeleteProfile());
         }
+
+
+
 
         if (edit_image != null) {
             edit_image.setOnClickListener(v -> {
                 Toast.makeText(this, "Profile image upload coming soon", Toast.LENGTH_SHORT).show();
             });
         }
+
 
         // Org View / User View button - behavior depends on context
         if (btnOrgView != null) {
@@ -198,7 +188,9 @@ public class ProfileActivity extends AppCompatActivity {
             });
         }
 
+
     }
+
 
     /**
      * Show a confirmation dialog before logging out.
@@ -213,6 +205,7 @@ public class ProfileActivity extends AppCompatActivity {
                 .show();
     }
 
+
     /**
      * Perform the actual logout process.
      * Signs out from Firebase Authentication, clears "Remember Me" preferences,
@@ -222,6 +215,7 @@ public class ProfileActivity extends AppCompatActivity {
         // Sign out from Firebase
         mAuth.signOut();
 
+
         // Clear "Remember Me" preference
         SharedPreferences sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -230,8 +224,10 @@ public class ProfileActivity extends AppCompatActivity {
         editor.remove("password");
         editor.apply();
 
+
         // Show logout message
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
+
 
         // Navigate to login screen and clear activity stack
         Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
@@ -240,11 +236,11 @@ public class ProfileActivity extends AppCompatActivity {
         finish();
     }
 
+
     /**
      * Load the user's profile information from Firestore.
      * Retrieves name, email, and phone number from the "accounts" collection.
-     * If no profile exists in Firestore, uses the email from Firebase Auth as
-     * fallback.
+     * If no profile exists in Firestore, uses the email from Firebase Auth as fallback.
      */
     private void loadUserProfile() {
         db.collection("accounts").document(userId)
@@ -260,12 +256,10 @@ public class ProfileActivity extends AppCompatActivity {
                                 String email = document.getString("email");
                                 String phone = document.getString("mobile_num");
 
-                                if (name != null)
-                                    etName.setText(name);
-                                if (email != null)
-                                    etEmail.setText(email);
-                                if (phone != null)
-                                    etPhone.setText(phone);
+
+                                if (name != null) etName.setText(name);
+                                if (email != null) etEmail.setText(email);
+                                if (phone != null) etPhone.setText(phone);
                             } else {
                                 // No profile exists, use Firebase Auth email
                                 if (currentUser.getEmail() != null) {
@@ -280,6 +274,7 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
     }
+
 
     /**
      * Set up the device ID field with a masked Android ID.
@@ -299,6 +294,7 @@ public class ProfileActivity extends AppCompatActivity {
         etDeviceId.setEnabled(false);
     }
 
+
     /**
      * Save the updated profile information to Firestore.
      * First validates the input, then updates the Firestore document.
@@ -310,13 +306,16 @@ public class ProfileActivity extends AppCompatActivity {
         String email = etEmail.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
 
+
         // Validate inputs
         if (!validateInputs(name, email, phone)) {
             return;
         }
 
+
         btnSave.setEnabled(false);
         btnSave.setText("Saving...");
+
 
         // Create update map
         Map<String, Object> updates = new HashMap<>();
@@ -331,6 +330,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
         updates.put("updated_at", System.currentTimeMillis());
 
+
         // Update Firestore
         db.collection("accounts").document(userId)
                 .set(updates, com.google.firebase.firestore.SetOptions.merge())
@@ -340,25 +340,24 @@ public class ProfileActivity extends AppCompatActivity {
                         btnSave.setEnabled(true);
                         btnSave.setText("Save");
 
+
                         if (task.isSuccessful()) {
                             // Also update Firebase Auth email if it changed
                             if (!email.equals(currentUser.getEmail())) {
                                 updateFirebaseAuthEmail(email);
                             } else {
-                                Toast.makeText(ProfileActivity.this, "Profile updated successfully!",
-                                        Toast.LENGTH_SHORT).show();
+                                Toast.makeText(ProfileActivity.this, "Profile updated successfully!", Toast.LENGTH_SHORT).show();
                             }
                         } else {
                             Log.e("ProfileActivity", "Error updating profile", task.getException());
                             Toast.makeText(ProfileActivity.this,
-                                    "Failed to update profile: "
-                                            + (task.getException() != null ? task.getException().getMessage()
-                                                    : "Unknown error"),
+                                    "Failed to update profile: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"),
                                     Toast.LENGTH_LONG).show();
                         }
                     }
                 });
     }
+
 
     /**
      * Update the email address in Firebase Authentication.
@@ -368,15 +367,13 @@ public class ProfileActivity extends AppCompatActivity {
      * @param newEmail the new email address to set
      */
     private void updateFirebaseAuthEmail(String newEmail) {
-        // updateEmail() is deprecated but still works - updates the user's email in
-        // Firebase Auth
+        // updateEmail() is deprecated but still works - updates the user's email in Firebase Auth
         currentUser.updateEmail(newEmail)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(Task<Void> task) {
                         if (task.isSuccessful()) {
-                            Toast.makeText(ProfileActivity.this, "Profile and email updated successfully!",
-                                    Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ProfileActivity.this, "Profile and email updated successfully!", Toast.LENGTH_SHORT).show();
                         } else {
                             Log.e("ProfileActivity", "Error updating email", task.getException());
                             Toast.makeText(ProfileActivity.this,
@@ -386,6 +383,7 @@ public class ProfileActivity extends AppCompatActivity {
                     }
                 });
     }
+
 
     /**
      * Show a confirmation dialog before deleting the account.
@@ -400,6 +398,7 @@ public class ProfileActivity extends AppCompatActivity {
                 .show();
     }
 
+
     /**
      * Delete the user's profile from both Firestore and Firebase Auth.
      * Deletes the Firestore document first, then the Firebase Auth account.
@@ -411,6 +410,7 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
+
         // Store userId before any deletion (important!)
         final String userIdToDelete = userId;
         if (userIdToDelete == null || userIdToDelete.isEmpty()) {
@@ -418,9 +418,11 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
+
         // Disable delete button to prevent multiple clicks
         btnDelete.setEnabled(false);
         btnDelete.setText("Deleting...");
+
 
         // Delete Firestore FIRST, then Auth account
         // This ensures we have the userId available
@@ -429,6 +431,7 @@ public class ProfileActivity extends AppCompatActivity {
             deleteAuthAccount();
         });
     }
+
 
     /**
      * Delete the Firebase Auth account.
@@ -442,6 +445,7 @@ public class ProfileActivity extends AppCompatActivity {
             btnDelete.setText("Delete Profile");
             return;
         }
+
 
         // Try to delete the Auth account directly
         currentUser.delete()
@@ -457,6 +461,7 @@ public class ProfileActivity extends AppCompatActivity {
                             Exception exception = task.getException();
                             String errorMsg = exception != null ? exception.getMessage() : "Unknown error";
                             Log.e("ProfileActivity", "Error deleting Auth account: " + errorMsg, exception);
+
 
                             // Check if re-authentication is required
                             if (errorMsg != null && errorMsg.contains("requires recent authentication")) {
@@ -475,6 +480,7 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
+
     /**
      * Show a dialog asking the user to enter their password for re-authentication.
      * Firebase requires recent authentication before allowing account deletion
@@ -486,13 +492,14 @@ public class ProfileActivity extends AppCompatActivity {
         builder.setTitle("Re-authentication Required");
         builder.setMessage("Please enter your password to confirm account deletion:");
 
+
         // Create password input field
         final EditText passwordInput = new EditText(this);
-        passwordInput.setInputType(
-                android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        passwordInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
         passwordInput.setHint("Password");
         passwordInput.setPadding(50, 20, 50, 20);
         builder.setView(passwordInput);
+
 
         builder.setPositiveButton("Confirm", (dialog, which) -> {
             String password = passwordInput.getText().toString().trim();
@@ -506,19 +513,23 @@ public class ProfileActivity extends AppCompatActivity {
             reAuthenticateAndDelete(password);
         });
 
+
         builder.setNegativeButton("Cancel", (dialog, which) -> {
             btnDelete.setEnabled(true);
             btnDelete.setText("Delete Profile");
             dialog.dismiss();
         });
 
+
         builder.setOnCancelListener(dialog -> {
             btnDelete.setEnabled(true);
             btnDelete.setText("Delete Profile");
         });
 
+
         builder.show();
     }
+
 
     /**
      * Re-authenticate the user with their password, then attempt to delete
@@ -534,8 +545,10 @@ public class ProfileActivity extends AppCompatActivity {
             return;
         }
 
+
         // Create credential with email and password
         AuthCredential credential = EmailAuthProvider.getCredential(currentUser.getEmail(), password);
+
 
         // Re-authenticate
         currentUser.reauthenticate(credential)
@@ -553,13 +566,13 @@ public class ProfileActivity extends AppCompatActivity {
                             btnDelete.setEnabled(true);
                             btnDelete.setText("Delete Profile");
                             Toast.makeText(ProfileActivity.this,
-                                    "Re-authentication failed: "
-                                            + (errorMsg.contains("password") ? "Incorrect password" : errorMsg),
+                                    "Re-authentication failed: " + (errorMsg.contains("password") ? "Incorrect password" : errorMsg),
                                     Toast.LENGTH_LONG).show();
                         }
                     }
                 });
     }
+
 
     /**
      * Attempt to delete the Auth account after successful re-authentication.
@@ -572,6 +585,7 @@ public class ProfileActivity extends AppCompatActivity {
             btnDelete.setText("Delete Profile");
             return;
         }
+
 
         currentUser.delete()
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -595,14 +609,14 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
+
     /**
      * Delete the user's document from the Firestore "accounts" collection.
      * First checks if the document exists for debugging purposes,
      * then proceeds with deletion and executes the callback when done.
      *
      * @param userIdToDelete the user ID whose document should be deleted
-     * @param onComplete     callback to execute after deletion completes (success
-     *                       or failure)
+     * @param onComplete callback to execute after deletion completes (success or failure)
      */
     private void deleteFirestoreDocument(String userIdToDelete, Runnable onComplete) {
         Log.d("ProfileActivity", "Attempting to delete Firestore document for userId: " + userIdToDelete);
@@ -619,8 +633,7 @@ public class ProfileActivity extends AppCompatActivity {
                             if (doc != null && doc.exists()) {
                                 Log.d("ProfileActivity", "Document exists, proceeding with deletion");
                             } else {
-                                Log.w("ProfileActivity",
-                                        "Document does not exist in Firestore for userId: " + userIdToDelete);
+                                Log.w("ProfileActivity", "Document does not exist in Firestore for userId: " + userIdToDelete);
                             }
                         }
 
@@ -632,12 +645,11 @@ public class ProfileActivity extends AppCompatActivity {
 
     /**
      * Perform the actual deletion of the Firestore document.
-     * Handles success and failure cases, and executes the callback in both
-     * scenarios.
+     * Handles success and failure cases, and executes the callback in both scenarios.
      * Shows appropriate error messages if deletion fails.
      *
      * @param userIdToDelete the user ID whose document should be deleted
-     * @param onComplete     callback to execute when deletion attempt completes
+     * @param onComplete callback to execute when deletion attempt completes
      */
     private void performFirestoreDeletion(String userIdToDelete, Runnable onComplete) {
         db.collection("accounts").document(userIdToDelete)
@@ -684,6 +696,7 @@ public class ProfileActivity extends AppCompatActivity {
                 });
     }
 
+
     /**
      * Clean up user preferences and navigate back to the login screen.
      * Clears "Remember Me" preferences, signs out from Firebase,
@@ -699,10 +712,13 @@ public class ProfileActivity extends AppCompatActivity {
         editor.remove("password");
         editor.apply();
 
+
         // Sign out from Firebase (if not already signed out)
         mAuth.signOut();
 
+
         Toast.makeText(ProfileActivity.this, "Account deleted successfully", Toast.LENGTH_SHORT).show();
+
 
         // Navigate to MainActivity (shows both Login and Create Account options)
         Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
@@ -711,12 +727,13 @@ public class ProfileActivity extends AppCompatActivity {
         finish();
     }
 
+
     /**
      * Validate the user's input fields.
      * Name and email are required fields. Email must be in valid format.
      * Phone number is optional, but if provided, must be at least 10 digits.
      *
-     * @param name  the user's full name
+     * @param name the user's full name
      * @param email the user's email address
      * @param phone the user's phone number (can be empty/null)
      * @return true if all validations pass, false otherwise
@@ -728,17 +745,20 @@ public class ProfileActivity extends AppCompatActivity {
             return false;
         }
 
+
         if (TextUtils.isEmpty(email)) {
             etEmail.setError("Email is required");
             etEmail.requestFocus();
             return false;
         }
 
+
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             etEmail.setError("Please enter a valid email");
             etEmail.requestFocus();
             return false;
         }
+
 
         // Phone number is optional, but if provided, validate it
         if (!TextUtils.isEmpty(phone) && phone.length() < 10) {
@@ -747,6 +767,9 @@ public class ProfileActivity extends AppCompatActivity {
             return false;
         }
 
+
         return true;
     }
 }
+
+

@@ -19,19 +19,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Event list adapter is a recycle view adapter fo display a list of event
- * objects
+ * Event list adapter is a recycle view adapter fo display a list of event objects
  * <p>
- * Using listAdapter and diffUtil to handle list updates, filtering, and data
- * changes without reloading the entire dataset.
+ * Using listAdapter and diffUtil to handle list updates, filtering, and data changes without reloading the entire dataset.
  * </p>
  * <p>
- * This adapter supports filtering events by search query, date, and interest
- * category.
- * It also provides listener callbacks for user interactions such as viewing
- * event details or joining an event waitlist.
+ * This adapter supports filtering events by search query, date, and interest category.
+ * It also provides listener callbacks for user interactions such as viewing event details or joining an event waitlist.
  * </p>
- * 
  * @author Zenith team
  * @version 2.0
  */
@@ -46,7 +41,6 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
     public interface Listener {
         // TODO - Complete the functionality of join from this button
         void onDetails(Event e);
-
         void onJoin(Event e);
     }
 
@@ -157,42 +151,36 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
 
     private boolean matchesSearch(Event event, String query) {
         return (event.getName() != null && event.getName().toLowerCase().contains(query)) ||
-                (event.getLocation() != null && event.getLocation().toLowerCase().contains(query)) ||
-                (event.getCategory() != null && event.getCategory().toLowerCase().contains(query)) ||
-                (event.getDescription() != null && event.getDescription().toLowerCase().contains(query));
+               (event.getLocation() != null && event.getLocation().toLowerCase().contains(query)) ||
+               (event.getCategory() != null && event.getCategory().toLowerCase().contains(query)) ||
+               (event.getDescription() != null && event.getDescription().toLowerCase().contains(query));
     }
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
         private final ImageView eventImage;
         private final TextView eventTitle;
+        private final TextView eventDateTime;
         private final TextView eventLocation;
-        private final TextView eventDateDay;
-        private final TextView eventDateMonth;
-        private final Button btnEventDetails;
+        private final TextView eventPrice;
+        private final Button btnViewDetails;
+        private final Button btnJoinWaitlist;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
             eventImage = itemView.findViewById(R.id.eventImage);
             eventTitle = itemView.findViewById(R.id.eventTitle);
+            eventDateTime = itemView.findViewById(R.id.eventDateTime);
             eventLocation = itemView.findViewById(R.id.eventLocation);
-            eventDateDay = itemView.findViewById(R.id.eventDateDay);
-            eventDateMonth = itemView.findViewById(R.id.eventDateMonth);
-            btnEventDetails = itemView.findViewById(R.id.btnEventDetails);
+            eventPrice = itemView.findViewById(R.id.eventPrice);
+            btnViewDetails = itemView.findViewById(R.id.btnViewDetails);
+            btnJoinWaitlist = itemView.findViewById(R.id.btnJoinWaitlist);
         }
 
         public void bind(Event event, Listener listener) {
             eventTitle.setText(event.getName() != null ? event.getName() : "Untitled Event");
+            eventDateTime.setText(event.getDateTime() != null ? event.getDateTime() : "TBD");
             eventLocation.setText(event.getLocation() != null ? event.getLocation() : "Location TBD");
-
-            // Parse and set date
-            if (event.getDateTime() != null && !event.getDateTime().isEmpty()) {
-                String[] dateParts = parseDate(event.getDateTime());
-                eventDateDay.setText(dateParts[0]);
-                eventDateMonth.setText(dateParts[1]);
-            } else {
-                eventDateDay.setText("--");
-                eventDateMonth.setText("TBD");
-            }
+            eventPrice.setText(event.getPrice() != null ? event.getPrice() : "Free");
 
             if (event.getImageUrl() != null && !event.getImageUrl().isEmpty()) {
                 // TODO: Load image with Glide or Picasso
@@ -201,48 +189,17 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
                 eventImage.setImageResource(R.drawable.placeholder_img);
             }
 
-            // Event Details button click
-            btnEventDetails.setOnClickListener(v -> {
+            btnViewDetails.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onDetails(event);
                 }
             });
 
-            // Item click listener is handled by the RecyclerView or parent
-            itemView.setOnClickListener(v -> {
+            btnJoinWaitlist.setOnClickListener(v -> {
                 if (listener != null) {
-                    listener.onDetails(event);
+                    listener.onJoin(event);
                 }
             });
-        }
-
-        private String[] parseDate(String dateString) {
-            String day = "01";
-            String month = "JAN";
-            try {
-                String[] parts = dateString.split("[/\\s,-]+");
-                if (parts.length >= 2) {
-                    if (parts[0].matches("\\d+")) {
-                        day = parts[0];
-                        // If second part is a number, convert to month name
-                        if (parts[1].matches("\\d+")) {
-                            int monthNum = Integer.parseInt(parts[1]);
-                            String[] monthNames = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-                                    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
-                            if (monthNum >= 1 && monthNum <= 12) {
-                                month = monthNames[monthNum - 1];
-                            }
-                        } else {
-                            month = parts[1].substring(0, Math.min(3, parts[1].length())).toUpperCase();
-                        }
-                    } else if (parts[1].matches("\\d+")) {
-                        month = parts[0].substring(0, Math.min(3, parts[0].length())).toUpperCase();
-                        day = parts[1];
-                    }
-                }
-            } catch (Exception e) {
-            }
-            return new String[] { day, month };
         }
     }
 }

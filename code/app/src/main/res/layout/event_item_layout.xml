@@ -1,179 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    android:layout_marginHorizontal="4dp"
-    app:cardBackgroundColor="@color/card_bg"
-    app:cardCornerRadius="24dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="8dp"
+    app:cardCornerRadius="12dp"
     app:cardElevation="4dp"
-    app:strokeColor="@android:color/transparent"
-    app:strokeWidth="0dp">
+    app:cardBackgroundColor="#FFFFFF"
+    android:focusable="false"
+    android:focusableInTouchMode="false">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false">
 
-        <!-- Event Image (Rounded Square) -->
-        <com.google.android.material.imageview.ShapeableImageView
+        <ImageView
             android:id="@+id/eventImage"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:scaleType="centerCrop"
             android:src="@drawable/placeholder_img"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium" />
+            android:contentDescription="Event Image"
+            android:scaleType="centerCrop"
+            android:background="#E0E0E0"
+            android:layout_marginBottom="12dp"
+            android:focusable="false"/>
 
-        <!-- Date Badge (Right Side) -->
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/dateBadge"
-            android:layout_width="50dp"
-            android:layout_height="60dp"
-            app:cardBackgroundColor="#FFE4E1"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/eventDateDay"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="23"
-                    android:textColor="#000000"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/eventDateMonth"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Dec"
-                    android:textColor="#FF7F50"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- Event Details (Center) -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/eventTitle"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp"
-            android:orientation="vertical"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/dateBadge"
-            app:layout_constraintStart_toEndOf="@id/eventImage"
-            app:layout_constraintTop_toTopOf="parent">
+            android:text="Event Title"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#000000"
+            android:layout_marginBottom="4dp"
+            android:focusable="false"/>
 
-            <TextView
-                android:id="@+id/eventTitle"
-                android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/eventDateTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Date &amp; Time"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp"
+            android:focusable="false"/>
+
+        <TextView
+            android:id="@+id/eventLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Location"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="4dp"
+            android:focusable="false"/>
+
+        <TextView
+            android:id="@+id/eventPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Price"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="16dp"
+            android:focusable="false"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:focusable="false"
+            android:focusableInTouchMode="false">
+
+            <Button
+                android:id="@+id/btnViewDetails"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:text="Lantern Festival"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold" />
+                android:layout_weight="1"
+                android:text="View Details"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#2C3E3F"
+                android:layout_marginEnd="8dp"
+                android:focusable="true"
+                android:clickable="true"/>
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/btnJoinWaitlist"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <ImageView
-                    android:layout_width="12dp"
-                    android:layout_height="12dp"
-                    android:layout_marginEnd="4dp"
-                    android:src="@drawable/ic_location"
-                    app:tint="@color/text_secondary" />
-
-                <TextView
-                    android:id="@+id/eventLocation"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:maxLines="1"
-                    android:text="Nagasaki, Japan"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <!-- Avatar Pile + Event Details Button -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <!-- Placeholder Avatars (Overlapping) -->
-                <FrameLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:background="@drawable/circle_background"
-                        android:backgroundTint="#FF5722"
-                        android:padding="1dp"
-                        android:src="@drawable/ic_profile_placeholder" />
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginStart="12dp"
-                        android:background="@drawable/circle_background"
-                        android:backgroundTint="#4CAF50"
-                        android:padding="1dp"
-                        android:src="@drawable/ic_profile_placeholder" />
-
-                    <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginStart="24dp"
-                        android:background="@drawable/circle_background"
-                        android:backgroundTint="#2196F3"
-                        android:padding="1dp"
-                        android:src="@drawable/ic_profile_placeholder" />
-                </FrameLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnEventDetails"
-                    android:layout_width="wrap_content"
-                    android:layout_height="28dp"
-                    android:layout_marginStart="8dp"
-                    android:text="Event Details"
-                    android:textSize="10sp"
-                    android:textColor="@color/primary_gold"
-                    android:paddingHorizontal="12dp"
-                    android:paddingVertical="0dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    app:backgroundTint="@android:color/transparent"
-                    app:strokeColor="@color/primary_gold"
-                    app:strokeWidth="1dp"
-                    app:cornerRadius="14dp" />
-            </LinearLayout>
+                android:layout_weight="1"
+                android:text="Join Waitlist"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#2C3E3F"
+                android:focusable="true"
+                android:clickable="true"/>
 
         </LinearLayout>
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
-</com.google.android.material.card.MaterialCardView>
+</androidx.cardview.widget.CardView>

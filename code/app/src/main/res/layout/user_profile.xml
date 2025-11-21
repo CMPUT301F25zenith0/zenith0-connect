@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="#050816">
+    android:background="#5A8A8A"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,411 +12,322 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- TOP BAR - BACK & LOGOUT AS NEON CHIPS -->
+        <!-- Top Bar with Back and Logout Buttons -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp">
 
+            <!-- Back Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/back_btn"
-                android:layout_width="110dp"
-                android:layout_height="36dp"
+                android:layout_width="100dp"
+                android:layout_height="30dp"
                 android:layout_alignParentStart="true"
-                android:text="Back"
-                android:textAllCaps="false"
-                android:textSize="13sp"
-                android:textColor="#0B1020"
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
                 app:icon="@drawable/ic_back_arrow"
-                app:iconTint="#0B1020"
+                app:iconTint="#FFFFFF"
                 app:iconGravity="textStart"
-                app:iconPadding="4dp"
-                app:backgroundTint="#FBBF24"
-                app:cornerRadius="999dp" />
+                app:iconPadding="0dp"
+                app:backgroundTint="@color/f5"
+                app:cornerRadius="20dp"/>
 
+            <!-- Logout Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_logout"
-                android:layout_width="110dp"
-                android:layout_height="36dp"
+                android:layout_width="100dp"
+                android:layout_height="30dp"
                 android:layout_alignParentEnd="true"
-                android:text="Log Out"
+                android:text="Logout"
+                android:textSize="12sp"
+                android:textColor="#FFFFFF"
                 android:textAllCaps="false"
-                android:textSize="13sp"
-                android:textColor="#F9FAFB"
-                app:backgroundTint="#EF4444"
-                app:cornerRadius="999dp" />
+                android:insetLeft="0dp"
+                android:insetTop="0dp"
+                android:insetRight="0dp"
+                android:insetBottom="0dp"
+                app:backgroundTint="@color/f5"
+                app:cornerRadius="20dp"/>
 
         </RelativeLayout>
 
-        <!-- LOTTERY HEADER -->
+
+        <!-- Profile Image Container -->
+        <RelativeLayout
+            android:id="@+id/profileContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="40dp">
+
+            <!-- Profile Image -->
+            <ImageView
+                android:id="@+id/profile_img"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/ic_profile_example"
+                android:padding="3dp"
+                android:scaleType="centerCrop"
+                android:contentDescription="Profile Image" />
+
+            <!-- Edit Icon -->
+            <ImageButton
+                android:id="@+id/edit_profile"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:layout_alignEnd="@id/profile_img"
+                android:layout_alignBottom="@id/profile_img"
+                android:src="@drawable/ic_edit"
+                android:padding="6dp"
+                android:background="@drawable/rounded_image_button"
+                android:scaleType="centerInside"
+                android:contentDescription="Edit Profile" />
+
+        </RelativeLayout>
+
+        <!-- Form Fields Container -->
         <LinearLayout
+            android:id="@+id/device_icon"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:gravity="center"
             android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PROFILE JACKPOT"
-                android:textAllCaps="true"
-                android:textColor="#FBBF24"
-                android:textSize="18sp"
-                android:letterSpacing="0.2"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Your golden ticket into every draw"
-                android:textColor="#9CA3AF"
-                android:textSize="12sp" />
-        </LinearLayout>
-
-        <!-- TICKET CARD -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="#0B1020"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="10dp"
-            app:strokeColor="#FBBF24"
-            app:strokeWidth="2dp">
-
-            <LinearLayout
-                android:id="@+id/device_icon"
+            <!-- Name Field -->
+            <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
+                android:layout_marginBottom="12dp">
 
-                <!-- TICKET TOP STRIP -->
+                <ImageView
+                    android:id="@+id/name_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_profile_name"
+                    app:tint="#000000"
+                    android:contentDescription="Name" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_toEndOf="@id/name_icon"
+                    android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="ADMIT ONE"
-                        android:textAllCaps="true"
-                        android:textColor="#6EE7B7"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:text="Name"
+                        android:textColor="#000000"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="LIVE DRAWS"
-                        android:textAllCaps="true"
-                        android:textColor="#F472B6"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- PROFILE IMAGE AS LOTTERY AVATAR -->
-                <RelativeLayout
-                    android:id="@+id/profileContainer"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="24dp"
-                    android:layout_marginBottom="12dp">
-
-                    <ImageView
-                        android:id="@+id/profile_img"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:background="@drawable/rounded_image_button"
-                        android:padding="6dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_profile_example"
-                        android:contentDescription="Profile Image" />
-
-                    <ImageButton
-                        android:id="@+id/edit_profile"
-                        android:layout_width="40dp"
+                    <EditText
+                        android:id="@+id/et_name"
+                        android:layout_width="match_parent"
                         android:layout_height="40dp"
-                        android:layout_alignEnd="@id/profile_img"
-                        android:layout_alignBottom="@id/profile_img"
-                        android:backgroundTint="#22C55E"
-                        android:background="@drawable/rounded_image_button"
-                        android:padding="8dp"
-                        android:scaleType="centerInside"
-                        android:src="@drawable/ic_edit"
-                        android:contentDescription="Edit Profile" />
+                        android:background="@drawable/edittext_bg"
+                        android:hint="Amy Young"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:inputType="textPersonName" />
+                </LinearLayout>
+            </RelativeLayout>
 
-                </RelativeLayout>
+            <!-- Email Field -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="Tap to change your lucky avatar"
-                    android:textColor="#9CA3AF"
-                    android:textSize="11sp" />
+                <ImageView
+                    android:id="@+id/email_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_email"
+                    app:tint="#000000"
+                    android:contentDescription="Email" />
 
-                <!-- DOTTED SEPARATOR -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="12dp"
-                    android:gravity="center"
-                    android:text="···  ···  ···  ···  ···  ···  ···  ···"
-                    android:textColor="#1F2937"
-                    android:textSize="10sp" />
-
-                <!-- NAME FIELD ROW -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_toEndOf="@id/email_icon"
+                    android:orientation="vertical">
 
-                    <ImageView
-                        android:id="@+id/name_icon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_profile_name"
-                        app:tint="#FBBF24"
-                        android:contentDescription="Name" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:text="E-Mail"
+                        android:textColor="#000000"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ticket Holder Name"
-                            android:textColor="#E5E7EB"
-                            android:textSize="13sp" />
-
-                        <EditText
-                            android:id="@+id/et_name"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:background="@drawable/edittext_bg"
-                            android:hint="e.g. Amy Jackpot Young"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:textSize="14sp"
-                            android:textColor="#F9FAFB"
-                            android:inputType="textPersonName" />
-                    </LinearLayout>
+                    <EditText
+                        android:id="@+id/et_email_profile"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@drawable/edittext_bg"
+                        android:hint="amyoung@random.com"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:inputType="textEmailAddress" />
                 </LinearLayout>
+            </RelativeLayout>
 
-                <!-- EMAIL FIELD ROW -->
+            <!-- Device ID Field -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/ivDeviceIcon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_device_icon"
+                    app:tint="#000000"
+                    android:contentDescription="Device ID" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_toEndOf="@id/ivDeviceIcon"
+                    android:orientation="vertical">
 
-                    <ImageView
-                        android:id="@+id/email_icon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_email"
-                        app:tint="#60A5FA"
-                        android:contentDescription="Email" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:text="Device ID"
+                        android:textColor="#000000"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Winning Notification Email"
-                            android:textColor="#E5E7EB"
-                            android:textSize="13sp" />
-
-                        <EditText
-                            android:id="@+id/et_email_profile"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:background="@drawable/edittext_bg"
-                            android:hint="you@luckydomain.com"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:textSize="14sp"
-                            android:textColor="#F9FAFB"
-                            android:inputType="textEmailAddress" />
-                    </LinearLayout>
+                    <EditText
+                        android:id="@+id/et_device"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@drawable/edittext_bg"
+                        android:hint="• • • • • • •"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:inputType="text"
+                        android:enabled="false" />
                 </LinearLayout>
+            </RelativeLayout>
 
-                <!-- DEVICE ID FIELD ROW -->
+            <!-- Phone Number Field -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:id="@+id/phone_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentStart="true"
+                    android:layout_marginEnd="12dp"
+                    android:src="@drawable/ic_phone"
+                    app:tint="#000000"
+                    android:contentDescription="Phone" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_toEndOf="@id/phone_icon"
+                    android:orientation="vertical">
 
-                    <ImageView
-                        android:id="@+id/ivDeviceIcon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_device_icon"
-                        app:tint="#34D399"
-                        android:contentDescription="Device ID" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
+                    <TextView
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:text="Phone no."
+                        android:textColor="#000000"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Bound Device"
-                            android:textColor="#E5E7EB"
-                            android:textSize="13sp" />
-
-                        <EditText
-                            android:id="@+id/et_device"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:background="@drawable/edittext_bg"
-                            android:hint="••••••••"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:textSize="14sp"
-                            android:textColor="#F9FAFB"
-                            android:enabled="false"
-                            android:inputType="text" />
-                    </LinearLayout>
+                    <EditText
+                        android:id="@+id/et_phone"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:background="@drawable/edittext_bg"
+                        android:hint="+98 1245560090"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textSize="14sp"
+                        android:textColor="#000000"
+                        android:inputType="phone" />
                 </LinearLayout>
+            </RelativeLayout>
 
-                <!-- PHONE FIELD ROW -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/phone_icon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_phone"
-                        app:tint="#F97316"
-                        android:contentDescription="Phone" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Backup Alert Number"
-                            android:textColor="#E5E7EB"
-                            android:textSize="13sp" />
-
-                        <EditText
-                            android:id="@+id/et_phone"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:background="@drawable/edittext_bg"
-                            android:hint="+1 (555) LUCKY YOU"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:textSize="14sp"
-                            android:textColor="#F9FAFB"
-                            android:inputType="phone" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- SMALL BADGE -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="4dp"
-                    android:text="PROFILE SEEDED ✓"
-                    android:textAllCaps="true"
-                    android:textColor="#6EE7B7"
-                    android:textSize="10sp" />
-
-            </LinearLayout>
-
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- SAVE / DELETE BUTTONS AS BIG CALL-TO-ACTION -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
-
+            <!-- Save Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_save"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="Save Changes"
+                android:layout_width="200dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:text="Save"
+                android:textColor="@color/white"
+                android:textSize="16sp"
                 android:textAllCaps="false"
-                android:textColor="#0B1020"
-                android:textSize="15sp"
-                app:backgroundTint="#22C55E"
-                app:cornerRadius="999dp" />
+                app:backgroundTint="@color/f5"
+                app:cornerRadius="24dp"
+                android:layout_marginBottom="8dp" />
 
+            <!-- Delete Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_delete"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:text="Delete Account"
+                android:layout_width="200dp"
+                android:layout_height="48dp"
+                android:layout_gravity="center"
+                android:text="Delete"
+                android:textColor="@color/white"
+                android:textSize="16sp"
                 android:textAllCaps="false"
-                android:textColor="#F9FAFB"
-                android:textSize="15sp"
-                app:backgroundTint="#B91C1C"
-                app:cornerRadius="999dp" />
+                app:backgroundTint="@color/f5"
+                app:cornerRadius="24dp"
+                android:layout_marginBottom="16dp" />
+
         </LinearLayout>
 
-        <!-- ORG / USER VIEW SWITCHER AS LOTTERY MODE TOGGLE -->
+        <!-- Bottom Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="12dp"
+            android:orientation="horizontal"
             android:gravity="center"
-            android:orientation="horizontal">
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp">
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_org_view"
-                android:layout_width="match_parent"
-                android:layout_height="46dp"
-                android:text="Switch Draw Console"
-                android:textAllCaps="false"
-                android:textColor="#E5E7EB"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Org View"
+                android:textColor="@color/white"
                 android:textSize="14sp"
-                app:backgroundTint="#1F2937"
-                app:cornerRadius="999dp" />
+                android:textAllCaps="false"
+                app:backgroundTint="#8FAF8F"
+                app:cornerRadius="24dp" />
 
         </LinearLayout>
 

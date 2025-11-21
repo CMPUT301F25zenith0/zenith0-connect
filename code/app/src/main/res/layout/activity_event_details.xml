@@ -1,365 +1,346 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_dark">
+    android:background="#FFFFFF">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        app:elevation="0dp">
+    <!-- Top Bar -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/topBar"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/topBar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="?attr/homeAsUpIndicator"
-            app:navigationIconTint="@color/primary_gold"
-            app:title="PRIZE DETAILS"
-            app:titleTextColor="@color/primary_gold"
-            app:titleCentered="true"/>
-    </com.google.android.material.appbar.AppBarLayout>
+        <!-- Back arrow (transparent, icon-like) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnBack"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:text="←"
+            android:textSize="18sp"
+            android:textColor="#000000"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:backgroundTint="@android:color/transparent"
+            android:padding="0dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Event Details"
+            android:textColor="#000000"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <!-- Scrollable Content -->
     <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintBottom_toTopOf="@id/bottomButtonsLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="12dp">
 
-            <!-- Prize Image Card -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Event Image -->
+            <ImageView
+                android:id="@+id/ivEventImage"
                 android:layout_width="match_parent"
-                android:layout_height="240dp"
-                android:layout_marginBottom="24dp"
-                app:cardCornerRadius="16dp"
-                app:strokeColor="@color/primary_gold"
-                app:strokeWidth="2dp"
-                app:cardElevation="8dp">
+                android:layout_height="180dp"
+                android:layout_marginBottom="12dp"
+                android:background="#F0F0F0"
+                android:contentDescription="Event Image"
+                android:scaleType="centerCrop"
+                android:src="@android:drawable/ic_menu_gallery" />
 
-                <ImageView
-                    android:id="@+id/ivEventImage"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@color/card_bg"
-                    android:contentDescription="Event Image"
-                    android:scaleType="centerCrop"
-                    android:src="@android:drawable/ic_menu_gallery" />
-                
+            <!-- Event Name -->
+            <TextView
+                android:id="@+id/tvEventName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Event Name**"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Organizer -->
+            <TextView
+                android:id="@+id/tvOrganizer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Organizer:"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Status -->
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Status:"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+
+            <!-- Fee -->
+            <TextView
+                android:id="@+id/tvFee"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Fee:"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Divider -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:background="#81C4C4"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Dates -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="GRAND PRIZE"
-                    android:background="@color/primary_gold"
-                    android:textColor="@color/black"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingTop="6dp"
-                    android:paddingBottom="6dp"
-                    android:textStyle="bold"
-                    android:layout_gravity="top|end"
-                    android:layout_margin="16dp"
-                    android:elevation="4dp"/>
-            </com.google.android.material.card.MaterialCardView>
+                    android:text="📅"
+                    android:textSize="18sp"
+                    android:layout_marginEnd="6dp" />
 
-            <!-- Title and Organizer -->
-            <TextView
-                android:id="@+id/tvEventName"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Event Name"
-                android:textColor="@color/primary_gold"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="4dp" 
-                android:gravity="center"/>
-
-            <TextView
-                android:id="@+id/tvOrganizer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Hosted by Organizer"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:layout_marginBottom="24dp" 
-                android:gravity="center"/>
-
-            <!-- Info Grid (Dates, Location, Fee) -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/card_bg"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="4dp"
-                android:layout_marginBottom="24dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/tvDates"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:text="Dates:"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-                    <!-- Row 1: Status & Fee -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="16dp">
-                        
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-                            <TextView
-                                android:text="STATUS"
-                                android:textSize="10sp"
-                                android:textColor="@color/text_secondary"
-                                android:textStyle="bold"/>
-                            <TextView
-                                android:id="@+id/tvStatus"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Open"
-                                android:textColor="@color/accent_green"
-                                android:textStyle="bold"
-                                android:textSize="16sp"/>
-                        </LinearLayout>
+            <!-- Location -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-                            <TextView
-                                android:text="ENTRY FEE"
-                                android:textSize="10sp"
-                                android:textColor="@color/text_secondary"
-                                android:textStyle="bold"/>
-                            <TextView
-                                android:id="@+id/tvFee"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="$0.00"
-                                android:textColor="@color/text_primary"
-                                android:textStyle="bold"
-                                android:textSize="16sp"/>
-                        </LinearLayout>
-                    </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📍"
+                    android:textSize="18sp"
+                    android:layout_marginEnd="6dp" />
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/text_field_bg"
-                        android:layout_marginBottom="16dp"/>
-
-                    <!-- Row 2: Date & Location -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="12dp">
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@android:drawable/ic_menu_my_calendar"
-                            app:tint="@color/primary_gold"
-                            android:layout_marginEnd="12dp"/>
-                        <TextView
-                            android:id="@+id/tvDates"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Date Range"
-                            android:textColor="@color/text_primary"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:src="@android:drawable/ic_menu_mapmode"
-                            app:tint="@color/primary_gold"
-                            android:layout_marginEnd="12dp"/>
-                        <TextView
-                            android:id="@+id/tvLocation"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Location Details"
-                            android:textColor="@color/text_primary"/>
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <TextView
+                    android:id="@+id/tvLocation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Location:"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <!-- Description -->
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="DETAILS"
-                android:textColor="@color/primary_gold"
-                android:textStyle="bold"
-                android:layout_marginBottom="8dp"
-                android:layout_marginStart="8dp"/>
+                android:orientation="horizontal"
+                android:layout_marginBottom="6dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📄"
+                    android:textSize="18sp"
+                    android:layout_marginEnd="6dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Description:"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvDescriptionContent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Description text..."
-                android:textColor="@color/text_secondary"
-                android:lineSpacingExtra="4dp"
-                android:layout_marginBottom="24dp"
-                android:paddingStart="8dp"/>
+                android:text="Lorem ipsum sample description…"
+                android:textColor="#666666"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp"
+                android:paddingStart="24dp" />
 
-            <!-- Draw Window Info -->
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
+            <!-- Registration Window -->
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/card_bg"
-                app:strokeColor="@color/primary_gold_dim"
-                app:strokeWidth="1dp"
-                app:cardCornerRadius="8dp"
-                android:layout_marginBottom="24dp">
-                
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="12dp">
+                android:text="Registration Window"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="DRAW SCHEDULE"
-                        android:textColor="@color/primary_gold"
-                        android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="8dp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginBottom="4dp">
-                        <TextView
-                            android:layout_width="60dp"
-                            android:layout_height="wrap_content"
-                            android:text="OPENS"
-                            android:textSize="10sp"
-                            android:textColor="@color/text_secondary"/>
-                        <TextView
-                            android:id="@+id/tvRegistrationOpens"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="MM DD, YYYY"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-                        <TextView
-                            android:layout_width="60dp"
-                            android:layout_height="wrap_content"
-                            android:text="CLOSES"
-                            android:textSize="10sp"
-                            android:textColor="@color/text_secondary"/>
-                        <TextView
-                            android:id="@+id/tvRegistrationCloses"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="MM DD, YYYY"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Stats (Hidden unless relevant) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="80dp">
-                
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+
                 <TextView
-                    android:id="@+id/tvWaitingList"
+                    android:layout_width="70dp"
+                    android:layout_height="wrap_content"
+                    android:text="Opens:"
+                    android:textColor="#000000"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvRegistrationOpens"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Waiting List: 0"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"/>
-                <TextView
-                    android:id="@+id/tvSelected"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Selected: 0"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"/>
-                <TextView
-                    android:id="@+id/tvEnrolled"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Enrolled: 0"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"/>
-                <TextView
-                    android:id="@+id/tvCancelled"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Cancelled: 0"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"/>
+                    android:text="MM DD, YYYY"
+                    android:textColor="#999999"
+                    android:textSize="13sp" />
             </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <TextView
+                    android:layout_width="70dp"
+                    android:layout_height="wrap_content"
+                    android:text="Closes:"
+                    android:textColor="#000000"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvRegistrationCloses"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MM DD, YYYY"
+                    android:textColor="#999999"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Waiting / Selected / Enrolled / Cancelled -->
+            <TextView
+                android:id="@+id/tvWaitingList"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Waiting List:"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tvSelected"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Selected:"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tvEnrolled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enrolled:"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tvCancelled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancelled:"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="12dp" />
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- Bottom Action Bar -->
+    <!-- Bottom Buttons -->
     <LinearLayout
         android:id="@+id/bottomButtonsLayout"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:background="@color/card_bg"
-        android:elevation="16dp">
+        android:padding="12dp"
+        android:background="#FFFFFF"
+        android:elevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <Button
             android:id="@+id/btnEditEvent"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+            style="@style/Widget.Material3.Button"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="44dp"
             android:layout_weight="1"
-            android:text="EDIT PRIZE"
-            android:textColor="@color/primary_gold"
-            app:strokeColor="@color/primary_gold"
+            android:text="Edit Event"
+            android:textColor="#2C4E4E"
+            android:textSize="13sp"
+            android:backgroundTint="#A5D8D8"
             android:layout_marginEnd="10dp"
-            app:cornerRadius="8dp" />
+            app:cornerRadius="22dp" />
 
         <Button
             android:id="@+id/btnManageDraw"
             style="@style/Widget.Material3.Button"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="44dp"
             android:layout_weight="1"
-            android:text="MANAGE DRAW"
-            android:textColor="@color/black"
-            android:textStyle="bold"
-            android:backgroundTint="@color/accent_green"
-            app:cornerRadius="8dp" />
+            android:text="Manage Draw"
+            android:textColor="#2C4E4E"
+            android:textSize="13sp"
+            android:backgroundTint="#A5D8D8"
+            app:cornerRadius="22dp" />
     </LinearLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

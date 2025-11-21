@@ -23,19 +23,16 @@ import java.util.List;
  * Custom arrayAdapter used to populate the event listview
  * <p>
  * It inflates a custom layout for each event item and binds the event data
- * (title, date/time, location, price, and image) to its corresponding view
- * components.
+ * (title, date/time, location, price, and image) to its corresponding view components.
  * </p>
  * <p>
  * Each list item also contains two buttons:
  * <ul>
- * <li><b>View Details</b> — navigates to the event details screen.</li>
- * TODO: Change the flow of join Waitlist
- * <li><b>Join Waitlist</b> — navigates to the event details screen where users
- * can join the waitlist.</li>
+ *     <li><b>View Details</b> — navigates to the event details screen.</li>
+ *     TODO: Change the flow of join Waitlist
+ *     <li><b>Join Waitlist</b> — navigates to the event details screen where users can join the waitlist.</li>
  * </ul>
  * </p>
- * 
  * @author Zenith team
  * @version 3.0
  */
@@ -47,8 +44,7 @@ public class EventAdapter extends ArrayAdapter<Event> {
     /**
      * Constructs a new eventAdapter
      *
-     * @param context the current context (usually the Activity where this adapter
-     *                is used)
+     * @param context the current context (usually the Activity where this adapter is used)
      * @param events  the list of event objects to display in the list
      */
 
@@ -67,8 +63,7 @@ public class EventAdapter extends ArrayAdapter<Event> {
      *
      * @param position    the position of the item within the dataset
      * @param convertView the old view to reuse, if possible
-     * @param parent      the parent view that this view will eventually be attached
-     *                    to
+     * @param parent      the parent view that this view will eventually be attached to
      * @return the fully populated view for the current event item
      */
     @NonNull
@@ -81,10 +76,11 @@ public class EventAdapter extends ArrayAdapter<Event> {
             holder = new ViewHolder();
             holder.eventImage = convertView.findViewById(R.id.eventImage);
             holder.eventTitle = convertView.findViewById(R.id.eventTitle);
+            holder.eventDateTime = convertView.findViewById(R.id.eventDateTime);
             holder.eventLocation = convertView.findViewById(R.id.eventLocation);
-            holder.eventDateDay = convertView.findViewById(R.id.eventDateDay);
-            holder.eventDateMonth = convertView.findViewById(R.id.eventDateMonth);
-            holder.btnEventDetails = convertView.findViewById(R.id.btnEventDetails);
+            holder.eventPrice = convertView.findViewById(R.id.eventPrice);
+            holder.btnViewDetails = convertView.findViewById(R.id.btnViewDetails);
+            holder.btnJoinWaitlist = convertView.findViewById(R.id.btnJoinWaitlist);
             convertView.setTag(holder);
         } else {
             holder = (ViewHolder) convertView.getTag();
@@ -94,80 +90,36 @@ public class EventAdapter extends ArrayAdapter<Event> {
 
         // Set event details
         holder.eventTitle.setText(event.getName() != null ? event.getName() : "Untitled Event");
+        holder.eventDateTime.setText(event.getDateTime() != null ? event.getDateTime() : "TBD");
         holder.eventLocation.setText(event.getLocation() != null ? event.getLocation() : "Location TBD");
-
-        // Parse and set date
-        if (event.getDateTime() != null && !event.getDateTime().isEmpty()) {
-            String[] dateParts = parseDate(event.getDateTime());
-            holder.eventDateDay.setText(dateParts[0]);
-            holder.eventDateMonth.setText(dateParts[1]);
-        } else {
-            holder.eventDateDay.setText("--");
-            holder.eventDateMonth.setText("TBD");
-        }
+        holder.eventPrice.setText(event.getPrice() != null ? event.getPrice() : "Free");
 
         // Load image if available
         if (event.getImageUrl() != null && !event.getImageUrl().isEmpty()) {
             // TODO: Use Glide or Picasso to load image
+            // Glide.with(context).load(event.getImageUrl()).into(holder.eventImage);
             holder.eventImage.setImageResource(R.drawable.placeholder_img);
         } else {
             holder.eventImage.setImageResource(R.drawable.placeholder_img);
         }
 
-        // Event Details button click
-        holder.btnEventDetails.setOnClickListener(v -> {
+        // View Details button click
+        holder.btnViewDetails.setOnClickListener(v -> {
+            // Navigate to event details activity
             Intent intent = new Intent(context, com.example.connect.activities.EventDetails.class);
-            intent.putExtra("event_id", event.getEventId());
+            intent.putExtra("EVENT_ID", event.getEventId());
+            context.startActivity(intent);
+        });
+
+        // Join Waitlist button click
+        holder.btnJoinWaitlist.setOnClickListener(v -> {
+            // Navigate to event details activity (where users can join waitlist)
+            Intent intent = new Intent(context, com.example.connect.activities.EventDetails.class);
+            intent.putExtra("EVENT_ID", event.getEventId());
             context.startActivity(intent);
         });
 
         return convertView;
-    }
-
-    /**
-     * Helper to parse date string into Day and Month.
-     * Assumes format like "dd/MM/yyyy" or "MMM dd, yyyy" or similar.
-     * For now, simple heuristic or fallback.
-     *
-     * @param dateString the raw date string from the event
-     * @return an array where [0] is day, [1] is month (uppercase 3-letter
-     *         abbreviation)
-     */
-    private String[] parseDate(String dateString) {
-        String day = "01";
-        String month = "JAN";
-
-        try {
-            // Split by common delimiters
-            String[] parts = dateString.split("[/\\s,-]+");
-            if (parts.length >= 2) {
-                // Heuristic: if first part is a number, assume dd/MM or dd MMM
-                if (parts[0].matches("\\d+")) {
-                    day = parts[0];
-                    // If second part is a number, it's MM; if text, it's month name
-                    if (parts[1].matches("\\d+")) {
-                        // Convert month number to name
-                        int monthNum = Integer.parseInt(parts[1]);
-                        String[] monthNames = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-                                "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
-                        if (monthNum >= 1 && monthNum <= 12) {
-                            month = monthNames[monthNum - 1];
-                        }
-                    } else {
-                        // It's already a month name, take first 3 chars and uppercase
-                        month = parts[1].substring(0, Math.min(3, parts[1].length())).toUpperCase();
-                    }
-                } else if (parts[1].matches("\\d+")) {
-                    // Format is MMM dd
-                    month = parts[0].substring(0, Math.min(3, parts[0].length())).toUpperCase();
-                    day = parts[1];
-                }
-            }
-        } catch (Exception e) {
-            // Fallback to defaults
-        }
-
-        return new String[] { day, month };
     }
 
     /**
@@ -182,14 +134,15 @@ public class EventAdapter extends ArrayAdapter<Event> {
     }
 
     /**
-     * A static inner class used to cache view references for each list item.
+     * A static inner class used to cache view references for each list item, minimizing repeated calls to that find views and improving scroll performance.
      */
     static class ViewHolder {
         ImageView eventImage;
         TextView eventTitle;
+        TextView eventDateTime;
         TextView eventLocation;
-        TextView eventDateDay;
-        TextView eventDateMonth;
-        Button btnEventDetails;
+        TextView eventPrice;
+        Button btnViewDetails;
+        Button btnJoinWaitlist;
     }
 }
