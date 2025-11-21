@@ -2,25 +2,36 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="f1">#B7E4EA</color>  <!-- Winter Chill F1 -->
-    <color name="f2">#94B1B5</color>
-    <color name="f3">#507D82</color>
-    <color name="f4">#0B2E32</color>
+    
+    <!-- Event Lottery Palette (Light Mode) -->
+    <color name="primary_gold">#B45309</color> <!-- Amber 700, Darker gold for light bg -->
+    <color name="primary_gold_dim">#D97706</color> <!-- Amber 600 -->
+    <color name="background_dark">#F8FAFC</color> <!-- Slate 50, Light background -->
+    <color name="card_bg">#FFFFFF</color> <!-- White card -->
+    <color name="accent_green">#00C853</color> <!-- Green 700, Darker green for contrast -->
+    <color name="accent_red">#D32F2F</color> <!-- Red 700 -->
+    <color name="text_primary">#0F172A</color> <!-- Slate 900, Dark text -->
+    <color name="text_secondary">#64748B</color> <!-- Slate 500 -->
+    <color name="border_gold">#B45309</color> <!-- Amber 700 -->
 
-    <color name="f5">#93B185</color> <!-- Button Colour for user pages-->
+    <!-- Legacy/Mapped Colors -->
+    <color name="f1">#FFFFFF</color>  <!-- Mapped to card_bg -->
+    <color name="f2">#E2E8F0</color>
+    <color name="f3">#B45309</color>  <!-- Mapped to gold -->
+    <color name="f4">#F8FAFC</color>  <!-- Mapped to background -->
+    <color name="f5">#00C853</color>  <!-- Mapped to green -->
 
     <!-- QR code scanner colours -->
-    <color name="zxing_custom_possible_result_points">#c0ffbd</color>
+    <color name="zxing_custom_possible_result_points">#00C853</color>
     <color name="zxing_custom_result_view">#b0000000</color>
-    <color name="zxing_custom_viewfinder_laser">#ff0000</color>
+    <color name="zxing_custom_viewfinder_laser">#B45309</color>
     <color name="zxing_custom_viewfinder_mask">#60000000</color>
 
-    <color name="filter_selected">#3D5454</color>
-    <color name="filter_default">#5F8A8A</color>
-    <color name="filter_text_default">#E8F4F4</color>
+    <color name="filter_selected">#B45309</color>
+    <color name="filter_default">#E2E8F0</color>
+    <color name="filter_text_default">#64748B</color>
     <color name="filter_text_selected">#FFFFFF</color>
 
-    <!-- Shade looks green in the preview | Could try D3D3D3 -->
-    <color name="text_field_bg">#fafafa</color>
-    <color name="hint_colour">#a6a5a7</color>
+    <color name="text_field_bg">#F1F5F9</color>
+    <color name="hint_colour">#94A3B8</color>
 </resources>
