@@ -136,7 +136,7 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnSuccessListener(authResult -> {
                     // Login successful, now check admin status
                     FirebaseUser user = mAuth.getCurrentUser();
-                    Log.d("LoginActivity", "Authentication successful! UID: " + user.getUid());
+                    Log.d("LoginActivity", "Authentication successful! UID: " );
 
                     // Check admin status in Firestore
                     checkAdminStatus(user);
@@ -163,7 +163,7 @@ public class LoginActivity extends AppCompatActivity {
      */
     private void checkAdminStatus(FirebaseUser user) {
         // Query Firestore for user document
-        db.collection("users").document(user.getUid())
+        db.collection("accounts").document(user.getUid())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
@@ -172,11 +172,11 @@ public class LoginActivity extends AppCompatActivity {
 
                         if (isAdmin != null && isAdmin) {
                             // User is admin, navigate to admin activity
-                            Log.d("LoginActivity", "Admin user detected! UID: " + user.getUid());
+                            Log.d("LoginActivity", "Admin user detected! UID: " );
                             proceedWithAdminLogin();
                         } else {
                             // Regular user, proceed with normal login
-                            Log.d("LoginActivity", "Regular user login! UID: " + user.getUid());
+                            Log.d("LoginActivity", "Regular user login! UID: ");
                             proceedWithRegularLogin();
                         }
                     } else {
@@ -213,7 +213,7 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.LENGTH_SHORT).show();
 
         // Navigate to admin activity (replace AdminActivity.class with your actual admin activity)
-        Intent intent = new Intent(LoginActivity.this, AdminDashboard.class);
+        Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
         startActivity(intent);
         finish(); // Close login screen so user can't go back to it
     }
