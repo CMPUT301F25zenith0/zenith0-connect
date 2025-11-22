@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -32,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+
 
 public class NotificationsActivity extends AppCompatActivity {
 
@@ -158,7 +161,11 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     /**
-     * Load user's notification preference from Firestore
+     * Loads the current user's notification preference from Firestore (NEW DB structure).
+     *
+     * - Reads the "notificationsEnabled" field from the user's document in "accounts"
+     * - Defaults to true if the field is missing
+     * - Updates the UI toggle accordingly
      */
     private void loadNotificationPreference() {
         db.collection("accounts")
@@ -166,39 +173,58 @@ public class NotificationsActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
+                        // Get notification preference, default to true if null
                         Boolean enabled = documentSnapshot.getBoolean("notificationsEnabled");
                         notificationsEnabled = enabled != null ? enabled : true;
+
+                        // Update UI toggle (switch/button)
+                        updateToggleButton();
+                    } else {
+                        Log.w(TAG, "Account document not found for user: " + currentUserId);
+                        notificationsEnabled = true; // default if missing
                         updateToggleButton();
                     }
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading notification preference", e);
+                    Log.e(TAG, "❌ Error loading notification preference for user: " + currentUserId, e);
+                    notificationsEnabled = true; // fallback default
+                    updateToggleButton();
                 });
     }
 
     /**
-     * Toggle notification preference
+     * Toggles the current user's notification preference and updates Firestore.
+     *
+     * - Flips the current notificationsEnabled boolean
+     * - Updates the "notificationsEnabled" field in "accounts/{userId}"
+     * - Updates the UI toggle and shows a toast message
+     * - Reverts the toggle if Firestore update fails
      */
     private void toggleNotificationPreference() {
+        // Flip the local boolean
         notificationsEnabled = !notificationsEnabled;
 
-        // Update in Firestore
+        // Update Firestore
         db.collection("accounts")
                 .document(currentUserId)
                 .update("notificationsEnabled", notificationsEnabled)
                 .addOnSuccessListener(aVoid -> {
+                    // Update UI
                     updateToggleButton();
+
+                    // Show toast message
                     String message = notificationsEnabled ?
                             "Notifications enabled" : "Notifications disabled";
                     Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error updating notification preference", e);
-                    // Revert the toggle
+                    // Revert local toggle on failure
                     notificationsEnabled = !notificationsEnabled;
+                    Log.e(TAG, "❌ Error updating notification preference for user: " + currentUserId, e);
                     Toast.makeText(this, "Failed to update preference", Toast.LENGTH_SHORT).show();
                 });
     }
+
 
     /**
      * Update toggle button text based on current preference
@@ -219,8 +245,14 @@ public class NotificationsActivity extends AppCompatActivity {
         }
     }
 
+
     /**
-     * Load user's notifications from Firestore
+     * Loads the current user's notifications from Firestore.
+     *
+     * - Reads from "accounts/{userId}/notifications"
+     * - Orders notifications by timestamp (most recent first)
+     * - Updates the RecyclerView with the list of notifications
+     * - Shows a "No notifications" message if none exist
      */
     private void loadNotifications() {
         db.collection("accounts")
@@ -229,11 +261,12 @@ public class NotificationsActivity extends AppCompatActivity {
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener((snapshots, error) -> {
                     if (error != null) {
-                        Log.e(TAG, "Error loading notifications", error);
+                        Log.e(TAG, "❌ Error loading notifications for user: " + currentUserId, error);
                         Toast.makeText(this, "Failed to load notifications", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
+                    // Handle empty snapshot
                     if (snapshots == null || snapshots.isEmpty()) {
                         tvNoNotifications.setVisibility(View.VISIBLE);
                         recyclerViewNotifications.setVisibility(View.GONE);
@@ -243,24 +276,26 @@ public class NotificationsActivity extends AppCompatActivity {
                     tvNoNotifications.setVisibility(View.GONE);
                     recyclerViewNotifications.setVisibility(View.VISIBLE);
 
+                    // Convert Firestore documents into NotificationItem objects
                     List<NotificationItem> notifications = new ArrayList<>();
                     for (DocumentSnapshot doc : snapshots.getDocuments()) {
                         NotificationItem item = new NotificationItem(
-                                doc.getId(),
-                                doc.getString("title"),
-                                doc.getString("body"),
-                                doc.getString("type"),
-                                doc.getString("eventId"),
-                                doc.getString("eventName"),
-                                doc.getDate("timestamp"),
-                                doc.getBoolean("read") != null && doc.getBoolean("read"),
-                                doc.getBoolean("declined") != null && doc.getBoolean("declined")
+                                doc.getId(),                                   // Document ID
+                                doc.getString("title"),                        // Notification title
+                                doc.getString("body"),                         // Notification body
+                                doc.getString("type"),                         // Notification type
+                                doc.getString("eventId"),                      // Related event ID
+                                doc.getString("eventName"),                    // Related event name
+                                doc.getDate("timestamp"),                      // Timestamp
+                                doc.getBoolean("read") != null && doc.getBoolean("read"),       // Read status
+                                doc.getBoolean("declined") != null && doc.getBoolean("declined") // Declined status
                         );
                         notifications.add(item);
                     }
 
+                    // Update RecyclerView adapter
                     adapter.setNotifications(notifications);
-                    Log.d(TAG, "Loaded " + notifications.size() + " notifications");
+                    Log.d(TAG, "✅ Loaded " + notifications.size() + " notifications for user: " + currentUserId);
                 });
     }
 
@@ -292,117 +327,75 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     /**
-     * Perform the decline operation in Firestore
+     * Declines an invitation for a given notification.
+     *
+     * Workflow:
+     * 1. Removes the current user from the event's "chosen" subcollection.
+     * 2. Adds the user to the event's "declined" subcollection with a timestamp and reason.
+     * 3. Updates the notification document in the user's notifications collection to mark it as declined.
+     *
+     * @param notification The NotificationItem representing the invitation to decline.
      */
     void performDecline(NotificationItem notification) {
         String eventId = notification.eventId;
+        if (eventId == null) return;
 
-        if (eventId == null || eventId.isEmpty()) {
-            Toast.makeText(this, "Error: Event ID not found", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        String userId = currentUserId;
 
-        Log.d(TAG, "Declining invitation for eventId=" + eventId + " user=" + currentUserId);
-
-        // Remove user from chosen list
         db.collection("events").document(eventId)
-                .collection("chosen").document(currentUserId)
-                .delete()
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, " Removed from chosen list");
-
-                    // Add to declined list
+                .collection("chosen").document(userId)
+                .delete().addOnSuccessListener(aVoid -> {
                     Map<String, Object> declinedData = new HashMap<>();
                     declinedData.put("declinedAt", FieldValue.serverTimestamp());
                     declinedData.put("reason", "User declined invitation");
 
                     db.collection("events").document(eventId)
-                            .collection("declined").document(currentUserId)
+                            .collection("declined").document(userId)
                             .set(declinedData)
                             .addOnSuccessListener(aVoid2 -> {
-                                Log.d(TAG, " Added to declined list");
-
-                                // Update notification
-                                db.collection("accounts").document(currentUserId)
+                                db.collection("accounts").document(userId)
                                         .collection("notifications").document(notification.id)
-                                        .update("declined", true, "declinedAt", FieldValue.serverTimestamp())
-                                        .addOnSuccessListener(aVoid3 -> {
-                                            Log.d(TAG, "Notification marked declined");
-                                            notification.declined = true;
-                                            adapter.notifyDataSetChanged(); // instantly refresh UI
-                                            Toast.makeText(this, "Invitation declined successfully", Toast.LENGTH_SHORT).show();
-                                        })
-                                        .addOnFailureListener(e -> Log.e(TAG, "Failed to update notification", e));
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, " Failed to add to declined list", e);
-                                Toast.makeText(this,
-                                        "Error declining invitation (declined list)",
-                                        Toast.LENGTH_SHORT).show();
+                                        .update("declined", true, "declinedAt", FieldValue.serverTimestamp());
+                                adapter.notifyDataSetChanged();
                             });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, " Failed to remove from chosen list", e);
-                    Toast.makeText(this, "Error declining invitation (chosen list)", Toast.LENGTH_SHORT).show();
                 });
     }
 
-
     /**
-     * Perform the Accept operation in Firestore
+     * Accepts an invitation for a given notification.
+     *
+     * Workflow:
+     * 1. Removes the current user from the event's "chosen" subcollection.
+     * 2. Adds the user to the event's "accepted" subcollection with a timestamp and status.
+     * 3. Updates the notification document in the user's notifications collection to mark it as accepted.
+     *
+     * @param notification The NotificationItem representing the invitation to accept.
      */
     void performAccept(NotificationItem notification) {
         String eventId = notification.eventId;
+        if (eventId == null) return;
 
-        if (eventId == null || eventId.isEmpty()) {
-            Toast.makeText(this, "Error: Event ID not found", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        String userId = currentUserId;
 
-        Log.d(TAG, "Accepting invitation for eventId=" + eventId + " user=" + currentUserId);
+        DocumentReference chosenRef = db.collection("events").document(eventId)
+                .collection("chosen").document(userId);
 
-        // Remove from chosen (since user accepted)
-        db.collection("events").document(eventId)
-                .collection("chosen").document(currentUserId)
-                .delete()
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Removed from chosen list");
+        chosenRef.delete().addOnSuccessListener(aVoid -> {
+            Map<String, Object> acceptedData = new HashMap<>();
+            acceptedData.put("acceptedAt", FieldValue.serverTimestamp());
+            acceptedData.put("status", "accepted");
 
-                    // Add user to accepted list
-                    Map<String, Object> acceptedData = new HashMap<>();
-                    acceptedData.put("acceptedAt", FieldValue.serverTimestamp());
-                    acceptedData.put("status", "accepted");
-
-                    db.collection("events").document(eventId)
-                            .collection("accepted").document(currentUserId)
-                            .set(acceptedData)
-                            .addOnSuccessListener(aVoid2 -> {
-                                Log.d(TAG, "Added to accepted list");
-
-                                // Update notification
-                                db.collection("accounts").document(currentUserId)
-                                        .collection("notifications").document(notification.id)
-                                        .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp())
-                                        .addOnSuccessListener(aVoid3 -> {
-                                            Log.d(TAG, " Notification marked accepted");
-                                            Toast.makeText(this, "Invitation accepted successfully", Toast.LENGTH_SHORT).show();
-
-                                            // Refresh UI (optional)
-                                            adapter.notifyDataSetChanged();
-                                        })
-                                        .addOnFailureListener(e -> Log.e(TAG, "Failed to update notification", e));
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, " Failed to add to accepted list", e);
-                                Toast.makeText(this, "Error accepting invitation (accepted list)", Toast.LENGTH_SHORT).show();
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to remove from chosen list", e);
-                    Toast.makeText(this, "Error accepting invitation (chosen list)", Toast.LENGTH_SHORT).show();
-                });
+            db.collection("events").document(eventId)
+                    .collection("accepted").document(userId)
+                    .set(acceptedData)
+                    .addOnSuccessListener(aVoid2 -> {
+                        db.collection("accounts").document(userId)
+                                .collection("notifications").document(notification.id)
+                                .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp());
+                        adapter.notifyDataSetChanged();
+                    });
+        });
     }
-
     /**
      * Get current user ID
      */

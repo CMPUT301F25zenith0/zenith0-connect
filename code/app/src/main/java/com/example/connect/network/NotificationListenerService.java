@@ -97,7 +97,7 @@ public class NotificationListenerService extends Service {
         }
 
         // Listen for new notifications added to user's notifications collection
-        notificationListener = db.collection("accounts")
+        notificationListener = db.collection("users")
                 .document(userId)
                 .collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)

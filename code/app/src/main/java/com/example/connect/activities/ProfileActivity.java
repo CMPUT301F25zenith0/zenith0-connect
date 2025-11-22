@@ -28,6 +28,7 @@ import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 
 import java.util.HashMap;
@@ -238,39 +239,48 @@ public class ProfileActivity extends AppCompatActivity {
 
 
     /**
-     * Load the user's profile information from Firestore.
-     * Retrieves name, email, and phone number from the "accounts" collection.
-     * If no profile exists in Firestore, uses the email from Firebase Auth as fallback.
+     * Loads user profile data from the NEW "users" collection.
+     *
+     * Firestore Structure:
+     * users/
+     *    {userId}/
+     *       name: String
+     *       email: String
+     *       phone: String
+     *       admin: Boolean   (not used here)
+     *
+     * If Firestore has no profile, fallback to FirebaseAuth email.
      */
     private void loadUserProfile() {
-        db.collection("accounts").document(userId)
+
+        db.collection("users").document(userId)
                 .get()
-                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(Task<DocumentSnapshot> task) {
-                        if (task.isSuccessful()) {
-                            DocumentSnapshot document = task.getResult();
-                            if (document != null && document.exists()) {
-                                // Load data from Firestore
-                                String name = document.getString("full_name");
-                                String email = document.getString("email");
-                                String phone = document.getString("mobile_num");
+                .addOnCompleteListener(task -> {
 
+                    if (!task.isSuccessful()) {
+                        Log.e("ProfileActivity", "Error loading profile", task.getException());
+                        Toast.makeText(ProfileActivity.this, "Error loading profile", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
 
-                                if (name != null) etName.setText(name);
-                                if (email != null) etEmail.setText(email);
-                                if (phone != null) etPhone.setText(phone);
-                            } else {
-                                // No profile exists, use Firebase Auth email
-                                if (currentUser.getEmail() != null) {
-                                    etEmail.setText(currentUser.getEmail());
-                                }
-                                Log.d("ProfileActivity", "No profile document found, creating new one");
-                            }
-                        } else {
-                            Log.e("ProfileActivity", "Error loading profile", task.getException());
-                            Toast.makeText(ProfileActivity.this, "Error loading profile", Toast.LENGTH_SHORT).show();
+                    DocumentSnapshot document = task.getResult();
+
+                    if (document != null && document.exists()) {
+                        // Load from Firestore
+                        String name = document.getString("name");
+                        String email = document.getString("email");
+                        String phone = document.getString("phone");
+
+                        if (name != null) etName.setText(name);
+                        if (email != null) etEmail.setText(email);
+                        if (phone != null) etPhone.setText(phone);
+
+                    } else {
+                        // No profile exists → fallback to FirebaseAuth
+                        if (currentUser.getEmail() != null) {
+                            etEmail.setText(currentUser.getEmail());
                         }
+                        Log.d("ProfileActivity", "No Firestore profile found for user");
                     }
                 });
     }
@@ -296,64 +306,71 @@ public class ProfileActivity extends AppCompatActivity {
 
 
     /**
-     * Save the updated profile information to Firestore.
-     * First validates the input, then updates the Firestore document.
-     * If the email address changed, also updates it in Firebase Auth.
-     * Phone number is optional - if empty, sets it to null in Firestore.
+     * Saves the user's updated profile data to the NEW Firestore structure.
+     *
+     * NEW Firestore Structure:
+     * users/
+     *    {userId}/
+     *       name: String
+     *       email: String
+     *       phone: String (optional)
+     *       updated_at: Long
+     *
+     * If the email changed, also updates FirebaseAuth email.
      */
     private void saveProfile() {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
 
-
-        // Validate inputs
+        // Validate user input
         if (!validateInputs(name, email, phone)) {
             return;
         }
 
-
         btnSave.setEnabled(false);
         btnSave.setText("Saving...");
 
-
-        // Create update map
+        // Build Firestore update map
         Map<String, Object> updates = new HashMap<>();
-        updates.put("full_name", name);
+        updates.put("name", name);
         updates.put("email", email);
-        // Only add mobile_num if provided (phone number is optional)
+
         if (!TextUtils.isEmpty(phone)) {
-            updates.put("mobile_num", phone);
+            updates.put("phone", phone);
         } else {
-            // If phone is empty, set it to null or remove the field
-            updates.put("mobile_num", null);
+            // If phone is empty, explicitly clear it
+            updates.put("phone", null);
         }
+
         updates.put("updated_at", System.currentTimeMillis());
 
+        // Save to Firestore (MERGE ensures only these fields update)
+        db.collection("users").document(userId)
+                .set(updates, SetOptions.merge())
+                .addOnCompleteListener(task -> {
 
-        // Update Firestore
-        db.collection("accounts").document(userId)
-                .set(updates, com.google.firebase.firestore.SetOptions.merge())
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(Task<Void> task) {
-                        btnSave.setEnabled(true);
-                        btnSave.setText("Save");
+                    btnSave.setEnabled(true);
+                    btnSave.setText("Save");
 
+                    if (task.isSuccessful()) {
 
-                        if (task.isSuccessful()) {
-                            // Also update Firebase Auth email if it changed
-                            if (!email.equals(currentUser.getEmail())) {
-                                updateFirebaseAuthEmail(email);
-                            } else {
-                                Toast.makeText(ProfileActivity.this, "Profile updated successfully!", Toast.LENGTH_SHORT).show();
-                            }
-                        } else {
-                            Log.e("ProfileActivity", "Error updating profile", task.getException());
-                            Toast.makeText(ProfileActivity.this,
-                                    "Failed to update profile: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"),
-                                    Toast.LENGTH_LONG).show();
+                        // Email changed → sync with Firebase Auth
+                        if (!email.equals(currentUser.getEmail())) {
+                            updateFirebaseAuthEmail(email);
+                            return;
                         }
+
+                        Toast.makeText(ProfileActivity.this,
+                                "Profile updated successfully!",
+                                Toast.LENGTH_SHORT).show();
+
+                    } else {
+                        Log.e("ProfileActivity", "Error updating profile", task.getException());
+                        Toast.makeText(ProfileActivity.this,
+                                "Failed to update profile: " +
+                                        (task.getException() != null ? task.getException().getMessage() : "Unknown error"),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -368,7 +385,7 @@ public class ProfileActivity extends AppCompatActivity {
      */
     private void updateFirebaseAuthEmail(String newEmail) {
         // updateEmail() is deprecated but still works - updates the user's email in Firebase Auth
-        currentUser.updateEmail(newEmail)
+        currentUser.verifyBeforeUpdateEmail(newEmail)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(Task<Void> task) {
@@ -611,73 +628,83 @@ public class ProfileActivity extends AppCompatActivity {
 
 
     /**
-     * Delete the user's document from the Firestore "accounts" collection.
-     * First checks if the document exists for debugging purposes,
-     * then proceeds with deletion and executes the callback when done.
+     * Deletes the user's document from the NEW Firestore "users" collection.
+     * First checks if the document exists (for debugging), then deletes it.
+     *
+     * Firestore Structure:
+     * users/
+     *    {userId}/
      *
      * @param userIdToDelete the user ID whose document should be deleted
      * @param onComplete callback to execute after deletion completes (success or failure)
      */
     private void deleteFirestoreDocument(String userIdToDelete, Runnable onComplete) {
         Log.d("ProfileActivity", "Attempting to delete Firestore document for userId: " + userIdToDelete);
-        Log.d("ProfileActivity", "Collection path: accounts/" + userIdToDelete);
+        Log.d("ProfileActivity", "Collection path: users/" + userIdToDelete);
 
-        // First check if document exists (optional, but helps with debugging)
-        db.collection("accounts").document(userIdToDelete)
+        // STEP 1 — Check if the document exists
+        db.collection("users").document(userIdToDelete)
                 .get()
-                .addOnCompleteListener(new OnCompleteListener<com.google.firebase.firestore.DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(Task<com.google.firebase.firestore.DocumentSnapshot> getTask) {
-                        if (getTask.isSuccessful()) {
-                            com.google.firebase.firestore.DocumentSnapshot doc = getTask.getResult();
-                            if (doc != null && doc.exists()) {
-                                Log.d("ProfileActivity", "Document exists, proceeding with deletion");
-                            } else {
-                                Log.w("ProfileActivity", "Document does not exist in Firestore for userId: " + userIdToDelete);
-                            }
-                        }
+                .addOnCompleteListener(getTask -> {
+                    if (getTask.isSuccessful()) {
+                        com.google.firebase.firestore.DocumentSnapshot doc = getTask.getResult();
 
-                        // Proceed with deletion regardless
-                        performFirestoreDeletion(userIdToDelete, onComplete);
+                        if (doc != null && doc.exists()) {
+                            Log.d("ProfileActivity", "Document exists, proceeding with deletion");
+                        } else {
+                            Log.w("ProfileActivity", "Document does not exist in Firestore for userId: " + userIdToDelete);
+                        }
+                    } else {
+                        Log.e("ProfileActivity", "Error checking document existence", getTask.getException());
                     }
+
+                    // STEP 2 — Proceed with deletion regardless of existence
+                    performFirestoreDeletion(userIdToDelete, onComplete);
                 });
     }
 
     /**
-     * Perform the actual deletion of the Firestore document.
-     * Handles success and failure cases, and executes the callback in both scenarios.
-     * Shows appropriate error messages if deletion fails.
+     * Performs the actual deletion of a Firestore document from the NEW "users" collection.
+     * Handles success and failure cases, logs everything, and executes the callback in both scenarios.
+     *
+     * Firestore Structure:
+     * users/
+     *    {userId}/
      *
      * @param userIdToDelete the user ID whose document should be deleted
-     * @param onComplete callback to execute when deletion attempt completes
+     * @param onComplete callback to execute after deletion attempt (success or failure)
      */
     private void performFirestoreDeletion(String userIdToDelete, Runnable onComplete) {
-        db.collection("accounts").document(userIdToDelete)
+
+        db.collection("users").document(userIdToDelete)
                 .delete()
                 .addOnSuccessListener(aVoid -> {
                     Log.d("ProfileActivity", "✅ Firestore document deleted successfully for userId: " + userIdToDelete);
+
                     runOnUiThread(() -> {
-                        // Show success message (optional)
+                        // Optional UI feedback
                         Log.d("ProfileActivity", "Firestore deletion completed successfully");
                     });
 
-                    // Execute callback (which will delete Auth account)
+                    // Execute callback (e.g., delete Auth account)
                     if (onComplete != null) {
                         onComplete.run();
                     }
+
                 })
                 .addOnFailureListener(e -> {
                     String errorMsg = e != null ? e.getMessage() : "Unknown error";
+
                     Log.e("ProfileActivity", "❌ Error deleting Firestore document for userId: " + userIdToDelete, e);
                     Log.e("ProfileActivity", "Error type: " + (e != null ? e.getClass().getName() : "null"));
                     Log.e("ProfileActivity", "Error message: " + errorMsg);
 
-                    // Check for permission errors
+                    // Special case: permission issues
                     if (errorMsg != null && errorMsg.contains("PERMISSION_DENIED")) {
                         Log.e("ProfileActivity", "⚠️ PERMISSION DENIED - Check Firestore security rules!");
                         runOnUiThread(() -> {
                             Toast.makeText(ProfileActivity.this,
-                                    "Permission denied. Check Firestore security rules allow delete on accounts/{userId}",
+                                    "Permission denied. Check Firestore security rules allow delete on users/{userId}",
                                     Toast.LENGTH_LONG).show();
                         });
                     } else {
@@ -688,14 +715,12 @@ public class ProfileActivity extends AppCompatActivity {
                         });
                     }
 
-                    // Still execute callback even if Firestore deletion fails
-                    // (Auth deletion might still work)
+                    // Still run callback even if Firestore deletion fails
                     if (onComplete != null) {
                         onComplete.run();
                     }
                 });
     }
-
 
     /**
      * Clean up user preferences and navigate back to the login screen.

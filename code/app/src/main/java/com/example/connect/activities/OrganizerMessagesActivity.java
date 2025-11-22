@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.connect.R;
 import com.example.connect.utils.NotificationHelper;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -115,9 +116,9 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
             AtomicInteger completedGroups = new AtomicInteger(0);
 
             // Get chosen entrants from "chosen" collection
-            getChosenEntrantsFromCollection(eventIdStr, chosenIds -> {
+            getChosenEntrants(eventIdStr, chosenIds -> {
                 // Get not-chosen entrants (waiting list minus chosen)
-                getNotChosenEntrantsFromCollections(eventIdStr, notChosenIds -> {
+                getNotChosenEntrants(eventIdStr, notChosenIds -> {
 
                     int tempTotalGroups = 0;
                     if (!chosenIds.isEmpty()) tempTotalGroups++;
@@ -184,7 +185,7 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
             }
 
             // Get waiting list IDs from the waiting_lists collection
-            getWaitingListEntrantsFromCollection(eventIdStr, waitingListIds -> {
+            getWaitingListEntrants(eventIdStr, waitingListIds -> {
                 if (waitingListIds.isEmpty()) {
                     Toast.makeText(this, "No entrants in waiting list", Toast.LENGTH_SHORT).show();
                     return;
@@ -294,21 +295,19 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
     }
 
     /**
-     * Load all accounts/entrants from Firestore for the spinner
+     * Load all accounts/entrants from Firestore for use in a spinner or selection UI.
+     * <p>
+     * Retrieves all documents from the "accounts" collection and populates two lists:
+     * - entrantNames: List of full names for display
+     * - entrantUids: Corresponding list of user IDs
+     * </p>
      */
     private void loadEntrants() {
-        Log.d(TAG, "Loading entrants from Firestore...");
         db.collection("accounts").get().addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) {
-                Log.e(TAG, "Failed to load entrants", task.getException());
-                return;
-            }
+            if (!task.isSuccessful()) return;
 
             entrantUids.clear();
             entrantNames.clear();
-
-            int totalDocs = task.getResult().size();
-            Log.d(TAG, "Total documents in accounts collection: " + totalDocs);
 
             for (QueryDocumentSnapshot doc : task.getResult()) {
                 String name = doc.getString("full_name");
@@ -316,123 +315,81 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
                 if (name != null) {
                     entrantNames.add(name);
                     entrantUids.add(uid);
-                    Log.d(TAG, "Added entrant: " + name + " UID: " + uid);
-                } else {
-                    Log.w(TAG, "Skipped document with UID " + uid + " because name is null");
                 }
             }
-
-            Log.d(TAG, "Total entrants added: " + entrantNames.size());
         });
     }
-
-
     /**
-     * Get chosen entrants from the "chosen" collection
+     * Fetches the list of chosen entrants for a specific event.
+     * <p>
+     * Looks inside the "chosen" subcollection under the given event document in "events".
+     * Returns a list of user IDs via the callback.
+     * </p>
+     *
+     * @param eventId  The ID of the event
+     * @param callback Callback that receives the list of chosen entrant IDs
      */
-    private void getChosenEntrantsFromCollection(String eventId, EntrantIdsCallback callback) {
-        db.collection("chosen").document(eventId)
+
+    private void getChosenEntrants(String eventId, EntrantIdsCallback callback) {
+        db.collection("events").document(eventId)
+                .collection("chosen")
                 .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
-                        Log.d(TAG, "No chosen document found for event: " + eventId);
-                        callback.onEntrantIdsFetched(new ArrayList<>());
-                        return;
-                    }
-
-                    List<String> chosenIds = (List<String>) documentSnapshot.get("entries");
-                    if (chosenIds == null) {
-                        chosenIds = new ArrayList<>();
-                    }
-
-                    Log.d(TAG, "Found " + chosenIds.size() + " chosen entrants");
-                    callback.onEntrantIdsFetched(chosenIds);
+                .addOnSuccessListener(querySnapshot -> {
+                    List<String> ids = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot) ids.add(doc.getId());
+                    callback.onEntrantIdsFetched(ids);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching chosen entrants", e);
-                    callback.onEntrantIdsFetched(new ArrayList<>());
-                });
+                .addOnFailureListener(e -> callback.onEntrantIdsFetched(new ArrayList<>()));
+    }
+    /**
+     * Get not-chosen entrants for an event.
+     * <p>
+     * Fetches the waiting list under "waiting_lists/{eventId}" and subtracts users
+     * who are in the "chosen" subcollection under "events/{eventId}".
+     * Returns the resulting list of user IDs via callback.
+     * </p>
+     *
+     * @param eventId  The ID of the event
+     * @param callback Callback that receives the list of not-chosen entrant IDs
+     */
+    private void getNotChosenEntrants(String eventId, EntrantIdsCallback callback) {
+        CollectionReference waitlistRef = db.collection("events")
+                .document(eventId)
+                .collection("waiting_list_entries");
+
+        waitlistRef.get().addOnSuccessListener(waitingSnap -> {
+            List<String> waitingIds = new ArrayList<>();
+            for (DocumentSnapshot doc : waitingSnap) waitingIds.add(doc.getId());
+
+            getChosenEntrants(eventId, chosenIds -> {
+                List<String> notChosen = new ArrayList<>(waitingIds);
+                notChosen.removeAll(chosenIds);
+                callback.onEntrantIdsFetched(notChosen);
+            });
+        }).addOnFailureListener(e -> callback.onEntrantIdsFetched(new ArrayList<>()));
     }
 
     /**
-     * Get not-chosen entrants (waiting list minus chosen)
+     * Get all entrants from the waiting list for a given event.
+     * <p>
+     * Reads the "entries" array from the "waiting_lists/{eventId}" document
+     * and returns the list of user IDs via the callback.
+     * </p>
+     *
+     * @param eventId  The ID of the event
+     * @param callback Callback that receives the list of waiting list user IDs
      */
-    private void getNotChosenEntrantsFromCollections(String eventId, EntrantIdsCallback callback) {
-        // First get waiting list
-        db.collection("waiting_lists").document(eventId)
+    private void getWaitingListEntrants(String eventId, EntrantIdsCallback callback) {
+        db.collection("events").document(eventId)
+                .collection("waiting_list_entries")
                 .get()
-                .addOnSuccessListener(waitingListDoc -> {
-                    if (!waitingListDoc.exists()) {
-                        Log.d(TAG, "No waiting list found for event: " + eventId);
-                        callback.onEntrantIdsFetched(new ArrayList<>());
-                        return;
-                    }
-
-                    List<String> waitingListIds = (List<String>) waitingListDoc.get("entries");
-                    if (waitingListIds == null || waitingListIds.isEmpty()) {
-                        Log.d(TAG, "Waiting list is empty");
-                        callback.onEntrantIdsFetched(new ArrayList<>());
-                        return;
-                    }
-
-                    // Then get chosen list
-                    db.collection("chosen").document(eventId)
-                            .get()
-                            .addOnSuccessListener(chosenDoc -> {
-                                List<String> chosenIds = new ArrayList<>();
-                                if (chosenDoc.exists()) {
-                                    List<String> chosen = (List<String>) chosenDoc.get("entries");
-                                    if (chosen != null) {
-                                        chosenIds = chosen;
-                                    }
-                                }
-
-                                // Calculate not-chosen: waiting list minus chosen
-                                List<String> notChosenIds = new ArrayList<>(waitingListIds);
-                                notChosenIds.removeAll(chosenIds);
-
-                                Log.d(TAG, "Found " + notChosenIds.size() + " not-chosen entrants");
-                                callback.onEntrantIdsFetched(notChosenIds);
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Error fetching chosen list", e);
-                                // If we can't get chosen list, treat all waiting list as not-chosen
-                                callback.onEntrantIdsFetched(waitingListIds);
-                            });
+                .addOnSuccessListener(snap -> {
+                    List<String> ids = new ArrayList<>();
+                    for (DocumentSnapshot doc : snap) ids.add(doc.getId());
+                    callback.onEntrantIdsFetched(ids);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching waiting list", e);
-                    callback.onEntrantIdsFetched(new ArrayList<>());
-                });
+                .addOnFailureListener(e -> callback.onEntrantIdsFetched(new ArrayList<>()));
     }
-
-    /**
-     * Get waiting list entrants from the "waiting_lists" collection
-     */
-    private void getWaitingListEntrantsFromCollection(String eventId, EntrantIdsCallback callback) {
-        db.collection("waiting_lists").document(eventId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
-                        Log.d(TAG, "No waiting list found for event: " + eventId);
-                        callback.onEntrantIdsFetched(new ArrayList<>());
-                        return;
-                    }
-
-                    List<String> waitingListIds = (List<String>) documentSnapshot.get("entries");
-                    if (waitingListIds == null) {
-                        waitingListIds = new ArrayList<>();
-                    }
-
-                    Log.d(TAG, "Found " + waitingListIds.size() + " waiting list entrants");
-                    callback.onEntrantIdsFetched(waitingListIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching waiting list", e);
-                    callback.onEntrantIdsFetched(new ArrayList<>());
-                });
-    }
-
     /**
      * Callback interface for fetching entrant IDs
      */
@@ -440,165 +397,4 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
         void onEntrantIdsFetched(List<String> entrantIds);
     }
 
-
-
-
-
-
-    /**
-     * Get list of chosen entrant IDs from Firestore (DEPRECATED)
-     */
-    private void getChosenEntrantsOLD(String eventId, EntrantListCallback callback) {
-        db.collection("events").document(eventId)
-                .collection("chosen")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<String> chosenIds = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        chosenIds.add(doc.getId());
-                    }
-                    Log.d(TAG, "Found " + chosenIds.size() + " chosen entrants for event " + eventId);
-                    callback.onEntrantsLoaded(chosenIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get chosen entrants", e);
-                    Toast.makeText(this, "Failed to load chosen entrants", Toast.LENGTH_SHORT).show();
-                    callback.onEntrantsLoaded(new ArrayList<>());
-                });
-    }
-
-    /**
-     * Get list of not chosen entrant IDs from Firestore (DEPRECATED)
-     */
-    private void getNotChosenEntrantsOLD(String eventId, EntrantListCallback callback) {
-        db.collection("events").document(eventId)
-                .collection("notChosen")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<String> notChosenIds = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        notChosenIds.add(doc.getId());
-                    }
-                    Log.d(TAG, "Found " + notChosenIds.size() + " not-chosen entrants");
-                    callback.onEntrantsLoaded(notChosenIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get not-chosen entrants", e);
-                    Toast.makeText(this, "Failed to load not-chosen entrants", Toast.LENGTH_SHORT).show();
-                    callback.onEntrantsLoaded(new ArrayList<>());
-                });
-    }
-
-
-    /**
-     * Mark a user as chosen in Firestore (DEPRECATED)
-     */
-    private void markUserAsChosen(String uid) {
-        if (spinnerEntrants == null || spinnerEntrants.getSelectedItemPosition() < 0) {
-            Toast.makeText(this, "No entrant selected", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to mark user as chosen: " + selectedName + " UID: " + uid);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
-
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
-        }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("chosen")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully marked as chosen: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " marked as chosen!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to mark as chosen: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to mark as chosen: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Mark a user as not chosen in Firestore
-     */
-    private void markUserAsNotChosen(String uid) {
-        if (spinnerEntrants == null || spinnerEntrants.getSelectedItemPosition() < 0) {
-            Toast.makeText(this, "No entrant selected", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to mark user as NOT chosen: " + selectedName + " UID: " + uid);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
-
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
-        }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("notChosen")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully marked as NOT chosen: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " marked as NOT chosen!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to mark as NOT chosen: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to mark as NOT chosen: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Add a user to waiting list in Firestore
-     */
-    private void addToWaitingList(String uid) {
-        if (spinnerEntrants == null || spinnerEntrants.getSelectedItemPosition() < 0) {
-            Toast.makeText(this, "No entrant selected", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to add user to waiting list: " + selectedName + " UID: " + uid);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
-
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
-        }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("waitingList")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully added to waiting list: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " added to waiting list!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to add to waiting list: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to add to waiting list: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Callback interface for loading entrant lists
-     */
-    private interface EntrantListCallback {
-        void onEntrantsLoaded(List<String> entrantIds);
-    }
 }

@@ -88,47 +88,47 @@ public class NotificationHelper {
     }
 
     /**
-     * Send notifications to a list of users, respecting their notification preferences
+     * Sends notifications to the specified users.
+     *
+     * New DB structure:
+     * - User documents stored in: /users/{userId}
+     * - Notifications stored in: /users/{userId}/notifications/{notifId}
+     *
+     * Logic:
+     * 1. Fetch each user's notification preference.
+     * 2. If enabled → save notification under their notifications collection.
+     * 3. Count how many succeeded / skipped.
      */
     private void sendNotificationsToUsers(List<String> userIds, String title, String body,
                                           String type, String eventId, String eventName,
                                           NotificationCallback callback) {
-
         if (userIds.isEmpty()) {
             callback.onFailure("No users to notify");
             return;
         }
 
-        // Use atomic counters to track progress
         final int totalUsers = userIds.size();
         final int[] processedCount = {0};
         final int[] notifiedCount = {0};
         final int[] skippedCount = {0};
 
         for (String userId : userIds) {
-            db.collection("accounts").document(userId).get()
+            db.collection("users").document(userId).get()
                     .addOnSuccessListener(documentSnapshot -> {
-                        // Check if notifications are enabled (default to true if not set)
                         boolean notificationsEnabled = documentSnapshot.getBoolean("notificationsEnabled") != null
                                 ? documentSnapshot.getBoolean("notificationsEnabled")
                                 : true;
 
                         if (!notificationsEnabled) {
-                            Log.d(TAG, "Skipping user " + userId + " — notifications disabled");
                             skippedCount[0]++;
                             processedCount[0]++;
-
-                            // Check if all users processed
                             if (processedCount[0] == totalUsers) {
-                                String message = "Notifications sent to " + notifiedCount[0] +
-                                        " users, skipped " + skippedCount[0] + " users";
-                                Log.d(TAG, message);
-                                callback.onSuccess(message);
+                                callback.onSuccess("Notifications sent to " + notifiedCount[0] +
+                                        ", skipped " + skippedCount[0]);
                             }
                             return;
                         }
 
-                        // User has notifications enabled - send notification
                         Map<String, Object> notificationData = new HashMap<>();
                         notificationData.put("title", title);
                         notificationData.put("body", body);
@@ -138,45 +138,30 @@ public class NotificationHelper {
                         notificationData.put("timestamp", FieldValue.serverTimestamp());
                         notificationData.put("read", false);
 
-                        db.collection("accounts").document(userId)
+                        db.collection("users").document(userId)
                                 .collection("notifications")
                                 .add(notificationData)
                                 .addOnSuccessListener(docRef -> {
-                                    Log.d(TAG, "✅ Notification saved for user: " + userId);
                                     notifiedCount[0]++;
                                     processedCount[0]++;
-
-                                    // Check if all users processed
                                     if (processedCount[0] == totalUsers) {
-                                        String message = "Notifications sent to " + notifiedCount[0] +
-                                                " users, skipped " + skippedCount[0] + " users";
-                                        Log.d(TAG, message);
-                                        callback.onSuccess(message);
+                                        callback.onSuccess("Notifications sent to " + notifiedCount[0] +
+                                                ", skipped " + skippedCount[0]);
                                     }
                                 })
                                 .addOnFailureListener(e -> {
-                                    Log.e(TAG, "❌ Failed to write notification for user: " + userId, e);
                                     processedCount[0]++;
-
-                                    // Check if all users processed
                                     if (processedCount[0] == totalUsers) {
-                                        String message = "Notifications sent to " + notifiedCount[0] +
-                                                " users, skipped " + skippedCount[0] + " users";
-                                        Log.d(TAG, message);
-                                        callback.onSuccess(message);
+                                        callback.onSuccess("Notifications sent to " + notifiedCount[0] +
+                                                ", skipped " + skippedCount[0]);
                                     }
                                 });
                     })
                     .addOnFailureListener(e -> {
-                        Log.e(TAG, "❌ Failed to get user preference for: " + userId, e);
                         processedCount[0]++;
-
-                        // Check if all users processed
                         if (processedCount[0] == totalUsers) {
-                            String message = "Notifications sent to " + notifiedCount[0] +
-                                    " users, skipped " + skippedCount[0] + " users (some errors occurred)";
-                            Log.d(TAG, message);
-                            callback.onSuccess(message);
+                            callback.onSuccess("Notifications sent to " + notifiedCount[0] +
+                                    ", skipped " + skippedCount[0] + " (some errors)");
                         }
                     });
         }
