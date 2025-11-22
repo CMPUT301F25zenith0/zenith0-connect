@@ -7,6 +7,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -17,7 +18,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
-
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
@@ -25,10 +27,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
@@ -43,6 +43,7 @@ import java.util.Map;
  * This activity provides a comprehensive event creation interface that allows organizers to:
  * <ul>
  *   <li>Set event details (name, description, location, price)</li>
+ *   <li>Upload event images to Firebase Storage</li>
  *   <li>Configure date/time and registration periods</li>
  *   <li>Set capacity limits and waiting list parameters</li>
  *   <li>Save drafts or publish events with QR code generation</li>
@@ -50,11 +51,12 @@ import java.util.Map;
  * </p>
  * <p>
  * Events are stored in Firebase Firestore under the "events" collection.
+ * Images are uploaded to Firebase Storage and their URLs are stored in Firestore.
  * Upon publication, a QR code is generated for easy event sharing and registration.
  * </p>
  *
  * @author Digaant
- * @version 1.0
+ * @version 2.0
  */
 public class CreateEvent extends AppCompatActivity {
 
@@ -65,7 +67,6 @@ public class CreateEvent extends AppCompatActivity {
     private Button btnBack, btnStartDate, btnStartTime, btnEndDate, btnEndTime;
     private Button btnRegistrationOpens, btnRegistrationCloses, btnSaveDraft, btnPublishQR;
     private ImageView ivEventImage, ivAddImage;
-    private SwitchMaterial switchGeolocation;
 
     // Date and Time
     private Calendar startDateTime, endDateTime, registrationOpens, registrationCloses;
@@ -88,12 +89,11 @@ public class CreateEvent extends AppCompatActivity {
      * Initialize the activity, sets up Firebase authentication, and prepares UI.
      * <p>
      * This method verifies user authentication status and redirects to login if necessary.
-     * It also fetches the organizers name from the Firestore accounts collection.
+     * It also fetches the organizer's name from the Firestore accounts collection.
      * </p>
      *
      * @param savedInstanceState Bundle containing the activity's previously saved state, or null
      */
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -114,7 +114,6 @@ public class CreateEvent extends AppCompatActivity {
 
         // Fetch organizer name from accounts collection
         fetchOrganizerName();
-
 
         // Methods to setup views
         initializeViews();
@@ -157,7 +156,7 @@ public class CreateEvent extends AppCompatActivity {
     /**
      * Initializes all UI view references from the layout.
      * <p>
-     * Connects EditTexts, Buttons, ImageViews, and Switches to their corresponding member variables for later use in the activity.
+     * Connects EditTexts, Buttons, and ImageViews to their corresponding member variables.
      * </p>
      */
     private void initializeViews() {
@@ -183,9 +182,6 @@ public class CreateEvent extends AppCompatActivity {
         // ImageViews
         ivEventImage = findViewById(R.id.ivEventImage);
         ivAddImage = findViewById(R.id.ivAddImage);
-
-        // Switch
-        switchGeolocation = findViewById(R.id.switchGeolocation);
     }
 
     /**
@@ -216,7 +212,8 @@ public class CreateEvent extends AppCompatActivity {
     /**
      * Sets up the activity result launcher for image selection.
      * <p>
-     * Registers a callback that handles the result of the image picker intent, updating the event image view when an image is successfully selected.
+     * Registers a callback that handles the result of the image picker intent,
+     * updating the event image view when an image is successfully selected.
      * </p>
      */
     private void setupImagePicker() {
@@ -234,14 +231,8 @@ public class CreateEvent extends AppCompatActivity {
     /**
      * Configures click listeners for all interactive UI elements.
      * <p>
-     * Sets up handlers for:
-     * <ul>
-     *   <li>Navigation (back button)</li>
-     *   <li>Image selection</li>
-     *   <li>Date and time pickers</li>
-     *   <li>Registration period selectors</li>
-     *   <li>Save draft and publish actions</li>
-     * </ul>
+     * Sets up handlers for navigation, image selection, date/time pickers,
+     * registration period selectors, and save/publish actions.
      * </p>
      */
     private void setupClickListeners() {
@@ -275,13 +266,11 @@ public class CreateEvent extends AppCompatActivity {
      * Opens the device's media store to allow selection of an image from the gallery.
      * </p>
      */
-
     private void openImagePicker() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
         imagePickerLauncher.launch(intent);
     }
-
 
     /**
      * Displays a date picker dialog and updates the specified calendar and button.
@@ -290,7 +279,6 @@ public class CreateEvent extends AppCompatActivity {
      * @param button The Button to display the selected date
      * @param isStart True if this is for the event start date, false for end date
      */
-
     private void showDatePicker(Calendar calendar, Button button, boolean isStart) {
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
@@ -314,7 +302,6 @@ public class CreateEvent extends AppCompatActivity {
      * @param button The Button to display the selected time
      * @param isStart True if this is for the event start time, false for end time
      */
-
     private void showTimePicker(Calendar calendar, Button button, boolean isStart) {
         TimePickerDialog timePickerDialog = new TimePickerDialog(
                 this,
@@ -330,12 +317,11 @@ public class CreateEvent extends AppCompatActivity {
         timePickerDialog.show();
     }
 
-
     /**
      * Displays combined date and time picker dialogs for registration periods.
      * <p>
      * Shows a date picker first, then automatically displays a time picker.
-     * The button text is updated with the complete date time string and color is changed to black.
+     * The button text is updated with the complete date time string.
      * </p>
      *
      * @param calendar The Calendar object to update
@@ -377,13 +363,7 @@ public class CreateEvent extends AppCompatActivity {
     /**
      * Validates all required input fields before saving or publishing.
      * <p>
-     * Checks for:
-     * <ul>
-     *   <li>Non-empty event name</li>
-     *   <li>Non-empty description</li>
-     *   <li>Non-empty location</li>
-     *   <li>Valid date range (end time after start time)</li>
-     * </ul>
+     * Checks for non-empty event name, description, location, and valid date range.
      * </p>
      *
      * @return true if all validations pass, false otherwise
@@ -415,18 +395,20 @@ public class CreateEvent extends AppCompatActivity {
         return true;
     }
 
-
     /**
      * Saves the current event as a draft in Firestore.
      * <p>
      * Validates inputs, creates event data with "draft" status, and saves to the
      * "events" collection. Shows success/failure messages and closes activity on success.
+     * Drafts are saved without uploading images.
      * </p>
      */
     private void saveDraft() {
         if (!validateInputs()) {
             return;
         }
+
+        Toast.makeText(this, "Saving draft...", Toast.LENGTH_SHORT).show();
 
         // Create event data map
         Map<String, Object> eventData = createEventData(true);
@@ -448,15 +430,7 @@ public class CreateEvent extends AppCompatActivity {
     /**
      * Publishes the event and generates a QR code for registration.
      * <p>
-     * Workflow:
-     * <ol>
-     *   <li>Validates all inputs</li>
-     *   <li>Creates event data with "published" status</li>
-     *   <li>Saves to Firestore "events" collection</li>
-     *   <li>Generates QR code data and saves to event document</li>
-     *   <li>Creates waiting list structure</li>
-     *   <li>Displays QR code dialog for sharing</li>
-     * </ol>
+     * Converts image to Base64 and stores directly in Firestore if selected.
      * </p>
      */
     private void publishAndGenerateQR() {
@@ -464,11 +438,66 @@ public class CreateEvent extends AppCompatActivity {
             return;
         }
 
-        // Show loading message
         Toast.makeText(this, "Publishing event...", Toast.LENGTH_SHORT).show();
 
+        // If image is selected, convert to Base64
+        if (selectedImageUri != null) {
+            String base64Image = convertImageToBase64(selectedImageUri);
+            publishEventWithBase64Image(base64Image);
+        } else {
+            // No image, publish directly
+            publishEventWithBase64Image(null);
+        }
+    }
+
+    /**
+     * Converts the selected image URI to Base64 string.
+     *
+     * @param imageUri The URI of the selected image
+     * @return Base64 encoded string of the image, or null if conversion fails
+     */
+    private String convertImageToBase64(Uri imageUri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+
+            // Resize image to reduce size (max 800x800)
+            int maxSize = 800;
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+
+            float ratio = Math.min((float) maxSize / width, (float) maxSize / height);
+            int newWidth = Math.round(width * ratio);
+            int newHeight = Math.round(height * ratio);
+
+            Bitmap resized = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+
+            // Convert to Base64
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            resized.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream);
+            byte[] byteArray = byteArrayOutputStream.toByteArray();
+
+            return android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT);
+        } catch (Exception e) {
+            Log.e(TAG, "Error converting image to Base64", e);
+            Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+    }
+
+    /**
+     * Publishes the event to Firestore with Base64 image.
+     *
+     * @param base64Image The Base64 encoded image string, or null if no image
+     */
+    private void publishEventWithBase64Image(String base64Image) {
         // Create event data map
         Map<String, Object> eventData = createEventData(false);
+
+        // Add Base64 image if available
+        if (base64Image != null) {
+            eventData.put("image_base64", base64Image);
+        }
 
         // Save to Firestore
         db.collection("events")
@@ -503,25 +532,21 @@ public class CreateEvent extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error publishing event", e);
-                    Toast.makeText(this, "Failed to publish event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to publish event: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
                 });
     }
 
     /**
      * Creates the waiting list structure in Firestore for the published event.
      * <p>
-     * Creates a document in the "waiting_lists" collection with:
-     * <ul>
-     *   <li>event_id: Reference to the event</li>
-     *   <li>created_at: Timestamp of creation</li>
-     *   <li>total_capacity: Maximum waiting list size</li>
-     * </ul>
+     * Creates a document in the "waiting_lists" collection with event ID,
+     * creation timestamp, and total capacity.
      * </p>
      *
      * @param eventId The unique identifier of the event
      */
     private void createWaitingList(String eventId) {
-        // Create a placeholder document in waiting_lists collection
         Map<String, Object> waitingListData = new HashMap<>();
         waitingListData.put("event_id", eventId);
         waitingListData.put("created_at", System.currentTimeMillis());
@@ -562,13 +587,7 @@ public class CreateEvent extends AppCompatActivity {
     /**
      * Displays a dialog showing the generated QR code with sharing options.
      * <p>
-     * The dialog includes:
-     * <ul>
-     *   <li>QR code image (500x500 pixels)</li>
-     *   <li>Copy Link button - Copies the event link to clipboard</li>
-     *   <li>Share button - Opens system share sheet</li>
-     *   <li>Close button - Dismisses dialog and closes activity</li>
-     * </ul>
+     * The dialog includes QR code image, Copy Link button, Share button, and Close button.
      * </p>
      *
      * @param eventId The unique identifier of the event
@@ -651,16 +670,9 @@ public class CreateEvent extends AppCompatActivity {
     /**
      * Creates a comprehensive map of event data for Firestore storage.
      * <p>
-     * Includes all event information:
-     * <ul>
-     *   <li>Basic details (title, description, location)</li>
-     *   <li>Date/time information (start, end, registration period)</li>
-     *   <li>Capacity limits (draw capacity, waiting list)</li>
-     *   <li>Price and geolocation requirements</li>
-     *   <li>Status (draft or published)</li>
-     *   <li>Organizer information (ID and name)</li>
-     *   <li>Metadata (creation timestamp, image URI)</li>
-     * </ul>
+     * Includes all event information: basic details, date/time, capacity limits,
+     * price, status, organizer information, and metadata.
+     * Image URL is added separately during publish.
      * </p>
      *
      * @param isDraft True if saving as draft, false if publishing
@@ -709,21 +721,13 @@ public class CreateEvent extends AppCompatActivity {
         String price = etPrice.getText().toString().trim();
         eventData.put("price", price.isEmpty() ? "0" : price);
 
-        // Geolocation requirement
-        eventData.put("require_geolocation", switchGeolocation.isChecked());
-
         // Status and metadata
         eventData.put("status", isDraft ? "draft" : "published");
         eventData.put("created_at", System.currentTimeMillis());
 
-        // ✅ ADD ORGANIZER INFO
+        // Organizer info
         eventData.put("organizer_id", currentUserId);
         eventData.put("org_name", organizerName != null ? organizerName : "Organizer");
-
-        // Image URI
-        if (selectedImageUri != null) {
-            eventData.put("image_uri", selectedImageUri.toString());
-        }
 
         return eventData;
     }
