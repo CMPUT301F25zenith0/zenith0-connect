@@ -17,6 +17,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
+import com.example.connect.utils.UserActivityTracker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -123,10 +124,14 @@ public class MainActivity extends AppCompatActivity {
                         if (isAdmin != null && isAdmin) {
                             // User is admin, navigate to admin activity
                             Log.d("MainActivity", "Admin user detected! UID: " + user.getUid());
+                            // Mark user as active
+                            UserActivityTracker.markUserActive();
                             navigateToAdminDashboard();
                         } else {
                             // Regular user, proceed with normal login
                             Log.d("MainActivity", "Regular user login! UID: " + user.getUid());
+                            // Mark user as active
+                            UserActivityTracker.markUserActive();
                             navigateToEventList();
                         }
                     } else {
