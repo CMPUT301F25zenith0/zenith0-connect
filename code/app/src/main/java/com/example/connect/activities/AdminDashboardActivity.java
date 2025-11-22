@@ -11,6 +11,8 @@ import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import android.util.Log;
 
 /**
  * Activity for the Admin Dashboard.
@@ -33,6 +35,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private TextView tvStatSystem; // Added
 
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,10 +43,13 @@ public class AdminDashboardActivity extends AppCompatActivity {
         setContentView(R.layout.activity_admin_dashboard);
 
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         initViews();
         setupClickListeners();
         loadDashboardStats(); // Added
+
+        updateData();
     }
 
     private void initViews() {
@@ -102,4 +108,43 @@ public class AdminDashboardActivity extends AppCompatActivity {
             finish();
         });
     }
+
+
+    // This Method updates data on the starting dashboard screen | E.g, Total User and Total Active Users
+    private void updateData(){
+        // Query Firestore to get the total count of users in the accounts collection
+        db.collection("accounts")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    // Get the total number of documents (users)
+                    int totalUsers = queryDocumentSnapshots.size();
+
+                    // Account for admin accounts --> should not be included
+                    totalUsers = totalUsers - 6;
+                    
+                    // Format the number with commas for better readability
+                    String formattedCount = formatNumber(totalUsers);
+
+                    
+                    // Update the TextView with the user count
+                    tvStatUsers.setText(formattedCount);
+                    
+                    Log.d("AdminDashboard", "Total users count: " + totalUsers);
+                })
+                .addOnFailureListener(e -> {
+                    // If query fails, log error and keep default value
+                    Log.e("AdminDashboard", "Failed to get user count: " + e.getMessage(), e);
+                    // Optionally, you could set an error message or keep the default value
+                });
+    }
+
+    /**
+     * Formats a number with commas for better readability (e.g., 1204 -> "1,204")
+     * @param number The number to format
+     * @return Formatted string with commas
+     */
+    private String formatNumber(int number) {
+        return String.format("%,d", number);
+    }
+
 }
