@@ -20,12 +20,33 @@ import com.example.connect.models.Event;
 import java.util.List;
 
 /**
- * Adapter for displaying Event objects in a ListView
+ * Custom arrayAdapter used to populate the event listview
+ * <p>
+ * It inflates a custom layout for each event item and binds the event data
+ * (title, date/time, location, price, and image) to its corresponding view components.
+ * </p>
+ * <p>
+ * Each list item also contains two buttons:
+ * <ul>
+ *     <li><b>View Details</b> — navigates to the event details screen.</li>
+ *     TODO: Change the flow of join Waitlist
+ *     <li><b>Join Waitlist</b> — navigates to the event details screen where users can join the waitlist.</li>
+ * </ul>
+ * </p>
+ * @author Zenith team
+ * @version 3.0
  */
 public class EventAdapter extends ArrayAdapter<Event> {
 
     private final Context context;
     private final List<Event> events;
+
+    /**
+     * Constructs a new eventAdapter
+     *
+     * @param context the current context (usually the Activity where this adapter is used)
+     * @param events  the list of event objects to display in the list
+     */
 
     public EventAdapter(@NonNull Context context, @NonNull List<Event> events) {
         super(context, 0, events);
@@ -33,6 +54,18 @@ public class EventAdapter extends ArrayAdapter<Event> {
         this.events = events;
     }
 
+    /**
+     * Provides a view for each item in the dataset.
+     * <p>
+     * This method uses the ViewHolder pattern to optimize performance
+     * by reusing existing views rather than inflating new ones each time.
+     * </p>
+     *
+     * @param position    the position of the item within the dataset
+     * @param convertView the old view to reuse, if possible
+     * @param parent      the parent view that this view will eventually be attached to
+     * @return the fully populated view for the current event item
+     */
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
@@ -90,7 +123,9 @@ public class EventAdapter extends ArrayAdapter<Event> {
     }
 
     /**
-     * Update the adapter's data
+     * Updates the adapter with a new list of events and refreshes the view.
+     *
+     * @param newEvents the new list of event objects to display
      */
     public void updateEvents(List<Event> newEvents) {
         events.clear();
@@ -99,7 +134,7 @@ public class EventAdapter extends ArrayAdapter<Event> {
     }
 
     /**
-     * ViewHolder pattern for efficient view recycling
+     * A static inner class used to cache view references for each list item, minimizing repeated calls to that find views and improving scroll performance.
      */
     static class ViewHolder {
         ImageView eventImage;

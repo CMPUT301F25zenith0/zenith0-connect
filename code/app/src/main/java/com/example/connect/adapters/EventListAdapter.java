@@ -18,9 +18,28 @@ import com.example.connect.models.Event;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Event list adapter is a recycle view adapter fo display a list of event objects
+ * <p>
+ * Using listAdapter and diffUtil to handle list updates, filtering, and data changes without reloading the entire dataset.
+ * </p>
+ * <p>
+ * This adapter supports filtering events by search query, date, and interest category.
+ * It also provides listener callbacks for user interactions such as viewing event details or joining an event waitlist.
+ * </p>
+ * @author Zenith team
+ * @version 2.0
+ */
 public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventViewHolder> {
 
+    /**
+     * Called when the user selects an event to view its details.
+     * Or join the waitlist directly from the listView
+     *
+     * @param e is the event that was selected
+     */
     public interface Listener {
+        // TODO - Complete the functionality of join from this button
         void onDetails(Event e);
         void onJoin(Event e);
     }
@@ -28,6 +47,11 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
     private final Listener listener;
     private List<Event> allEvents = new ArrayList<>();
 
+    /**
+     * Constructs a new EventList Adapter
+     *
+     * @param listener the listener that handles user interactions with event items
+     */
     public EventListAdapter(Listener listener) {
         super(new DiffUtil.ItemCallback<Event>() {
             @Override

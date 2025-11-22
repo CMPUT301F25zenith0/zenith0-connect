@@ -64,10 +64,12 @@ dependencies {
     // ---------- Unit testing ----------
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.12.0")
-    testImplementation("org.robolectric:4.13")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
 
     // ---------- Android Instrumented testing ----------
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test:core:1.6.0")
+    androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("org.mockito:mockito-android:5.12.0")
 }

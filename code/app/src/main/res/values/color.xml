@@ -23,4 +23,23 @@
     <!-- Shade looks green in the preview | Could try D3D3D3 -->
     <color name="text_field_bg">#fafafa</color>
     <color name="hint_colour">#a6a5a7</color>
+
+    <!-- New Light Theme Colors -->
+    <color name="background_light">#F9F9F9</color>
+    <color name="card_bg_light">#FFFFFF</color>
+    <color name="text_primary_light">#000000</color>
+    <color name="text_secondary_light">#757575</color>
+    <color name="accent_orange">#FF5722</color>
+    <color name="accent_orange_light">#FFCCBC</color>
+
+    <!-- Vision UI Theme (Dark/Neon) -->
+    <color name="vision_bg">#0F1535</color>
+    <color name="vision_card_bg">#1F284E</color>
+    <color name="vision_primary">#2D3748</color>
+    <color name="vision_accent_purple">#582CFF</color>
+    <color name="vision_accent_blue">#0075FF</color>
+    <color name="vision_accent_green">#00E396</color>
+    <color name="vision_text_primary">#FFFFFF</color>
+    <color name="vision_text_secondary">#A0AEC0</color>
+    <color name="vision_icon_bg">#0075FF</color>
 </resources>

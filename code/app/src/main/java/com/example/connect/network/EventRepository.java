@@ -11,7 +11,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Repository for managing Event data from Firestore
+ * Eventrepo is responsible for retrieving and filtering event data fom firestore database
+ * <p>
+ * This provides methods to:
+ * <ul>
+ *     <li>Fetch all events</li>
+ *     <li>Search events by name</li>
+ *     <li>Filter events by category, location, or date range</li>
+ * </ul>
+ * <p>
+ * All operations are asynchronous and return their results through the callback interface.
+ * </p>
+ * @author Zenith Team
+ * @version 2.0
  */
 public class EventRepository {
 

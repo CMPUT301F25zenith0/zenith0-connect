@@ -95,7 +95,7 @@
                 android:id="@+id/clear_filters_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Clear Filters"
+                android:text="X"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#D32F2F"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>

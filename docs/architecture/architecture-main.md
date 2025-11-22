@@ -8,7 +8,7 @@ This section describes the **backend design**, **database schema**, **data flow*
 
 ## 📋 Table of Contents
 - [Overview](#overview)
-- [Backend Design](#backend-design)
+- [Backend Design (UML)](Zenith%20Connect%20App%20UML.pdf)
 - [Database Schema](#database-schema)
 - [System Flow](#system-flow)
 - [CRC Cards](#crc-cards)

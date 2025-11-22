@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.connect.R;
 import com.example.connect.utils.NotificationHelper;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -113,8 +114,10 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
             AtomicInteger totalNotifications = new AtomicInteger(0);
             AtomicInteger completedGroups = new AtomicInteger(0);
 
-            getChosenEntrants(eventIdStr, chosenIds -> {
-                getNotChosenEntrants(eventIdStr, notChosenIds -> {
+            // Get chosen entrants from "chosen" collection
+            getChosenEntrantsFromCollection(eventIdStr, chosenIds -> {
+                // Get not-chosen entrants (waiting list minus chosen)
+                getNotChosenEntrantsFromCollections(eventIdStr, notChosenIds -> {
 
                     int tempTotalGroups = 0;
                     if (!chosenIds.isEmpty()) tempTotalGroups++;
@@ -125,7 +128,6 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // ✅ Make it final so it can be used in inner class
                     final int totalGroups = tempTotalGroups;
 
                     NotificationHelper.NotificationCallback combinedCallback =
@@ -174,35 +176,44 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
         btnNotifyWaitingList.setOnClickListener(v -> {
             String eventIdStr = etEventId.getText().toString().trim();
             String eventName = etEventName.getText().toString().trim();
+            Log.d(TAG, "Event id and event name: " + eventIdStr + eventName);
 
             if (eventIdStr.isEmpty() || eventName.isEmpty()) {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            notificationHelper.notifyAllWaitingListEntrants(
-                    eventIdStr,
-                    eventName,
-                    new NotificationHelper.NotificationCallback() {
-                        @Override
-                        public void onSuccess(String msg) {
-                            runOnUiThread(() ->
-                                    Toast.makeText(OrganizerMessagesActivity.this,
-                                            msg, Toast.LENGTH_SHORT).show()
-                            );
-                        }
+            // Get waiting list IDs from the waiting_lists collection
+            getWaitingListEntrantsFromCollection(eventIdStr, waitingListIds -> {
+                if (waitingListIds.isEmpty()) {
+                    Toast.makeText(this, "No entrants in waiting list", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                        @Override
-                        public void onFailure(String error) {
-                            runOnUiThread(() ->
-                                    Toast.makeText(OrganizerMessagesActivity.this,
-                                            "Error: " + error, Toast.LENGTH_LONG).show()
-                            );
+                notificationHelper.notifyAllWaitingListEntrants(
+                        eventIdStr,
+                        waitingListIds,
+                        eventName,
+                        new NotificationHelper.NotificationCallback() {
+                            @Override
+                            public void onSuccess(String msg) {
+                                runOnUiThread(() ->
+                                        Toast.makeText(OrganizerMessagesActivity.this,
+                                                msg, Toast.LENGTH_SHORT).show()
+                                );
+                            }
+
+                            @Override
+                            public void onFailure(String error) {
+                                runOnUiThread(() ->
+                                        Toast.makeText(OrganizerMessagesActivity.this,
+                                                "Error: " + error, Toast.LENGTH_LONG).show()
+                                );
+                            }
                         }
-                    }
-            );
+                );
+            });
         });
-
         // Search functionality
         if (etSearch != null) {
             etSearch.addTextChangedListener(new TextWatcher() {
@@ -315,10 +326,129 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
         });
     }
 
+
     /**
-     * Get list of chosen entrant IDs from Firestore
+     * Get chosen entrants from the "chosen" collection
      */
-    private void getChosenEntrants(String eventId, EntrantListCallback callback) {
+    private void getChosenEntrantsFromCollection(String eventId, EntrantIdsCallback callback) {
+        db.collection("chosen").document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        Log.d(TAG, "No chosen document found for event: " + eventId);
+                        callback.onEntrantIdsFetched(new ArrayList<>());
+                        return;
+                    }
+
+                    List<String> chosenIds = (List<String>) documentSnapshot.get("entries");
+                    if (chosenIds == null) {
+                        chosenIds = new ArrayList<>();
+                    }
+
+                    Log.d(TAG, "Found " + chosenIds.size() + " chosen entrants");
+                    callback.onEntrantIdsFetched(chosenIds);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching chosen entrants", e);
+                    callback.onEntrantIdsFetched(new ArrayList<>());
+                });
+    }
+
+    /**
+     * Get not-chosen entrants (waiting list minus chosen)
+     */
+    private void getNotChosenEntrantsFromCollections(String eventId, EntrantIdsCallback callback) {
+        // First get waiting list
+        db.collection("waiting_lists").document(eventId)
+                .get()
+                .addOnSuccessListener(waitingListDoc -> {
+                    if (!waitingListDoc.exists()) {
+                        Log.d(TAG, "No waiting list found for event: " + eventId);
+                        callback.onEntrantIdsFetched(new ArrayList<>());
+                        return;
+                    }
+
+                    List<String> waitingListIds = (List<String>) waitingListDoc.get("entries");
+                    if (waitingListIds == null || waitingListIds.isEmpty()) {
+                        Log.d(TAG, "Waiting list is empty");
+                        callback.onEntrantIdsFetched(new ArrayList<>());
+                        return;
+                    }
+
+                    // Then get chosen list
+                    db.collection("chosen").document(eventId)
+                            .get()
+                            .addOnSuccessListener(chosenDoc -> {
+                                List<String> chosenIds = new ArrayList<>();
+                                if (chosenDoc.exists()) {
+                                    List<String> chosen = (List<String>) chosenDoc.get("entries");
+                                    if (chosen != null) {
+                                        chosenIds = chosen;
+                                    }
+                                }
+
+                                // Calculate not-chosen: waiting list minus chosen
+                                List<String> notChosenIds = new ArrayList<>(waitingListIds);
+                                notChosenIds.removeAll(chosenIds);
+
+                                Log.d(TAG, "Found " + notChosenIds.size() + " not-chosen entrants");
+                                callback.onEntrantIdsFetched(notChosenIds);
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error fetching chosen list", e);
+                                // If we can't get chosen list, treat all waiting list as not-chosen
+                                callback.onEntrantIdsFetched(waitingListIds);
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching waiting list", e);
+                    callback.onEntrantIdsFetched(new ArrayList<>());
+                });
+    }
+
+    /**
+     * Get waiting list entrants from the "waiting_lists" collection
+     */
+    private void getWaitingListEntrantsFromCollection(String eventId, EntrantIdsCallback callback) {
+        db.collection("waiting_lists").document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (!documentSnapshot.exists()) {
+                        Log.d(TAG, "No waiting list found for event: " + eventId);
+                        callback.onEntrantIdsFetched(new ArrayList<>());
+                        return;
+                    }
+
+                    List<String> waitingListIds = (List<String>) documentSnapshot.get("entries");
+                    if (waitingListIds == null) {
+                        waitingListIds = new ArrayList<>();
+                    }
+
+                    Log.d(TAG, "Found " + waitingListIds.size() + " waiting list entrants");
+                    callback.onEntrantIdsFetched(waitingListIds);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching waiting list", e);
+                    callback.onEntrantIdsFetched(new ArrayList<>());
+                });
+    }
+
+    /**
+     * Callback interface for fetching entrant IDs
+     */
+    private interface EntrantIdsCallback {
+        void onEntrantIdsFetched(List<String> entrantIds);
+    }
+
+
+
+
+
+
+    /**
+     * Get list of chosen entrant IDs from Firestore (DEPRECATED)
+     */
+    private void getChosenEntrantsOLD(String eventId, EntrantListCallback callback) {
         db.collection("events").document(eventId)
                 .collection("chosen")
                 .get()
@@ -338,9 +468,9 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
     }
 
     /**
-     * Get list of not chosen entrant IDs from Firestore
+     * Get list of not chosen entrant IDs from Firestore (DEPRECATED)
      */
-    private void getNotChosenEntrants(String eventId, EntrantListCallback callback) {
+    private void getNotChosenEntrantsOLD(String eventId, EntrantListCallback callback) {
         db.collection("events").document(eventId)
                 .collection("notChosen")
                 .get()
@@ -359,8 +489,9 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
                 });
     }
 
+
     /**
-     * Mark a user as chosen in Firestore
+     * Mark a user as chosen in Firestore (DEPRECATED)
      */
     private void markUserAsChosen(String uid) {
         if (spinnerEntrants == null || spinnerEntrants.getSelectedItemPosition() < 0) {
