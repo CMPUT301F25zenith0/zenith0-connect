@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_dark">
+    android:background="@color/background_light">
 
     <!-- Top Bar -->
     <com.google.android.material.appbar.AppBarLayout
@@ -16,11 +16,11 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="VIP MEMBER"
-            app:titleTextColor="@color/primary_gold"
+            app:title="My Profile"
+            app:titleTextColor="@color/text_primary_light"
             app:titleCentered="true"
             app:navigationIcon="?attr/homeAsUpIndicator"
-            app:navigationIconTint="@color/primary_gold"/>
+            app:navigationIconTint="@color/text_primary_light"/>
     </com.google.android.material.appbar.AppBarLayout>
 
     <ScrollView
@@ -39,11 +39,11 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/card_bg"
-                app:strokeColor="@color/primary_gold"
-                app:strokeWidth="2dp"
+                app:cardBackgroundColor="@color/card_bg_light"
+                app:strokeColor="@android:color/transparent"
+                app:strokeWidth="0dp"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="8dp"
+                app:cardElevation="4dp"
                 android:layout_marginBottom="24dp">
 
                 <LinearLayout
@@ -52,41 +52,6 @@
                     android:orientation="vertical"
                     android:padding="24dp"
                     android:gravity="center_horizontal">
-
-                    <!-- Header with Logo/Chip -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
-                        
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:src="@android:drawable/star_on"
-                            app:tint="@color/primary_gold"
-                            android:layout_marginEnd="8dp"/>
-                        
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="ZENITH CLUB"
-                            android:textColor="@color/primary_gold"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.15"/>
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/tvOrganizerLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="MEMBER"
-                            android:textColor="@color/black"
-                            app:chipBackgroundColor="@color/primary_gold"
-                            android:textStyle="bold"
-                            app:chipMinHeight="32dp"/>
-                    </LinearLayout>
 
                     <!-- Avatar -->
                     <FrameLayout
@@ -99,9 +64,9 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:scaleType="centerCrop"
-                            android:src="@android:drawable/ic_menu_gallery"
+                            android:src="@drawable/ic_profile_placeholder"
                             app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
-                            app:strokeColor="@color/primary_gold"
+                            app:strokeColor="@color/accent_orange"
                             app:strokeWidth="2dp"
                             android:padding="2dp"/>
 
@@ -110,9 +75,9 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="bottom|end"
-                            app:backgroundTint="@color/primary_gold"
+                            app:backgroundTint="@color/accent_orange"
                             app:srcCompat="@android:drawable/ic_input_add"
-                            app:tint="@color/black"
+                            app:tint="@color/white"
                             app:fabSize="mini"
                             app:elevation="4dp"/>
                     </FrameLayout>
@@ -122,7 +87,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="ID: 8888-8888"
-                        android:textColor="@color/text_secondary"
+                        android:textColor="@color/text_secondary_light"
                         android:textSize="12sp"
                         android:letterSpacing="0.1"
                         android:layout_marginBottom="24dp"
@@ -132,12 +97,12 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="PLAYER NAME"
-                        app:boxBackgroundColor="@color/text_field_bg"
-                        app:boxStrokeColor="@color/primary_gold"
-                        app:hintTextColor="@color/primary_gold"
+                        android:hint="Full Name"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/accent_orange"
                         app:startIconDrawable="@android:drawable/ic_menu_myplaces"
-                        app:startIconTint="@color/primary_gold"
+                        app:startIconTint="@color/accent_orange"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -146,7 +111,7 @@
                             android:layout_height="wrap_content"
                             android:inputType="textPersonName"
                             android:text="Amy Young"
-                            android:textColor="@color/text_primary"/>
+                            android:textColor="@color/text_primary_light"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <!-- Email -->
@@ -154,12 +119,12 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="CONTACT EMAIL"
-                        app:boxBackgroundColor="@color/text_field_bg"
-                        app:boxStrokeColor="@color/primary_gold"
-                        app:hintTextColor="@color/primary_gold"
+                        android:hint="Email Address"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/accent_orange"
                         app:startIconDrawable="@android:drawable/ic_dialog_email"
-                        app:startIconTint="@color/primary_gold"
+                        app:startIconTint="@color/accent_orange"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -168,7 +133,7 @@
                             android:layout_height="wrap_content"
                             android:inputType="textEmailAddress"
                             android:text="amyoung@random.com"
-                            android:textColor="@color/text_primary"/>
+                            android:textColor="@color/text_primary_light"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <!-- Phone -->
@@ -176,12 +141,12 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="PHONE NUMBER"
-                        app:boxBackgroundColor="@color/text_field_bg"
-                        app:boxStrokeColor="@color/primary_gold"
-                        app:hintTextColor="@color/primary_gold"
+                        android:hint="Phone Number"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/accent_orange"
                         app:startIconDrawable="@android:drawable/ic_menu_call"
-                        app:startIconTint="@color/primary_gold"
+                        app:startIconTint="@color/accent_orange"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -190,7 +155,7 @@
                             android:layout_height="wrap_content"
                             android:inputType="phone"
                             android:text="+98 1245560090"
-                            android:textColor="@color/text_primary"/>
+                            android:textColor="@color/text_primary_light"/>
                     </com.google.android.material.textfield.TextInputLayout>
                     
                     <!-- Device ID (Hidden/Small) -->
@@ -198,12 +163,12 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="DEVICE ID"
-                        app:boxBackgroundColor="@color/text_field_bg"
-                        app:boxStrokeColor="@color/primary_gold"
-                        app:hintTextColor="@color/primary_gold"
+                        android:hint="Device ID"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/accent_orange"
                         app:startIconDrawable="@android:drawable/ic_menu_info_details"
-                        app:startIconTint="@color/primary_gold"
+                        app:startIconTint="@color/accent_orange"
                         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -213,7 +178,7 @@
                             android:inputType="text"
                             android:enabled="false"
                             android:text="*******"
-                            android:textColor="@color/text_secondary"/>
+                            android:textColor="@color/text_secondary_light"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
                 </LinearLayout>
@@ -224,7 +189,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="PREFERENCES"
-                android:textColor="@color/primary_gold"
+                android:textColor="@color/accent_orange"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="8dp"/>
@@ -232,7 +197,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/card_bg"
+                app:cardBackgroundColor="@color/card_bg_light"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
                 android:layout_marginBottom="24dp">
@@ -255,15 +220,15 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="Light Mode"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/text_primary_light"
                             android:textSize="16sp"/>
 
                         <com.google.android.material.materialswitch.MaterialSwitch
                             android:id="@+id/switchLightMode"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            app:thumbTint="@color/primary_gold"
-                            app:trackTint="@color/text_field_bg"/>
+                            app:thumbTint="@color/accent_orange"
+                            app:trackTint="@color/background_light"/>
                     </LinearLayout>
                     
                 </LinearLayout>
@@ -282,9 +247,9 @@
                     android:layout_height="56dp"
                     android:layout_marginBottom="12dp"
                     android:text="UPDATE PROFILE"
-                    android:textColor="@color/black"
+                    android:textColor="@color/white"
                     android:textStyle="bold"
-                    app:backgroundTint="@color/accent_green"
+                    app:backgroundTint="@color/accent_orange"
                     app:cornerRadius="8dp"
                     app:elevation="4dp"/>
                 
@@ -301,8 +266,8 @@
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
                         android:text="ORG VIEW"
-                        android:textColor="@color/primary_gold"
-                        app:strokeColor="@color/primary_gold"
+                        android:textColor="@color/accent_orange"
+                        app:strokeColor="@color/accent_orange"
                         app:strokeWidth="1dp"
                         app:cornerRadius="8dp" />
 
@@ -323,7 +288,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="LOG OUT"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_secondary_light"
                     android:layout_marginTop="8dp"/>
 
             </LinearLayout>

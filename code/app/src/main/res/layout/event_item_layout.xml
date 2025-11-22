@@ -85,7 +85,7 @@
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="Lantern Festival"
-                android:textColor="@color/white"
+                android:textColor="@color/text_primary_light"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -161,13 +161,13 @@
                     android:layout_marginStart="8dp"
                     android:text="Event Details"
                     android:textSize="10sp"
-                    android:textColor="@color/primary_gold"
+                    android:textColor="@color/accent_orange"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="0dp"
                     android:clickable="true"
                     android:focusable="true"
                     app:backgroundTint="@android:color/transparent"
-                    app:strokeColor="@color/primary_gold"
+                    app:strokeColor="@color/accent_orange"
                     app:strokeWidth="1dp"
                     app:cornerRadius="14dp" />
             </LinearLayout>

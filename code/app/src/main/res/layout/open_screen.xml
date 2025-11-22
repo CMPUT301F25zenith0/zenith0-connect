@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#020617"
+    android:background="@color/background_light"
     tools:context=".WelcomeActivity">
 
     <!-- Illustration Row -->
@@ -18,7 +18,7 @@
         android:paddingTop="32dp"
         android:text="Zenith-Connect\nDraw Lobby"
         android:textAlignment="center"
-        android:textColor="#FBBF24"
+        android:textColor="@color/accent_orange"
         android:textSize="28sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
@@ -54,8 +54,8 @@
         android:layout_width="0dp"
         android:layout_height="56dp"
         android:text="Log In"
-        android:textColor="@color/black"
-        android:backgroundTint="#22C55E"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/accent_orange"
         app:layout_constraintTop_toBottomOf="@id/illustrationRow"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -63,13 +63,15 @@
         android:layout_marginHorizontal="32dp" />
 
     <!-- Create Account button -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/create_acct_btn"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="0dp"
         android:layout_height="56dp"
         android:text="Create Account"
-        android:textColor="@color/black"
-        android:backgroundTint="#FBBF24"
+        android:textColor="@color/accent_orange"
+        app:strokeColor="@color/accent_orange"
+        app:strokeWidth="1dp"
         app:layout_constraintTop_toBottomOf="@id/btn_login"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

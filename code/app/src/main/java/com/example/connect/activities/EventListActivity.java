@@ -137,7 +137,7 @@ public class EventListActivity extends AppCompatActivity {
         popularEventsAdapter = new PopularEventsAdapter(this, popularEventsList, event -> {
             // Handle popular event click
             Intent intent = new Intent(EventListActivity.this, EventDetails.class);
-            intent.putExtra("event_id", event.getEventId());
+            intent.putExtra("EVENT_ID", event.getEventId());
             startActivity(intent);
         });
 

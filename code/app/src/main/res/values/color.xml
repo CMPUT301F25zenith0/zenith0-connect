@@ -34,4 +34,12 @@
 
     <color name="text_field_bg">#F1F5F9</color>
     <color name="hint_colour">#94A3B8</color>
+
+    <!-- New Light Theme Colors -->
+    <color name="background_light">#F9F9F9</color>
+    <color name="card_bg_light">#FFFFFF</color>
+    <color name="text_primary_light">#000000</color>
+    <color name="text_secondary_light">#757575</color>
+    <color name="accent_orange">#FF5722</color>
+    <color name="accent_orange_light">#FFCCBC</color>
 </resources>

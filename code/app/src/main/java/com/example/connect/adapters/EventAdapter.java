@@ -117,7 +117,7 @@ public class EventAdapter extends ArrayAdapter<Event> {
         // Event Details button click
         holder.btnEventDetails.setOnClickListener(v -> {
             Intent intent = new Intent(context, com.example.connect.activities.EventDetails.class);
-            intent.putExtra("event_id", event.getEventId());
+            intent.putExtra("EVENT_ID", event.getEventId()); // Fixed key to match EventDetails.java
             context.startActivity(intent);
         });
 
@@ -137,8 +137,28 @@ public class EventAdapter extends ArrayAdapter<Event> {
         String day = "01";
         String month = "JAN";
 
+        if (dateString == null || dateString.isEmpty()) {
+            return new String[] { day, month };
+        }
+
         try {
-            // Split by common delimiters
+            // Try parsing ISO format first (yyyy-MM-dd) which seems to be common
+            if (dateString.matches("\\d{4}-\\d{2}-\\d{2}.*")) {
+                // Simple string manipulation for ISO format
+                String[] parts = dateString.split("T")[0].split("-");
+                if (parts.length == 3) {
+                    day = parts[2];
+                    int monthNum = Integer.parseInt(parts[1]);
+                    String[] monthNames = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+                            "JUL", "AUG", "SEP", "OCT", "NOV", "DEC" };
+                    if (monthNum >= 1 && monthNum <= 12) {
+                        month = monthNames[monthNum - 1];
+                    }
+                    return new String[] { day, month };
+                }
+            }
+
+            // Fallback to existing heuristic
             String[] parts = dateString.split("[/\\s,-]+");
             if (parts.length >= 2) {
                 // Heuristic: if first part is a number, assume dd/MM or dd MMM

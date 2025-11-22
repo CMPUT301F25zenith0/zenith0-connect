@@ -1,425 +1,285 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:background="#050816">
+    android:background="@color/background_light">
 
-    <LinearLayout
+    <!-- Top Bar -->
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
 
-        <!-- TOP BAR - BACK & LOGOUT AS NEON CHIPS -->
-        <RelativeLayout
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp">
+            android:layout_height="?attr/actionBarSize"
+            app:title="Profile Jackpot"
+            app:titleTextColor="@color/text_primary_light"
+            app:titleCentered="true"
+            app:navigationIcon="?attr/homeAsUpIndicator"
+            app:navigationIconTint="@color/text_primary_light"/>
+    </com.google.android.material.appbar.AppBarLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/back_btn"
-                android:layout_width="110dp"
-                android:layout_height="36dp"
-                android:layout_alignParentStart="true"
-                android:text="Back"
-                android:textAllCaps="false"
-                android:textSize="13sp"
-                android:textColor="#0B1020"
-                app:icon="@drawable/ic_back_arrow"
-                app:iconTint="#0B1020"
-                app:iconGravity="textStart"
-                app:iconPadding="4dp"
-                app:backgroundTint="#FBBF24"
-                app:cornerRadius="999dp" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="false"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_logout"
-                android:layout_width="110dp"
-                android:layout_height="36dp"
-                android:layout_alignParentEnd="true"
-                android:text="Log Out"
-                android:textAllCaps="false"
-                android:textSize="13sp"
-                android:textColor="#F9FAFB"
-                app:backgroundTint="#EF4444"
-                app:cornerRadius="999dp" />
-
-        </RelativeLayout>
-
-        <!-- LOTTERY HEADER -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="16dp">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="PROFILE JACKPOT"
-                android:textAllCaps="true"
-                android:textColor="#FBBF24"
-                android:textSize="18sp"
-                android:letterSpacing="0.2"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
                 android:text="Your golden ticket into every draw"
-                android:textColor="#9CA3AF"
-                android:textSize="12sp" />
-        </LinearLayout>
+                android:textColor="@color/accent_orange"
+                android:gravity="center"
+                android:layout_marginBottom="24dp"
+                android:textSize="14sp"/>
 
-        <!-- TICKET CARD -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="#0B1020"
-            app:cardCornerRadius="28dp"
-            app:cardElevation="10dp"
-            app:strokeColor="#FBBF24"
-            app:strokeWidth="2dp">
+            <!-- Player Card Container -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/card_bg_light"
+                app:strokeColor="@color/accent_orange"
+                app:strokeWidth="1dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="24dp">
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="24dp"
+                    android:gravity="center_horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ADMIT ONE LIVE DRAWS"
+                        android:textColor="@color/accent_orange"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="24dp"/>
+
+                    <!-- Avatar -->
+                    <FrameLayout
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:layout_marginBottom="24dp">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/ivProfile"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/ic_profile_placeholder"
+                            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+                            app:strokeColor="@color/accent_orange"
+                            app:strokeWidth="2dp"
+                            android:padding="2dp"/>
+
+                        <com.google.android.material.floatingactionbutton.FloatingActionButton
+                            android:id="@+id/fabChangePhoto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="bottom|end"
+                            app:backgroundTint="@color/accent_orange"
+                            app:srcCompat="@android:drawable/ic_input_add"
+                            app:tint="@color/white"
+                            app:fabSize="mini"
+                            app:elevation="4dp"/>
+                    </FrameLayout>
+
+                    <!-- Name -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Ticket Holder Name"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/accent_orange"
+                        app:startIconDrawable="@android:drawable/ic_menu_myplaces"
+                        app:startIconTint="@color/accent_orange"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPersonName"
+                            android:textColor="@color/text_primary_light"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Email -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Winning Notification Email"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/accent_orange"
+                        app:startIconDrawable="@android:drawable/ic_dialog_email"
+                        app:startIconTint="@color/accent_orange"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_email_profile"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textEmailAddress"
+                            android:textColor="@color/text_primary_light"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Device ID -->
+                     <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Bound Device"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/accent_orange"
+                        app:startIconDrawable="@android:drawable/ic_menu_info_details"
+                        app:startIconTint="@color/accent_orange"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_device"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="text"
+                            android:enabled="false"
+                            android:textColor="@color/text_secondary_light"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Phone -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:hint="Backup Alert Number"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/accent_orange"
+                        app:startIconDrawable="@android:drawable/ic_menu_call"
+                        app:startIconTint="@color/accent_orange"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_phone"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="phone"
+                            android:textColor="@color/text_primary_light"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+                    
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Settings Section -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/card_bg_light"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="4dp"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Light Mode Switch -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Light Mode"
+                            android:textColor="@color/text_primary_light"
+                            android:textSize="16sp"/>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/switchLightMode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:thumbTint="@color/accent_orange"
+                            app:trackTint="@color/background_light"/>
+                    </LinearLayout>
+                    
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Action Buttons -->
             <LinearLayout
-                android:id="@+id/device_icon"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:gravity="center">
 
-                <!-- TICKET TOP STRIP -->
-                <LinearLayout
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_save"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="Save Changes"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    app:backgroundTint="@color/accent_orange"
+                    app:cornerRadius="8dp"
+                    app:elevation="4dp"/>
+                
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_org_view"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginBottom="12dp"
+                    android:text="Switch Draw Console"
+                    android:textColor="@color/accent_orange"
+                    app:strokeColor="@color/accent_orange"
+                    app:strokeWidth="1dp"
+                    app:cornerRadius="8dp" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="ADMIT ONE"
-                        android:textAllCaps="true"
-                        android:textColor="#6EE7B7"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="LIVE DRAWS"
-                        android:textAllCaps="true"
-                        android:textColor="#F472B6"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- PROFILE IMAGE AS LOTTERY AVATAR -->
-                <RelativeLayout
-                    android:id="@+id/profileContainer"
+                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_delete"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:text="Delete Account"
+                    android:textColor="@color/accent_red"
+                    android:textStyle="bold" />
+                
+                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_logout"
+                    style="@style/Widget.Material3.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="24dp"
-                    android:layout_marginBottom="12dp">
-
-                    <ImageView
-                        android:id="@+id/profile_img"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:background="@drawable/rounded_image_button"
-                        android:padding="6dp"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/ic_profile_example"
-                        android:contentDescription="Profile Image" />
-
-                    <ImageButton
-                        android:id="@+id/edit_profile"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:layout_alignEnd="@id/profile_img"
-                        android:layout_alignBottom="@id/profile_img"
-                        android:backgroundTint="#22C55E"
-                        android:background="@drawable/rounded_image_button"
-                        android:padding="8dp"
-                        android:scaleType="centerInside"
-                        android:src="@drawable/ic_edit"
-                        android:contentDescription="Edit Profile" />
-
-                </RelativeLayout>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="Tap to change your lucky avatar"
-                    android:textColor="#9CA3AF"
-                    android:textSize="11sp" />
-
-                <!-- DOTTED SEPARATOR -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:layout_marginBottom="12dp"
-                    android:gravity="center"
-                    android:text="···  ···  ···  ···  ···  ···  ···  ···"
-                    android:textColor="#1F2937"
-                    android:textSize="10sp" />
-
-                <!-- NAME FIELD ROW -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/name_icon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_profile_name"
-                        app:tint="#FBBF24"
-                        android:contentDescription="Name" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ticket Holder Name"
-                            android:textColor="#E5E7EB"
-                            android:textSize="13sp" />
-
-                        <EditText
-                            android:id="@+id/et_name"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:background="@drawable/edittext_bg"
-                            android:hint="e.g. Amy Jackpot Young"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:textSize="14sp"
-                            android:textColor="#F9FAFB"
-                            android:inputType="textPersonName" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- EMAIL FIELD ROW -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/email_icon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_email"
-                        app:tint="#60A5FA"
-                        android:contentDescription="Email" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Winning Notification Email"
-                            android:textColor="#E5E7EB"
-                            android:textSize="13sp" />
-
-                        <EditText
-                            android:id="@+id/et_email_profile"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:background="@drawable/edittext_bg"
-                            android:hint="you@luckydomain.com"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:textSize="14sp"
-                            android:textColor="#F9FAFB"
-                            android:inputType="textEmailAddress" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- DEVICE ID FIELD ROW -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/ivDeviceIcon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_device_icon"
-                        app:tint="#34D399"
-                        android:contentDescription="Device ID" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Bound Device"
-                            android:textColor="#E5E7EB"
-                            android:textSize="13sp" />
-
-                        <EditText
-                            android:id="@+id/et_device"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:background="@drawable/edittext_bg"
-                            android:hint="••••••••"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:textSize="14sp"
-                            android:textColor="#F9FAFB"
-                            android:enabled="false"
-                            android:inputType="text" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- PHONE FIELD ROW -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <ImageView
-                        android:id="@+id/phone_icon"
-                        android:layout_width="26dp"
-                        android:layout_height="26dp"
-                        android:layout_marginEnd="12dp"
-                        android:src="@drawable/ic_phone"
-                        app:tint="#F97316"
-                        android:contentDescription="Phone" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Backup Alert Number"
-                            android:textColor="#E5E7EB"
-                            android:textSize="13sp" />
-
-                        <EditText
-                            android:id="@+id/et_phone"
-                            android:layout_width="match_parent"
-                            android:layout_height="40dp"
-                            android:background="@drawable/edittext_bg"
-                            android:hint="+1 (555) LUCKY YOU"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:textSize="14sp"
-                            android:textColor="#F9FAFB"
-                            android:inputType="phone" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- SMALL BADGE -->
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginTop="4dp"
-                    android:text="PROFILE SEEDED ✓"
-                    android:textAllCaps="true"
-                    android:textColor="#6EE7B7"
-                    android:textSize="10sp" />
+                    android:text="Log Out"
+                    android:textColor="@color/text_secondary_light"
+                    android:layout_marginTop="8dp"/>
 
             </LinearLayout>
 
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- SAVE / DELETE BUTTONS AS BIG CALL-TO-ACTION -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_save"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="Save Changes"
-                android:textAllCaps="false"
-                android:textColor="#0B1020"
-                android:textSize="15sp"
-                app:backgroundTint="#22C55E"
-                app:cornerRadius="999dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_delete"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:text="Delete Account"
-                android:textAllCaps="false"
-                android:textColor="#F9FAFB"
-                android:textSize="15sp"
-                app:backgroundTint="#B91C1C"
-                app:cornerRadius="999dp" />
         </LinearLayout>
+    </ScrollView>
 
-        <!-- ORG / USER VIEW SWITCHER AS LOTTERY MODE TOGGLE -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginBottom="12dp"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_org_view"
-                android:layout_width="match_parent"
-                android:layout_height="46dp"
-                android:text="Switch Draw Console"
-                android:textAllCaps="false"
-                android:textColor="#E5E7EB"
-                android:textSize="14sp"
-                app:backgroundTint="#1F2937"
-                app:cornerRadius="999dp" />
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-</ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

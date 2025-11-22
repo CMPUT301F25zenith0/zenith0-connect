@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_dark">
+    android:background="@color/background_light">
 
     <LinearLayout
         android:id="@+id/content_layout"
@@ -18,8 +18,8 @@
             android:id="@+id/search_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/card_bg"
-            app:strokeColor="@color/primary_gold"
+            app:cardBackgroundColor="@color/card_bg_light"
+            app:strokeColor="@color/accent_orange"
             app:strokeWidth="2dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="8dp"
@@ -39,9 +39,9 @@
                     android:background="@android:color/transparent"
                     android:src="@drawable/ic_menu"
                     android:contentDescription="@string/menu"
-                    android:tint="@color/primary_gold"
+                    android:tint="@color/accent_orange"
                     android:padding="6dp"
-                    app:tint="@color/primary_gold" />
+                    app:tint="@color/accent_orange" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -56,7 +56,7 @@
                         android:layout_height="wrap_content"
                         android:text="LIVE JACKPOT EVENTS"
                         android:textAllCaps="true"
-                        android:textColor="@color/primary_gold"
+                        android:textColor="@color/accent_orange"
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:letterSpacing="0.1"/>
@@ -68,9 +68,9 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:hint="@string/search_events_hint"
-                        app:boxBackgroundColor="@color/text_field_bg"
-                        app:boxStrokeColor="@color/primary_gold"
-                        app:hintTextColor="@color/text_secondary"
+                        app:boxBackgroundColor="@color/background_light"
+                        app:boxStrokeColor="@color/accent_orange"
+                        app:hintTextColor="@color/text_secondary_light"
                         app:boxCornerRadiusTopStart="8dp"
                         app:boxCornerRadiusTopEnd="8dp"
                         app:boxCornerRadiusBottomStart="8dp"
@@ -82,8 +82,8 @@
                             android:layout_height="40dp"
                             android:inputType="text"
                             android:imeOptions="actionSearch"
-                            android:textColor="@color/text_primary"
-                            android:textColorHint="@color/text_secondary"
+                            android:textColor="@color/text_primary_light"
+                            android:textColorHint="@color/text_secondary_light"
                             android:paddingStart="12dp"
                             android:paddingEnd="12dp"
                             android:textSize="14sp"/>
@@ -107,7 +107,7 @@
                     android:layout_height="40dp"
                     android:layout_marginStart="6dp"
                     android:background="@drawable/ic_profile_name"
-                    android:backgroundTint="@color/primary_gold"
+                    android:backgroundTint="@color/accent_orange"
                     android:contentDescription="@string/profile"
                     android:padding="6dp"/>
 
@@ -129,9 +129,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/filter_interest"
-                android:textColor="@color/black"
-                app:chipBackgroundColor="@color/primary_gold"
-                app:chipStrokeColor="@color/primary_gold_dim"
+                android:textColor="@color/white"
+                app:chipBackgroundColor="@color/accent_orange"
+                app:chipStrokeColor="@color/accent_orange_light"
                 app:chipStrokeWidth="2dp"
                 app:chipCornerRadius="20dp"
                 android:textStyle="bold"/>
@@ -203,7 +203,7 @@
                 android:id="@+id/events_progress"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:indeterminateTint="@color/primary_gold" />
+                android:indeterminateTint="@color/accent_orange" />
 
             <TextView
                 android:id="@+id/events_empty"

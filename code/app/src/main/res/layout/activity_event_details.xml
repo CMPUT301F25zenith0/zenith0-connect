@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_dark">
+    android:background="@color/background_light">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
@@ -16,9 +16,9 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="?attr/homeAsUpIndicator"
-            app:navigationIconTint="@color/primary_gold"
-            app:title="PRIZE DETAILS"
-            app:titleTextColor="@color/primary_gold"
+            app:navigationIconTint="@color/text_primary_light"
+            app:title="Event Details"
+            app:titleTextColor="@color/text_primary_light"
             app:titleCentered="true"/>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -39,15 +39,15 @@
                 android:layout_height="240dp"
                 android:layout_marginBottom="24dp"
                 app:cardCornerRadius="16dp"
-                app:strokeColor="@color/primary_gold"
-                app:strokeWidth="2dp"
+                app:strokeColor="@android:color/transparent"
+                app:strokeWidth="0dp"
                 app:cardElevation="8dp">
 
                 <ImageView
                     android:id="@+id/ivEventImage"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@color/card_bg"
+                    android:background="@color/card_bg_light"
                     android:contentDescription="Event Image"
                     android:scaleType="centerCrop"
                     android:src="@android:drawable/ic_menu_gallery" />
@@ -55,9 +55,9 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="GRAND PRIZE"
-                    android:background="@color/primary_gold"
-                    android:textColor="@color/black"
+                    android:text="FEATURED"
+                    android:background="@color/accent_orange"
+                    android:textColor="@color/white"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
                     android:paddingTop="6dp"
@@ -74,7 +74,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Event Name"
-                android:textColor="@color/primary_gold"
+                android:textColor="@color/text_primary_light"
                 android:textSize="28sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="4dp" 
@@ -85,7 +85,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Hosted by Organizer"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/text_secondary_light"
                 android:textSize="14sp"
                 android:layout_marginBottom="24dp" 
                 android:gravity="center"/>
@@ -94,7 +94,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/card_bg"
+                app:cardBackgroundColor="@color/card_bg_light"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
                 android:layout_marginBottom="24dp">
@@ -120,7 +120,7 @@
                             <TextView
                                 android:text="STATUS"
                                 android:textSize="10sp"
-                                android:textColor="@color/text_secondary"
+                                android:textColor="@color/text_secondary_light"
                                 android:textStyle="bold"/>
                             <TextView
                                 android:id="@+id/tvStatus"
@@ -140,14 +140,14 @@
                             <TextView
                                 android:text="ENTRY FEE"
                                 android:textSize="10sp"
-                                android:textColor="@color/text_secondary"
+                                android:textColor="@color/text_secondary_light"
                                 android:textStyle="bold"/>
                             <TextView
                                 android:id="@+id/tvFee"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="$0.00"
-                                android:textColor="@color/text_primary"
+                                android:textColor="@color/text_primary_light"
                                 android:textStyle="bold"
                                 android:textSize="16sp"/>
                         </LinearLayout>
@@ -156,7 +156,7 @@
                     <View
                         android:layout_width="match_parent"
                         android:layout_height="1dp"
-                        android:background="@color/text_field_bg"
+                        android:background="@color/background_light"
                         android:layout_marginBottom="16dp"/>
 
                     <!-- Row 2: Date & Location -->
@@ -169,14 +169,14 @@
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_my_calendar"
-                            app:tint="@color/primary_gold"
+                            app:tint="@color/accent_orange"
                             android:layout_marginEnd="12dp"/>
                         <TextView
                             android:id="@+id/tvDates"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Date Range"
-                            android:textColor="@color/text_primary"/>
+                            android:textColor="@color/text_primary_light"/>
                     </LinearLayout>
 
                     <LinearLayout
@@ -187,14 +187,14 @@
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_mapmode"
-                            app:tint="@color/primary_gold"
+                            app:tint="@color/accent_orange"
                             android:layout_marginEnd="12dp"/>
                         <TextView
                             android:id="@+id/tvLocation"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Location Details"
-                            android:textColor="@color/text_primary"/>
+                            android:textColor="@color/text_primary_light"/>
                     </LinearLayout>
 
                 </LinearLayout>
@@ -205,7 +205,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="DETAILS"
-                android:textColor="@color/primary_gold"
+                android:textColor="@color/accent_orange"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"
                 android:layout_marginStart="8dp"/>
@@ -215,7 +215,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Description text..."
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/text_secondary_light"
                 android:lineSpacingExtra="4dp"
                 android:layout_marginBottom="24dp"
                 android:paddingStart="8dp"/>
@@ -224,8 +224,8 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/card_bg"
-                app:strokeColor="@color/primary_gold_dim"
+                app:cardBackgroundColor="@color/card_bg_light"
+                app:strokeColor="@color/accent_orange_light"
                 app:strokeWidth="1dp"
                 app:cardCornerRadius="8dp"
                 android:layout_marginBottom="24dp">
@@ -240,7 +240,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="DRAW SCHEDULE"
-                        android:textColor="@color/primary_gold"
+                        android:textColor="@color/accent_orange"
                         android:textSize="12sp"
                         android:textStyle="bold"
                         android:layout_marginBottom="8dp" />
@@ -255,13 +255,13 @@
                             android:layout_height="wrap_content"
                             android:text="OPENS"
                             android:textSize="10sp"
-                            android:textColor="@color/text_secondary"/>
+                            android:textColor="@color/text_secondary_light"/>
                         <TextView
                             android:id="@+id/tvRegistrationOpens"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="MM DD, YYYY"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/text_primary_light"
                             android:textSize="14sp" />
                     </LinearLayout>
 
@@ -274,13 +274,13 @@
                             android:layout_height="wrap_content"
                             android:text="CLOSES"
                             android:textSize="10sp"
-                            android:textColor="@color/text_secondary"/>
+                            android:textColor="@color/text_secondary_light"/>
                         <TextView
                             android:id="@+id/tvRegistrationCloses"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="MM DD, YYYY"
-                            android:textColor="@color/text_primary"
+                            android:textColor="@color/text_primary_light"
                             android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -298,28 +298,28 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Waiting List: 0"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_secondary_light"
                     android:textSize="12sp"/>
                 <TextView
                     android:id="@+id/tvSelected"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Selected: 0"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_secondary_light"
                     android:textSize="12sp"/>
                 <TextView
                     android:id="@+id/tvEnrolled"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Enrolled: 0"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_secondary_light"
                     android:textSize="12sp"/>
                 <TextView
                     android:id="@+id/tvCancelled"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Cancelled: 0"
-                    android:textColor="@color/text_secondary"
+                    android:textColor="@color/text_secondary_light"
                     android:textSize="12sp"/>
             </LinearLayout>
 
@@ -334,7 +334,7 @@
         android:layout_gravity="bottom"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:background="@color/card_bg"
+        android:background="@color/card_bg_light"
         android:elevation="16dp">
 
         <Button
@@ -344,8 +344,8 @@
             android:layout_height="50dp"
             android:layout_weight="1"
             android:text="EDIT PRIZE"
-            android:textColor="@color/primary_gold"
-            app:strokeColor="@color/primary_gold"
+            android:textColor="@color/accent_orange"
+            app:strokeColor="@color/accent_orange"
             android:layout_marginEnd="10dp"
             app:cornerRadius="8dp" />
 
@@ -356,7 +356,7 @@
             android:layout_height="50dp"
             android:layout_weight="1"
             android:text="MANAGE DRAW"
-            android:textColor="@color/black"
+            android:textColor="@color/white"
             android:textStyle="bold"
             android:backgroundTint="@color/accent_green"
             app:cornerRadius="8dp" />
