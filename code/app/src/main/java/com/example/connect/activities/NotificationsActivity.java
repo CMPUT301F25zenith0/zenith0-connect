@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-
-
 public class NotificationsActivity extends AppCompatActivity {
 
     private static final String TAG = "NotificationsActivity";
@@ -245,7 +243,6 @@ public class NotificationsActivity extends AppCompatActivity {
         }
     }
 
-
     /**
      * Loads the current user's notifications from Firestore.
      *
@@ -374,7 +371,6 @@ public class NotificationsActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> Log.e(TAG, "Failed to remove user from chosen list", e));
     }
 
-
     /**
      * Accepts an invitation for a given notification.
      *
@@ -434,7 +430,6 @@ public class NotificationsActivity extends AppCompatActivity {
         }).addOnFailureListener(e -> Log.e(TAG, "Failed to remove user from chosen list", e));
     }
 
-
     /**
      * Get current user ID
      */
@@ -445,8 +440,6 @@ public class NotificationsActivity extends AppCompatActivity {
         }
         return null;
     }
-
-
 
     /**
      * Data class for notification items
@@ -477,8 +470,6 @@ public class NotificationsActivity extends AppCompatActivity {
             this.declined = declined;
         }
     }
-
-
 
     /**
      * RecyclerView Adapter for displaying notifications
@@ -519,7 +510,6 @@ public class NotificationsActivity extends AppCompatActivity {
 
             View indicator;
             ImageView icClose; // 🔹 Added this
-
 
             NotificationViewHolder(View itemView) {
                 super(itemView);
