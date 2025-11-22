@@ -116,7 +116,7 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
             AtomicInteger completedGroups = new AtomicInteger(0);
 
             // Get chosen entrants from "chosen" collection
-            getChosenEntrants(eventIdStr, chosenIds -> {
+            getSelectedEntrants(eventIdStr, chosenIds -> {
                 // Get not-chosen entrants (waiting list minus chosen)
                 getNotChosenEntrants(eventIdStr, notChosenIds -> {
 
@@ -302,86 +302,79 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
      * - entrantUids: Corresponding list of user IDs
      * </p>
      */
-    private void loadEntrants() {
-        db.collection("accounts").get().addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) return;
-
-            entrantUids.clear();
-            entrantNames.clear();
-
-            for (QueryDocumentSnapshot doc : task.getResult()) {
-                String name = doc.getString("full_name");
-                String uid = doc.getId();
-                if (name != null) {
-                    entrantNames.add(name);
-                    entrantUids.add(uid);
-                }
-            }
-        });
-    }
     /**
-     * Fetches the list of chosen entrants for a specific event.
-     * <p>
-     * Looks inside the "chosen" subcollection under the given event document in "events".
-     * Returns a list of user IDs via the callback.
-     * </p>
+     * Load all user accounts for use in a spinner or selection UI.
+     *
+     * Firestore structure:
+     * - accounts/{userId} stores all user documents
+     *
+     * Populates:
+     * - entrantNames: List<String> of display names or full names
+     * - entrantUids: List<String> of corresponding user IDs
+     */
+    private void loadEntrants() {
+        db.collection("accounts_N") // use your final "accounts" collection
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        Log.e(TAG, "Error loading entrants", task.getException());
+                        return;
+                    }
+
+                    entrantUids.clear();
+                    entrantNames.clear();
+
+                    for (QueryDocumentSnapshot doc : task.getResult()) {
+                        String displayName = doc.getString("display_name");
+                        String fullName = doc.getString("full_name");
+                        String name = displayName != null && !displayName.isEmpty() ? displayName
+                                : fullName != null && !fullName.isEmpty() ? fullName
+                                : "Unknown";
+
+                        entrantNames.add(name);
+                        entrantUids.add(doc.getId());
+                    }
+
+                    Log.d(TAG, "Loaded " + entrantNames.size() + " entrants");
+                });
+    }
+
+
+
+    /**
+     * Fetches the list of selected entrants for a specific event.
+     *
+     * Looks inside the "registrations" subcollection under the given event document in "events",
+     * filtering for documents where status == "selected".
      *
      * @param eventId  The ID of the event
-     * @param callback Callback that receives the list of chosen entrant IDs
+     * @param callback Callback that receives the list of selected entrant IDs
      */
-
-    private void getChosenEntrants(String eventId, EntrantIdsCallback callback) {
-        db.collection("events").document(eventId)
-                .collection("chosen")
+    private void getSelectedEntrants(String eventId, EntrantIdsCallback callback) {
+        db.collection("events_N")
+                .document(eventId)
+                .collection("registrations")
+                .whereEqualTo("status", "selected")
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     List<String> ids = new ArrayList<>();
-                    for (DocumentSnapshot doc : querySnapshot) ids.add(doc.getId());
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        ids.add(doc.getId()); // doc ID = userId
+                    }
                     callback.onEntrantIdsFetched(ids);
                 })
-                .addOnFailureListener(e -> callback.onEntrantIdsFetched(new ArrayList<>()));
-    }
-    /**
-     * Get not-chosen entrants for an event.
-     * <p>
-     * Fetches the waiting list under "waiting_lists/{eventId}" and subtracts users
-     * who are in the "chosen" subcollection under "events/{eventId}".
-     * Returns the resulting list of user IDs via callback.
-     * </p>
-     *
-     * @param eventId  The ID of the event
-     * @param callback Callback that receives the list of not-chosen entrant IDs
-     */
-    private void getNotChosenEntrants(String eventId, EntrantIdsCallback callback) {
-        CollectionReference waitlistRef = db.collection("events")
-                .document(eventId)
-                .collection("waiting_list_entries");
-
-        waitlistRef.get().addOnSuccessListener(waitingSnap -> {
-            List<String> waitingIds = new ArrayList<>();
-            for (DocumentSnapshot doc : waitingSnap) waitingIds.add(doc.getId());
-
-            getChosenEntrants(eventId, chosenIds -> {
-                List<String> notChosen = new ArrayList<>(waitingIds);
-                notChosen.removeAll(chosenIds);
-                callback.onEntrantIdsFetched(notChosen);
-            });
-        }).addOnFailureListener(e -> callback.onEntrantIdsFetched(new ArrayList<>()));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching selected entrants for event: " + eventId, e);
+                    callback.onEntrantIdsFetched(new ArrayList<>());
+                });
     }
 
     /**
-     * Get all entrants from the waiting list for a given event.
-     * <p>
-     * Reads the "entries" array from the "waiting_lists/{eventId}" document
-     * and returns the list of user IDs via the callback.
-     * </p>
-     *
-     * @param eventId  The ID of the event
-     * @param callback Callback that receives the list of waiting list user IDs
+     * Fetches all registered users for a given event.
      */
-    private void getWaitingListEntrants(String eventId, EntrantIdsCallback callback) {
-        db.collection("events").document(eventId)
-                .collection("waiting_list_entries")
+    private void getRegisteredUsers(String eventId, EntrantIdsCallback callback) {
+        db.collection("events_N").document(eventId)
+                .collection("registrations")
                 .get()
                 .addOnSuccessListener(snap -> {
                     List<String> ids = new ArrayList<>();
@@ -390,6 +383,70 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> callback.onEntrantIdsFetched(new ArrayList<>()));
     }
+
+
+    /**
+     * Get not-chosen entrants for an event based on the new DB structure.
+     *
+     * Fetches registrations where status = "waiting" and removes users who are already "selected".
+     *
+     * @param eventId  The ID of the event
+     * @param callback Callback that receives the list of not-chosen entrant IDs
+     */
+    private void getNotChosenEntrants(String eventId, EntrantIdsCallback callback) {
+        db.collection("events_N")
+                .document(eventId)
+                .collection("registrations")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<String> waitingIds = new ArrayList<>();
+                    List<String> selectedIds = new ArrayList<>();
+
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        String status = doc.getString("status");
+                        String userId = doc.getId();
+                        if ("waiting".equals(status)) waitingIds.add(userId);
+                        if ("selected".equals(status)) selectedIds.add(userId);
+                    }
+
+                    // Remove selected users from waiting list
+                    waitingIds.removeAll(selectedIds);
+                    callback.onEntrantIdsFetched(waitingIds);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching not-chosen entrants for event: " + eventId, e);
+                    callback.onEntrantIdsFetched(new ArrayList<>());
+                });
+    }
+
+
+
+    /**
+     * Get all entrants on the waiting list for a given event
+     * using the new Firestore structure.
+     *
+     * @param eventId  The ID of the event
+     * @param callback Callback that receives the list of waiting list user IDs
+     */
+    private void getWaitingListEntrants(String eventId, EntrantIdsCallback callback) {
+        db.collection("events_N")
+                .document(eventId)
+                .collection("registrations")
+                .whereEqualTo("status", "waiting")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<String> waitingIds = new ArrayList<>();
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        waitingIds.add(doc.getId());
+                    }
+                    callback.onEntrantIdsFetched(waitingIds);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching waiting list entrants for event: " + eventId, e);
+                    callback.onEntrantIdsFetched(new ArrayList<>());
+                });
+    }
+
     /**
      * Callback interface for fetching entrant IDs
      */

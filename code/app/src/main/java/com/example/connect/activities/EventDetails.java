@@ -19,7 +19,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.SetOptions;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -155,7 +154,7 @@ public class EventDetails extends AppCompatActivity {
     private void loadEventDetails(String eventId) {
 
         // STEP 1 — Load the event metadata
-        db.collection("events")
+        db.collection("events_N")
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(eventSnap -> {
@@ -173,27 +172,28 @@ public class EventDetails extends AppCompatActivity {
                     description = eventSnap.getString("description");
 
                     // Format date/time
-                    String dateTime = formatDateTime(eventSnap.get("date_time"));
+                    String dateTime = formatDateTime(eventSnap.get("date_time_start"), eventSnap.get("date_time_end"));
 
                     // Format price
-                    String price = eventSnap.getString("price") != null
-                            ? "$" + eventSnap.getString("price")
+                    Number priceValue = eventSnap.getDouble("price");
+                    String price = (priceValue != null && priceValue.doubleValue() > 0)
+                            ? "$" + priceValue
                             : "Free";
 
                     // Format registration window
                     String formattedRegStart = formatRegistrationDate(eventSnap.getString("reg_start"));
-                    String formattedRegEnd   = formatRegistrationDate(eventSnap.getString("reg_stop"));
+                    String formattedRegEnd   = formatRegistrationDate(eventSnap.getString("reg_end"));
                     String registrationWindow = "Registration Window: " + formattedRegStart + " - " + formattedRegEnd;
 
-                    // ➜ STEP 2 — Query waiting list count from subcollection
-                    db.collection("events")
+                    // STEP 2 — Query waiting list count from subcollection
+                    db.collection("events_N")
                             .document(eventId)
                             .collection("registrations")
                             .whereEqualTo("status", "waiting")
                             .get()
                             .addOnSuccessListener(waitSnap -> {
 
-                                long waitingCount = waitSnap.size(); // number of waiting users
+                                long waitingCount = waitSnap.size();
                                 String waitingListText = "Waiting List Count: " + waitingCount + " Entrants";
 
                                 // STEP 3 — Display all details together
@@ -219,7 +219,6 @@ public class EventDetails extends AppCompatActivity {
                     finish();
                 });
     }
-
 
 
     /**
@@ -256,11 +255,13 @@ public class EventDetails extends AppCompatActivity {
      * Handles Date objects, Firestore Timestamp objects, and pre-formatted strings.
      * <p>
      * Format: "hh:mm a, MMM dd, yyyy" (e.g., "05:00 PM, Oct 01, 2025")
-     *  <p>
+     * <p>
+     *
      * @param dateTimeObj The date/time object to format (can be Date, Timestamp, or String)
+     * @param dateTimeEnd
      * @return A formatted date/time string, or "Date & Time" if the object is null or invalid
      */
-    private String formatDateTime(Object dateTimeObj) {
+    private String formatDateTime(Object dateTimeObj, Object dateTimeEnd) {
         if (dateTimeObj instanceof Date) {
             SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a, MMM dd, yyyy", Locale.getDefault());
             return sdf.format((Date) dateTimeObj);
@@ -302,78 +303,59 @@ public class EventDetails extends AppCompatActivity {
     }
 
     /**
-     * Adds the current user to the event's waiting list.
-     * Updated for NEW database structure:
+     * Adds the current user to the event's registration list.
      *
-     * events/
-     *   {eventId}/
-     *      waiting_list/
-     *         entries/
-     *            {userId}: true
-     *
-     * - draw_capacity now stored inside event document
-     * - organizer_id stored inside event document
+     * Firestore Structure:
+     * - /events/{eventId}/registrations/{userId} → document exists if registered
+     * - /events/{eventId}/draw_capacity → max allowed participants
+     * - /events/{eventId}/chosen, /accepted, /declined → track status
      */
     private void joinWaitingList() {
         if (eventId == null) return;
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         if (userId == null) return;
 
-        // Get event capacity
-        db.collection("events").document(eventId)
-                .get()
-                .addOnSuccessListener(eventDoc -> {
-                    if (!eventDoc.exists()) return;
+        DocumentReference eventRef = db.collection("events").document(eventId);
+        CollectionReference regRef = eventRef.collection("registrations");
 
-                    Long capacity = eventDoc.getLong("draw_capacity");
-                    String organizerId = eventDoc.getString("organizer_id");
-                    if (organizerId != null && organizerId.equals(userId)) return;
+        eventRef.get().addOnSuccessListener(eventDoc -> {
+            if (!eventDoc.exists()) return;
 
-                    CollectionReference waitlistRef = db.collection("events")
-                            .document(eventId)
-                            .collection("waiting_list_entries");
+            Long capacity = eventDoc.getLong("draw_capacity");
+            String organizerId = eventDoc.getString("organizer_id");
+            if (organizerId != null && organizerId.equals(userId)) return; // organizer cannot join
 
-                    waitlistRef.get()
-                            .addOnSuccessListener(waitlistSnap -> {
-                                List<String> entries = new ArrayList<>();
-                                for (DocumentSnapshot doc : waitlistSnap.getDocuments()) {
-                                    entries.add(doc.getId());
-                                }
+            regRef.get().addOnSuccessListener(regSnap -> {
+                List<String> registeredIds = new ArrayList<>();
+                for (DocumentSnapshot doc : regSnap) registeredIds.add(doc.getId());
 
-                                if (entries.contains(userId)) {
-                                    Toast.makeText(this, "Already on waiting list", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
+                if (registeredIds.contains(userId)) {
+                    Toast.makeText(this, "Already registered", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                                if (entries.size() >= capacity) {
-                                    Toast.makeText(this, "Waiting list full", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
+                if (capacity != null && registeredIds.size() >= capacity) {
+                    Toast.makeText(this, "Event full", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                                // Add user as a document under waiting_list_entries
-                                Map<String, Object> entryData = new HashMap<>();
-                                entryData.put("joinedAt", FieldValue.serverTimestamp());
-                                waitlistRef.document(userId)
-                                        .set(entryData)
-                                        .addOnSuccessListener(aVoid -> {
-                                            Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
-                                            loadEventDetails(eventId);
-                                        });
-                            });
-                });
+                Map<String, Object> registrationData = new HashMap<>();
+                registrationData.put("joinedAt", FieldValue.serverTimestamp());
+
+                regRef.document(userId)
+                        .set(registrationData)
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(this, "Registered successfully", Toast.LENGTH_SHORT).show();
+                            loadEventDetails(eventId);
+                        })
+                        .addOnFailureListener(e -> Toast.makeText(this, "Registration failed", Toast.LENGTH_SHORT).show());
+            });
+        });
     }
 
+
     /**
-     * Removes the current user from the event's waiting list.
-     * Updated for NEW database structure:
-     *
-     * events/
-     *   {eventId}/
-     *      waiting_list/
-     *         entries/
-     *            {userId}: true
-     *
-     * Removal = delete the key from the "entries" document.
+     * Removes the current user from the event's registrations.
      */
     private void leaveWaitingList() {
         if (eventId == null) return;
@@ -381,16 +363,15 @@ public class EventDetails extends AppCompatActivity {
         if (userId == null) return;
 
         db.collection("events").document(eventId)
-                .collection("waiting_list_entries")
+                .collection("registrations")
                 .document(userId)
                 .delete()
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Left event", Toast.LENGTH_SHORT).show();
                     loadEventDetails(eventId);
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "Error leaving waiting list", Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> Toast.makeText(this, "Failed to leave event", Toast.LENGTH_SHORT).show());
     }
-
 
     /**
      * Displays a dialog with the event description.

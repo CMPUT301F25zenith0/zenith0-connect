@@ -97,7 +97,7 @@ public class NotificationListenerService extends Service {
         }
 
         // Listen for new notifications added to user's notifications collection
-        notificationListener = db.collection("users")
+        notificationListener = db.collection("accounts_N")
                 .document(userId)
                 .collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
@@ -107,9 +107,7 @@ public class NotificationListenerService extends Service {
                         return;
                     }
 
-                    if (snapshots == null) {
-                        return;
-                    }
+                    if (snapshots == null) return;
 
                     // Process new notifications
                     for (DocumentChange dc : snapshots.getDocumentChanges()) {

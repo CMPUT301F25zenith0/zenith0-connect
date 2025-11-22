@@ -28,7 +28,7 @@ import java.util.List;
 public class EventRepository {
 
     private static final String TAG = "EventRepository";
-    private static final String COLLECTION_EVENTS = "events";
+    private static final String COLLECTION_EVENTS = "events_N";
 
     private final FirebaseFirestore db;
 

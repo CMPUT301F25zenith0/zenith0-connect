@@ -30,10 +30,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -133,19 +135,19 @@ public class CreateEvent extends AppCompatActivity {
      * - Defaults to "Organizer" if neither exists
      */
     private void fetchOrganizerName() {
-        db.collection("users").document(currentUserId)
+        db.collection("accounts_N").document(currentUserId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
-                        // Attempt to get display_name first
+                        // Try display_name first
                         organizerName = documentSnapshot.getString("display_name");
 
-                        // Fallback to "name" field if display_name missing
+                        // Fallback to full_name
                         if (organizerName == null || organizerName.isEmpty()) {
-                            organizerName = documentSnapshot.getString("name");
+                            organizerName = documentSnapshot.getString("full_name");
                         }
 
-                        // Default to "Organizer" if nothing found
+                        // Default to "Organizer"
                         if (organizerName == null || organizerName.isEmpty()) {
                             organizerName = "Organizer";
                         }
@@ -153,15 +155,14 @@ public class CreateEvent extends AppCompatActivity {
                         Log.d(TAG, "Organizer name: " + organizerName);
                     } else {
                         organizerName = "Organizer";
-                        Log.w(TAG, "User document not found for user: " + currentUserId);
+                        Log.w(TAG, "Account not found for user: " + currentUserId);
                     }
                 })
                 .addOnFailureListener(e -> {
                     organizerName = "Organizer";
-                    Log.e(TAG, "Error fetching organizer name", e);
+                    Log.e(TAG, "Error fetching organizer name for user: " + currentUserId, e);
                 });
     }
-
 
     /**
      * Initializes all UI view references from the layout.
@@ -425,45 +426,35 @@ public class CreateEvent extends AppCompatActivity {
     }
 
 
-    /**
-     * Saves the current event as a draft in the NEW Firestore structure.
-     *
-     * NEW DB Notes:
-     * - Events remain in the "events" collection.
-     * - Event document structure stays the same.
-     * - "status" field is set to "draft".
-     */
     private void saveDraft() {
-        // Validate input fields for the event
-        if (!validateInputs()) {
-            return;
-        }
+        if (!validateInputs()) return;
 
-        // STEP 1 — Prepare event data map
-        // The "true" argument ensures status = "draft"
-        Map<String, Object> eventData = createEventData(true);
+        Map<String, Object> eventData = createEventData(true);  // isDraft = true
+        String organizerId = FirebaseAuth.getInstance().getUid();
 
-        // STEP 2 — Save to Firestore under "events" collection
-        db.collection("events")
+        db.collection("events_N")
                 .add(eventData)
                 .addOnSuccessListener(documentReference -> {
-                    Log.d(TAG, "Draft saved successfully with ID: " + documentReference.getId());
+                    String eventId = documentReference.getId();
 
-                    // Show UI feedback
+                    // Save reference under accounts/{userId}/created_events/{eventId}
+                    db.collection("accounts_N")
+                            .document(organizerId)
+                            .collection("created_events")
+                            .document(eventId)
+                            .set(new HashMap<>()) // empty doc
+                            .addOnSuccessListener(a -> Log.d(TAG, "Linked draft event under account"))
+                            .addOnFailureListener(err -> Log.e(TAG, "Error linking draft event", err));
+
                     Toast.makeText(this, "Draft saved successfully", Toast.LENGTH_SHORT).show();
-
-                    // Close activity
                     finish();
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error saving draft", e);
-
-                    // Show error to user
-                    Toast.makeText(this,
-                            "Failed to save draft: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Failed to save draft: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
+
 
 
     /**
@@ -483,45 +474,50 @@ public class CreateEvent extends AppCompatActivity {
 
         Toast.makeText(this, "Publishing event...", Toast.LENGTH_SHORT).show();
 
-        // Create event data map
-        Map<String, Object> eventData = createEventData(false);
+        Map<String, Object> eventData = createEventData(false); // false = published
+        String organizerId = FirebaseAuth.getInstance().getUid();
 
-        db.collection("events")
+        db.collection("events_N")
                 .add(eventData)
                 .addOnSuccessListener(documentReference -> {
                     String eventId = documentReference.getId();
                     Log.d(TAG, "Event published with ID: " + eventId);
 
-                    // Generate QR code data
+                    // Link event to organizer
+                    db.collection("accounts_N")
+                            .document(organizerId)
+                            .collection("created_events")
+                            .document(eventId)
+                            .set(new HashMap<>());
+
+                    // Generate QR code
                     String qrData = QRGeneration.generateEventQRCodeData(eventId);
+                    db.collection("events_N")
+                            .document(eventId)
+                            .set(Collections.singletonMap("qr_code_data", qrData), SetOptions.merge());
 
-                    // Save QR code data to event document
-                    Map<String, Object> qrUpdate = new HashMap<>();
-                    qrUpdate.put("qr_code_data", qrData);
+                    // Initialize waiting list collection
+                    db.collection("events_N")
+                            .document(eventId)
+                            .collection("waiting_list")   // renamed to match final structure
+                            .document("_placeholder")
+                            .set(new HashMap<>());
 
-                    db.collection("events").document(eventId)
-                            .set(qrUpdate, com.google.firebase.firestore.SetOptions.merge())
-                            .addOnSuccessListener(aVoid -> Log.d(TAG, "QR code data saved to event"))
-                            .addOnFailureListener(e -> Log.e(TAG, "Error saving QR code data", e));
+                    // Optional: initialize labels collection
+                    db.collection("events_N")
+                            .document(eventId)
+                            .collection("labels")
+                            .document("_placeholder")
+                            .set(new HashMap<>());
 
-                    // Initialize waiting list subcollection (empty for now)
-                    // Each user will later have a document under events/{eventId}/waiting_list_entries/{userId}
-                    db.collection("events").document(eventId)
-                            .collection("waiting_list_entries") // empty initially
-                            .document("_placeholder") // optional placeholder doc to ensure collection exists
-                            .set(new HashMap<>())
-                            .addOnSuccessListener(aVoid -> Log.d(TAG, "Waiting list subcollection initialized"))
-                            .addOnFailureListener(e -> Log.e(TAG, "Error initializing waiting list subcollection", e));
-
-                    // Show QR code dialog
                     showQRDialog(eventId, qrData);
-
                     Toast.makeText(this, "Event published successfully!", Toast.LENGTH_SHORT).show();
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error publishing event", e);
                     Toast.makeText(this, "Failed to publish event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+
     }
 
 

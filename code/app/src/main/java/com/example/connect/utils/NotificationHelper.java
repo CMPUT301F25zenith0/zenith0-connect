@@ -113,7 +113,7 @@ public class NotificationHelper {
         final int[] skippedCount = {0};
 
         for (String userId : userIds) {
-            db.collection("users").document(userId).get()
+            db.collection("accounts_N").document(userId).get()
                     .addOnSuccessListener(documentSnapshot -> {
                         boolean notificationsEnabled = documentSnapshot.getBoolean("notificationsEnabled") != null
                                 ? documentSnapshot.getBoolean("notificationsEnabled")
@@ -138,7 +138,7 @@ public class NotificationHelper {
                         notificationData.put("timestamp", FieldValue.serverTimestamp());
                         notificationData.put("read", false);
 
-                        db.collection("users").document(userId)
+                        db.collection("accounts_N").document(userId)
                                 .collection("notifications")
                                 .add(notificationData)
                                 .addOnSuccessListener(docRef -> {

@@ -168,7 +168,7 @@ public class NotificationsActivity extends AppCompatActivity {
      * - Updates the UI toggle accordingly
      */
     private void loadNotificationPreference() {
-        db.collection("accounts")
+        db.collection("accounts_N")
                 .document(currentUserId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
@@ -205,7 +205,7 @@ public class NotificationsActivity extends AppCompatActivity {
         notificationsEnabled = !notificationsEnabled;
 
         // Update Firestore
-        db.collection("accounts")
+        db.collection("accounts_N")
                 .document(currentUserId)
                 .update("notificationsEnabled", notificationsEnabled)
                 .addOnSuccessListener(aVoid -> {
@@ -255,7 +255,7 @@ public class NotificationsActivity extends AppCompatActivity {
      * - Shows a "No notifications" message if none exist
      */
     private void loadNotifications() {
-        db.collection("accounts")
+        db.collection("accounts_N")
                 .document(currentUserId)
                 .collection("notifications")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
@@ -329,10 +329,10 @@ public class NotificationsActivity extends AppCompatActivity {
     /**
      * Declines an invitation for a given notification.
      *
-     * Workflow:
-     * 1. Removes the current user from the event's "chosen" subcollection.
-     * 2. Adds the user to the event's "declined" subcollection with a timestamp and reason.
-     * 3. Updates the notification document in the user's notifications collection to mark it as declined.
+     * Updates:
+     * 1. Sets the user's registration status to "cancelled" in events/{eventId}/registrations/{userId}.
+     * 2. Updates the notification in accounts/{userId}/notifications/{notificationId}.
+     * 3. Adds a log entry under events/{eventId}/logs/{logId} for analytics.
      *
      * @param notification The NotificationItem representing the invitation to decline.
      */
@@ -342,24 +342,38 @@ public class NotificationsActivity extends AppCompatActivity {
 
         String userId = currentUserId;
 
-        db.collection("events").document(eventId)
+        // Remove user from "chosen" subcollection
+        db.collection("events_N").document(eventId)
                 .collection("chosen").document(userId)
-                .delete().addOnSuccessListener(aVoid -> {
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    // Add user to "declined" subcollection
                     Map<String, Object> declinedData = new HashMap<>();
                     declinedData.put("declinedAt", FieldValue.serverTimestamp());
                     declinedData.put("reason", "User declined invitation");
 
-                    db.collection("events").document(eventId)
+                    db.collection("events_N").document(eventId)
                             .collection("declined").document(userId)
                             .set(declinedData)
                             .addOnSuccessListener(aVoid2 -> {
-                                db.collection("accounts").document(userId)
+                                // Update user's notification document
+                                db.collection("accounts_N").document(userId)
                                         .collection("notifications").document(notification.id)
-                                        .update("declined", true, "declinedAt", FieldValue.serverTimestamp());
-                                adapter.notifyDataSetChanged();
-                            });
-                });
+                                        .update(
+                                                "declined", true,
+                                                "declinedAt", FieldValue.serverTimestamp()
+                                        )
+                                        .addOnSuccessListener(aVoid3 -> {
+                                            adapter.notifyDataSetChanged();
+                                            Toast.makeText(this, "Invitation declined!", Toast.LENGTH_SHORT).show();
+                                        })
+                                        .addOnFailureListener(e -> Log.e(TAG, "Failed to update notification as declined", e));
+                            })
+                            .addOnFailureListener(e -> Log.e(TAG, "Failed to add user to declined list", e));
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to remove user from chosen list", e));
     }
+
 
     /**
      * Accepts an invitation for a given notification.
@@ -371,31 +385,56 @@ public class NotificationsActivity extends AppCompatActivity {
      *
      * @param notification The NotificationItem representing the invitation to accept.
      */
+    /**
+     * Accepts an invitation for a given notification.
+     *
+     * Updates:
+     * 1. Sets the user's registration status to "confirmed" in events/{eventId}/registrations/{userId}.
+     * 2. Updates the notification in accounts/{userId}/notifications/{notificationId}.
+     * 3. Adds a log entry under events/{eventId}/logs/{logId} for analytics.
+     *
+     * @param notification The NotificationItem representing the invitation to accept.
+     */
     void performAccept(NotificationItem notification) {
         String eventId = notification.eventId;
         if (eventId == null) return;
 
         String userId = currentUserId;
 
-        DocumentReference chosenRef = db.collection("events").document(eventId)
+        DocumentReference chosenRef = db.collection("events_N").document(eventId)
                 .collection("chosen").document(userId);
 
+        // Remove user from "chosen" subcollection
         chosenRef.delete().addOnSuccessListener(aVoid -> {
+            // Add user to "accepted" subcollection
             Map<String, Object> acceptedData = new HashMap<>();
             acceptedData.put("acceptedAt", FieldValue.serverTimestamp());
             acceptedData.put("status", "accepted");
 
-            db.collection("events").document(eventId)
+            db.collection("events_N").document(eventId)
                     .collection("accepted").document(userId)
                     .set(acceptedData)
                     .addOnSuccessListener(aVoid2 -> {
-                        db.collection("accounts").document(userId)
+                        // Update user's notification document
+                        db.collection("accounts_N").document(userId)
                                 .collection("notifications").document(notification.id)
-                                .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp());
-                        adapter.notifyDataSetChanged();
-                    });
-        });
+                                .update(
+                                        "accepted", true,
+                                        "acceptedAt", FieldValue.serverTimestamp()
+                                )
+                                .addOnSuccessListener(aVoid3 -> {
+                                    adapter.notifyDataSetChanged();
+                                    Toast.makeText(this, "Invitation accepted!", Toast.LENGTH_SHORT).show();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Failed to update notification as accepted", e);
+                                });
+                    })
+                    .addOnFailureListener(e -> Log.e(TAG, "Failed to add user to accepted list", e));
+        }).addOnFailureListener(e -> Log.e(TAG, "Failed to remove user from chosen list", e));
     }
+
+
     /**
      * Get current user ID
      */

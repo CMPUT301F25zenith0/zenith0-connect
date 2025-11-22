@@ -1,8 +1,11 @@
 package com.example.connect.network;
 
+import android.util.Log;
+
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.SetOptions;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -72,12 +75,16 @@ public class CreateAccountRepo {
         }
         user.put("created_at", System.currentTimeMillis());
 
-        db.collection("accounts").document(userId).set(user)
+        db.collection("accounts_N").document(userId)
+                .set(user, SetOptions.merge()) // merge instead of overwrite
                 .addOnSuccessListener(aVoid -> {
+                    Log.d("CreateAccountRepoTag", "✅ User data saved successfully for userId: " + userId);
                     callback.onSuccess();
                 })
                 .addOnFailureListener(e -> {
+                    Log.e("CreateAccountRepoTag", "❌ Failed to save user data for userId: " + userId, e);
                     callback.onFailure("Failed to save user data: " + e.getMessage());
                 });
+
     }
 }
