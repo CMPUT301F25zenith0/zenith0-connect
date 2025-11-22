@@ -19,14 +19,18 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 /**
- * Activity responsible for handling user authentication and login functionality.
+ * Activity responsible for handling user authentication and login
+ * functionality.
  * <p>
- * This activity provides a login interface where users can enter their credentials
- * (email and password) to authenticate with Firebase Authentication. It includes
+ * This activity provides a login interface where users can enter their
+ * credentials
+ * (email and password) to authenticate with Firebase Authentication. It
+ * includes
  * input validation, error handling, and user-friendly error messages.
  * </p>
  * Aakansh - Login functionality
  * Vansh - Remember me functonality
+ * 
  * @author Aakansh Chatterjee, Vansh Taneja
  * @version 2.0
  */
@@ -49,10 +53,13 @@ public class LoginActivity extends AppCompatActivity {
 
     /**
      * Called when the activity is first created.
-     * Initializes the activity, sets up the layout, Firebase authentication, and configures UI component listeners.
+     * Initializes the activity, sets up the layout, Firebase authentication, and
+     * configures UI component listeners.
      * <p>
-     * @param savedInstanceState Bundle containing the activity's previously saved state,
-     *                          or null if there is no saved state
+     * 
+     * @param savedInstanceState Bundle containing the activity's previously saved
+     *                           state,
+     *                           or null if there is no saved state
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +93,8 @@ public class LoginActivity extends AppCompatActivity {
 
     /**
      * Sets up click listeners for interactive UI components.
-     * Configures the login button to trigger authentication and the back button to return to the previous screen.
+     * Configures the login button to trigger authentication and the back button to
+     * return to the previous screen.
      */
     private void setupClickListeners() {
         btnLogin.setOnClickListener(v -> loginUser());
@@ -100,12 +108,12 @@ public class LoginActivity extends AppCompatActivity {
      * <p>
      * This method performs the following steps:
      * <ol>
-     *   <li>Retrieves and trims email and password input</li>
-     *   <li>Validates the input fields</li>
-     *   <li>Disables the login button to prevent duplicate requests</li>
-     *   <li>Attempts authentication with Firebase</li>
-     *   <li>Handles success by navigating to EventListActivity</li>
-     *   <li>Handles failure by displaying appropriate error messages</li>
+     * <li>Retrieves and trims email and password input</li>
+     * <li>Validates the input fields</li>
+     * <li>Disables the login button to prevent duplicate requests</li>
+     * <li>Attempts authentication with Firebase</li>
+     * <li>Handles success by navigating to EventListActivity</li>
+     * <li>Handles failure by displaying appropriate error messages</li>
      * </ol>
      * </p>
      */
@@ -137,14 +145,41 @@ public class LoginActivity extends AppCompatActivity {
                     // Save Remember Me preference
                     saveRememberMePreference(cbRememberMe.isChecked());
 
-                    Toast.makeText(LoginActivity.this,
-                            "Welcome back!",
-                            Toast.LENGTH_SHORT).show();
-
-                    // Navigate to main app screen
-                    Intent intent = new Intent(LoginActivity.this, EventListActivity.class);
-                    startActivity(intent);
-                    finish(); // Close login screen so user can't go back to it
+                    // Check User Role
+                    com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore
+                            .getInstance();
+                    db.collection("accounts").document(user.getUid()).get()
+                            .addOnSuccessListener(documentSnapshot -> {
+                                if (documentSnapshot.exists()) {
+                                    String role = documentSnapshot.getString("role");
+                                    if ("admin".equalsIgnoreCase(role)) {
+                                        // Navigate to Admin Dashboard
+                                        Toast.makeText(LoginActivity.this, "Welcome Admin!", Toast.LENGTH_SHORT).show();
+                                        Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
+                                        startActivity(intent);
+                                    } else {
+                                        // Navigate to Entrant/Organizer Dashboard
+                                        Toast.makeText(LoginActivity.this, "Welcome back!", Toast.LENGTH_SHORT).show();
+                                        Intent intent = new Intent(LoginActivity.this, EventListActivity.class);
+                                        startActivity(intent);
+                                    }
+                                    finish();
+                                } else {
+                                    // User document doesn't exist, assume entrant/default
+                                    Toast.makeText(LoginActivity.this, "Welcome back!", Toast.LENGTH_SHORT).show();
+                                    Intent intent = new Intent(LoginActivity.this, EventListActivity.class);
+                                    startActivity(intent);
+                                    finish();
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e("LoginActivity", "Error fetching user role", e);
+                                // Fallback to default dashboard on error
+                                Toast.makeText(LoginActivity.this, "Welcome back!", Toast.LENGTH_SHORT).show();
+                                Intent intent = new Intent(LoginActivity.this, EventListActivity.class);
+                                startActivity(intent);
+                                finish();
+                            });
                 })
                 .addOnFailureListener(e -> {
                     // Login failed
@@ -161,6 +196,7 @@ public class LoginActivity extends AppCompatActivity {
 
     /**
      * Saves the Remember Me preference to SharedPreferences.
+     * 
      * @param rememberMe true if user wants to be remembered, false otherwise
      */
     private void saveRememberMePreference(boolean rememberMe) {
@@ -175,10 +211,10 @@ public class LoginActivity extends AppCompatActivity {
      * <p>
      * Performs the following validations:
      * <ul>
-     *   <li>Checks if email field is empty</li>
-     *   <li>Validates email format using Android Patterns</li>
-     *   <li>Checks if password field is empty</li>
-     *   <li>Ensures password meets minimum length requirement (6 characters)</li>
+     * <li>Checks if email field is empty</li>
+     * <li>Validates email format using Android Patterns</li>
+     * <li>Checks if password field is empty</li>
+     * <li>Ensures password meets minimum length requirement (6 characters)</li>
      * </ul>
      * </p>
      *
@@ -208,7 +244,7 @@ public class LoginActivity extends AppCompatActivity {
             return false;
         }
 
-        // Check password length  --> need to match what we set in account creation
+        // Check password length --> need to match what we set in account creation
         if (password.length() < 6) {
             etPassword.setError("Password must be at least 6 characters");
             etPassword.requestFocus();
@@ -236,11 +272,14 @@ public class LoginActivity extends AppCompatActivity {
      * </p>
      *
      * @param firebaseError The raw error message from Firebase Authentication,
-     *                     or null if no specific error message is available
-     * @return A user-friendly error message string appropriate for display in the UI
-     * <p>
-     * AI: Claude was used to produce this
-     * Prompt: Make a small list of basic Firebase errors. Write a small java method that takes the error and returns an easy to understand message
+     *                      or null if no specific error message is available
+     * @return A user-friendly error message string appropriate for display in the
+     *         UI
+     *         <p>
+     *         AI: Claude was used to produce this
+     *         Prompt: Make a small list of basic Firebase errors. Write a small
+     *         java method that takes the error and returns an easy to understand
+     *         message
      */
     private String getErrorMessage(String firebaseError) {
         if (firebaseError == null) {
