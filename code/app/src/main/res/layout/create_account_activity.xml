@@ -37,7 +37,8 @@
                 android:text="Create Profile"
                 android:textColor="@color/text_primary_light"
                 android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:fontFamily="serif" />
 
         </RelativeLayout>
 

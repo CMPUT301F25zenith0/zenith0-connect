@@ -21,6 +21,7 @@
         android:textColor="@color/accent_orange"
         android:textSize="28sp"
         android:textStyle="bold"
+        android:fontFamily="serif"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
