@@ -17,18 +17,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.connect.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 /**
  * Activity responsible for handling user authentication and login functionality.
  * <p>
  * This activity provides a login interface where users can enter their credentials
  * (email and password) to authenticate with Firebase Authentication. It includes
- * input validation, error handling, and user-friendly error messages.
+ * input validation, error handling, admin verification, and user-friendly error messages.
  * </p>
  * Aakansh - Login functionality
  * Vansh - Remember me functonality
  * @author Aakansh Chatterjee, Vansh Taneja
- * @version 2.0
+ * @version 2.1
  */
 
 public class LoginActivity extends AppCompatActivity {
@@ -41,6 +42,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // Firebase
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     // SharedPreferences for Remember Me
     private SharedPreferences sharedPreferences;
@@ -59,8 +61,9 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_activity); // Load login screen
 
-        // Initialize Firebase Auth
+        // Initialize Firebase Auth and Firestore
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -104,6 +107,7 @@ public class LoginActivity extends AppCompatActivity {
      *   <li>Validates the input fields</li>
      *   <li>Disables the login button to prevent duplicate requests</li>
      *   <li>Attempts authentication with Firebase</li>
+     *   <li>Checks user's admin status from Firestore</li>
      *   <li>Handles success by navigating to EventListActivity</li>
      *   <li>Handles failure by displaying appropriate error messages</li>
      * </ol>
@@ -130,21 +134,12 @@ public class LoginActivity extends AppCompatActivity {
         // Sign in with Firebase Authentication
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
-                    // Login successful
+                    // Login successful, now check admin status
                     FirebaseUser user = mAuth.getCurrentUser();
-                    Log.d("LoginActivity", "Login successful! UID: " + user.getUid());
+                    Log.d("LoginActivity", "Authentication successful! UID: " + user.getUid());
 
-                    // Save Remember Me preference
-                    saveRememberMePreference(cbRememberMe.isChecked());
-
-                    Toast.makeText(LoginActivity.this,
-                            "Welcome back!",
-                            Toast.LENGTH_SHORT).show();
-
-                    // Navigate to main app screen
-                    Intent intent = new Intent(LoginActivity.this, EventListActivity.class);
-                    startActivity(intent);
-                    finish(); // Close login screen so user can't go back to it
+                    // Check admin status in Firestore
+                    checkAdminStatus(user);
                 })
                 .addOnFailureListener(e -> {
                     // Login failed
@@ -157,6 +152,88 @@ public class LoginActivity extends AppCompatActivity {
                             errorMessage,
                             Toast.LENGTH_LONG).show();
                 });
+    }
+
+    /**
+     * Checks if the authenticated user has admin privileges.
+     * Retrieves the user document from Firestore and checks for the 'admin' attribute.
+     * If admin is true, navigates to admin activity. Otherwise, proceeds with regular login.
+     *
+     * @param user The authenticated FirebaseUser
+     */
+    private void checkAdminStatus(FirebaseUser user) {
+        // Query Firestore for user document
+        db.collection("users").document(user.getUid())
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Check if admin field exists and is true
+                        Boolean isAdmin = documentSnapshot.getBoolean("admin");
+
+                        if (isAdmin != null && isAdmin) {
+                            // User is admin, navigate to admin activity
+                            Log.d("LoginActivity", "Admin user detected! UID: " + user.getUid());
+                            proceedWithAdminLogin();
+                        } else {
+                            // Regular user, proceed with normal login
+                            Log.d("LoginActivity", "Regular user login! UID: " + user.getUid());
+                            proceedWithRegularLogin();
+                        }
+                    } else {
+                        // User document doesn't exist, block login
+                        Log.e("LoginActivity", "User document not found in Firestore");
+                        mAuth.signOut();
+                        resetButton();
+                        Toast.makeText(LoginActivity.this,
+                                "Please contact support or create a new account.",
+                                Toast.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Failed to retrieve user document, proceed with regular login
+                    Log.e("LoginActivity", "Failure to retrieve document");
+                    mAuth.signOut();
+                    resetButton();
+                    Toast.makeText(LoginActivity.this,
+                            "Wait, check details and try again OR Contact technical support.",
+                            Toast.LENGTH_LONG).show();
+                });
+    }
+
+    /**
+     * Completes the login process for admin users.
+     * Saves preferences and navigates to the admin activity.
+     */
+    private void proceedWithAdminLogin() {
+        // Save Remember Me preference
+        saveRememberMePreference(cbRememberMe.isChecked());
+
+        Toast.makeText(LoginActivity.this,
+                "Welcome back, Admin!",
+                Toast.LENGTH_SHORT).show();
+
+        // Navigate to admin activity (replace AdminActivity.class with your actual admin activity)
+        Intent intent = new Intent(LoginActivity.this, AdminDashboard.class);
+        startActivity(intent);
+        finish(); // Close login screen so user can't go back to it
+    }
+
+    /**
+     * Completes the login process for regular users.
+     * Saves preferences and navigates to the main application screen.
+     */
+    private void proceedWithRegularLogin() {
+        // Save Remember Me preference
+        saveRememberMePreference(cbRememberMe.isChecked());
+
+        Toast.makeText(LoginActivity.this,
+                "Welcome back!",
+                Toast.LENGTH_SHORT).show();
+
+        // Navigate to main app screen
+        Intent intent = new Intent(LoginActivity.this, EventListActivity.class);
+        startActivity(intent);
+        finish(); // Close login screen so user can't go back to it
     }
 
     /**
