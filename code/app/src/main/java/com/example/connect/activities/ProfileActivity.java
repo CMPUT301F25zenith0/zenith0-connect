@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 
 import com.example.connect.R;
+import com.example.connect.utils.UserActivityTracker;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
@@ -212,6 +213,7 @@ public class ProfileActivity extends AppCompatActivity {
      * and navigates back to the login screen.
      */
     private void performLogout() {
+        UserActivityTracker.markUserInactive();
         // Sign out from Firebase
         mAuth.signOut();
 
@@ -227,7 +229,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Show logout message
         Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
-
 
         // Navigate to login screen and clear activity stack
         Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
@@ -769,6 +770,19 @@ public class ProfileActivity extends AppCompatActivity {
 
 
         return true;
+    }
+
+    /**
+     * Called when the activity is resumed.
+     * Marks the user as active for activity tracking.
+     */
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Mark user as active when they return to this activity
+        if (currentUser != null) {
+            UserActivityTracker.markUserActive();
+        }
     }
 }
 

@@ -71,6 +71,11 @@ public class CreateAccountRepo {
             user.put("mobile_num", mobileNumber);
         }
         user.put("created_at", System.currentTimeMillis());
+        
+        // Initialize activity tracking fields
+        long currentTimestamp = System.currentTimeMillis();
+        user.put("is_active", false); // New users start as inactive until they log in
+        user.put("last_active_timestamp", currentTimestamp);
 
         db.collection("accounts").document(userId).set(user)
                 .addOnSuccessListener(aVoid -> {

@@ -16,6 +16,7 @@ import com.example.connect.R;
 import com.example.connect.adapters.EventAdapter;
 import com.example.connect.models.Event;
 import com.example.connect.network.EventRepository;
+import com.example.connect.utils.UserActivityTracker;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -529,13 +530,26 @@ public class EventListActivity extends AppCompatActivity {
      * Called when the activity is resumed after being paused.
      * <p>
      * Reloads events from the repository to ensure the list is up-to-date when the user returns to this activity.
+     * Also marks the user as active for activity tracking.
      * </p>
      */
     @Override
     protected void onResume() {
         super.onResume();
+        // Mark user as active
+        UserActivityTracker.markUserActive();
         // Refresh events when returning to this activity
         loadEvents();
+    }
+
+    /**
+     * Called when the activity is paused (user navigates away).
+     * Note: We don't mark users inactive here because they might be navigating to another activity.
+     * The Application class handles marking users inactive when the app goes to background.
+     */
+    @Override
+    protected void onPause() {
+        super.onPause();
     }
 
 

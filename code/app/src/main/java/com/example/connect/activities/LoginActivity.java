@@ -15,6 +15,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
+import com.example.connect.utils.UserActivityTracker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -208,6 +209,9 @@ public class LoginActivity extends AppCompatActivity {
         // Save Remember Me preference
         saveRememberMePreference(cbRememberMe.isChecked());
 
+        // Mark user as active
+        UserActivityTracker.markUserActive();
+
         Toast.makeText(LoginActivity.this,
                 "Welcome back, Admin!",
                 Toast.LENGTH_SHORT).show();
@@ -225,6 +229,9 @@ public class LoginActivity extends AppCompatActivity {
     private void proceedWithRegularLogin() {
         // Save Remember Me preference
         saveRememberMePreference(cbRememberMe.isChecked());
+
+        // Mark user as active
+        UserActivityTracker.markUserActive();
 
         Toast.makeText(LoginActivity.this,
                 "Welcome back!",
