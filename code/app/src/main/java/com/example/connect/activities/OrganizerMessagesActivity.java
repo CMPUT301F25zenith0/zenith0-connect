@@ -12,6 +12,8 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import com.example.connect.network.DatabaseHelper;
+
 
 import com.example.connect.R;
 import com.example.connect.utils.NotificationHelper;
@@ -44,6 +46,15 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
     private Button btnNotifyChosen, btnNotifyWaitingList;
     private MaterialButton btnFilterByEvent, btnNewMessage;
     private MaterialButton btnNavDashboard, btnNavMessage, btnNavMap, btnNavProfile;
+
+    // NEW buttons for US 02.07.02 & US 02.07.03
+    private MaterialButton btnNotifySelectedEntrants;
+    private MaterialButton btnNotifyCancelledEntrants;
+
+    // Helper for registrations-based notifications
+    private DatabaseHelper dbHelper;
+
+
 
     private List<String> entrantUids = new ArrayList<>();
     private List<String> entrantNames = new ArrayList<>();
@@ -82,6 +93,14 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
         // Notification buttons
         btnNotifyChosen = findViewById(R.id.btn_notify_chosen);
         btnNotifyWaitingList = findViewById(R.id.btn_notify_waiting_list);
+
+        // NEW buttons for US 02.07.02 + 02.07.03
+        btnNotifySelectedEntrants = findViewById(R.id.btn_notify_selected_entrants);
+        btnNotifyCancelledEntrants = findViewById(R.id.btn_notify_cancelled_entrants);
+
+        // init helper
+        dbHelper = new DatabaseHelper();
+
 
         // Messages section buttons
         btnFilterByEvent = findViewById(R.id.btnFilterByEvent);
@@ -214,6 +233,89 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
                 );
             });
         });
+
+// ------------------------------------------------------------
+// Notify Selected Entrants (US 02.07.02)
+// ------------------------------------------------------------
+        btnNotifySelectedEntrants.setOnClickListener(v -> {
+            String eventIdStr = etEventId.getText().toString().trim();
+            String eventNameStr = etEventName.getText().toString().trim();
+
+            if (eventIdStr.isEmpty() || eventNameStr.isEmpty()) {
+                Toast.makeText(this, "Please enter event ID and name", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dbHelper.sendNotificationToRegistrations(
+                    eventIdStr,
+                    eventNameStr,
+                    "selected",
+                    "You have been selected!",
+                    "Congratulations! You were selected for event: " + eventNameStr,
+                    new DatabaseHelper.SimpleCallback() {
+                        @Override
+                        public void onComplete() {
+                            runOnUiThread(() -> Toast.makeText(
+                                    OrganizerMessagesActivity.this,
+                                    "Notifications sent to SELECTED entrants",
+                                    Toast.LENGTH_SHORT
+                            ).show());
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            runOnUiThread(() -> Toast.makeText(
+                                    OrganizerMessagesActivity.this,
+                                    "Error sending notifications: " + e.getMessage(),
+                                    Toast.LENGTH_LONG
+                            ).show());
+                        }
+                    }
+            );
+        });
+
+
+// ------------------------------------------------------------
+// Notify Cancelled Entrants (US 02.07.03)
+// ------------------------------------------------------------
+        btnNotifyCancelledEntrants.setOnClickListener(v -> {
+            String eventIdStr = etEventId.getText().toString().trim();
+            String eventNameStr = etEventName.getText().toString().trim();
+
+            if (eventIdStr.isEmpty() || eventNameStr.isEmpty()) {
+                Toast.makeText(this, "Please enter event ID and name", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            dbHelper.sendNotificationToRegistrations(
+                    eventIdStr,
+                    eventNameStr,
+                    "cancelled",
+                    "Registration Cancelled",
+                    "Unfortunately, your registration for '" + eventNameStr + "' has been cancelled.",
+                    new DatabaseHelper.SimpleCallback() {
+                        @Override
+                        public void onComplete() {
+                            runOnUiThread(() -> Toast.makeText(
+                                    OrganizerMessagesActivity.this,
+                                    "Notifications sent to CANCELLED entrants",
+                                    Toast.LENGTH_SHORT
+                            ).show());
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                            runOnUiThread(() -> Toast.makeText(
+                                    OrganizerMessagesActivity.this,
+                                    "Error sending notifications: " + e.getMessage(),
+                                    Toast.LENGTH_LONG
+                            ).show());
+                        }
+                    }
+            );
+        });
+
+
         // Search functionality
         if (etSearch != null) {
             etSearch.addTextChangedListener(new TextWatcher() {

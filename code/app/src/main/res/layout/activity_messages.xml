@@ -164,6 +164,31 @@
                 android:padding="16dp"
                 android:layout_marginBottom="16dp"
                 app:cornerRadius="12dp"/>
+            <!-- NEW: Notify Selected Entrants -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_notify_selected_entrants"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Notify Selected Entrants"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:backgroundTint="#92B8A0"
+                android:padding="16dp"
+                android:layout_marginBottom="12dp"
+                app:cornerRadius="12dp"/>
+
+            <!-- NEW: Notify Cancelled Entrants -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_notify_cancelled_entrants"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Notify Cancelled Entrants"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:backgroundTint="#92B8A0"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp"
+                app:cornerRadius="12dp"/>
 
             <!-- Divider -->
             <View
