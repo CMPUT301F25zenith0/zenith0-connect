@@ -9,6 +9,7 @@
 
 
     <application
+        android:name=".ConnectApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -37,6 +38,7 @@
         <activity android:name=".activities.CreateAcctActivity" />
         <activity android:name=".activities.OrganizerActivity" />
         <activity android:name=".activities.OrganizerMessagesActivity" />
+        <activity android:name=".activities.AdminDashboardActivity" />
 
         <activity android:name=".activities.QRCodeScanner" />
         <activity

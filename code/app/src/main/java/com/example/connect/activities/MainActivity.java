@@ -17,8 +17,10 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
+import com.example.connect.utils.UserActivityTracker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 /**
  * Main launcher activity for the app.
@@ -39,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Firebase
     private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     // Auto logging requirement
     private SharedPreferences sharedPreferences;
@@ -50,8 +53,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Initialize Firebase Authentication
+        // Initialize Firebase Authentication and Firestore
         mAuth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
 
         // Initialize SharedPreferences
         sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -72,7 +76,8 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Checks if user should be auto-logged in.
-     * If Remember Me is enabled from past  and user is already authenticated with Firebase, skip MainActivity and go directly to EventListActivity.
+     * If Remember Me is enabled from past and user is already authenticated with Firebase,
+     * checks admin status and navigates to appropriate screen (AdminDashboard or EventListActivity).
      * Otherwise, show the MainActivity screen normally.
      */
     private void checkAutoLogin() {
@@ -87,12 +92,10 @@ public class MainActivity extends AppCompatActivity {
 
         // If Remember Me is enabled and user is logged in, auto-login
         if (rememberMe && currentUser != null) {
-            Log.d("MainActivity", "Auto-login enabled, navigating to EventListActivity");
+            Log.d("MainActivity", "Auto-login enabled, checking admin status");
 
-            // Go directly to EventListActivity
-            Intent intent = new Intent(MainActivity.this, EventListActivity.class);
-            startActivity(intent);
-            finish(); // Close MainActivity so user can't go back to it
+            // Check admin status before navigating
+            checkAdminStatus(currentUser);
         } else {
             // Show MainActivity screen normally
             setContentView(R.layout.open_screen);
@@ -100,6 +103,68 @@ public class MainActivity extends AppCompatActivity {
             // Set up your normal MainActivity UI and button listeners
             setupMainActivityUI();
         }
+    }
+
+    /**
+     * Checks if the authenticated user has admin privileges.
+     * Retrieves the user document from Firestore and checks for the 'admin' attribute.
+     * If admin is true, navigates to admin activity. Otherwise, proceeds with regular login.
+     *
+     * @param user The authenticated FirebaseUser
+     */
+    private void checkAdminStatus(FirebaseUser user) {
+        // Query Firestore for user document
+        db.collection("accounts").document(user.getUid())
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Check if admin field exists and is true
+                        Boolean isAdmin = documentSnapshot.getBoolean("admin");
+
+                        if (isAdmin != null && isAdmin) {
+                            // User is admin, navigate to admin activity
+                            Log.d("MainActivity", "Admin user detected! UID: " + user.getUid());
+                            // Mark user as active
+                            UserActivityTracker.markUserActive();
+                            navigateToAdminDashboard();
+                        } else {
+                            // Regular user, proceed with normal login
+                            Log.d("MainActivity", "Regular user login! UID: " + user.getUid());
+                            // Mark user as active
+                            UserActivityTracker.markUserActive();
+                            navigateToEventList();
+                        }
+                    } else {
+                        // User document doesn't exist, show main screen
+                        Log.e("MainActivity", "User document not found in Firestore");
+                        setContentView(R.layout.open_screen);
+                        setupMainActivityUI();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Failed to retrieve user document, show main screen
+                    Log.e("MainActivity", "Failure to retrieve document: " + e.getMessage());
+                    setContentView(R.layout.open_screen);
+                    setupMainActivityUI();
+                });
+    }
+
+    /**
+     * Navigates to the admin dashboard for admin users.
+     */
+    private void navigateToAdminDashboard() {
+        Intent intent = new Intent(MainActivity.this, AdminDashboardActivity.class);
+        startActivity(intent);
+        finish(); // Close MainActivity so user can't go back to it
+    }
+
+    /**
+     * Navigates to the event list for regular users.
+     */
+    private void navigateToEventList() {
+        Intent intent = new Intent(MainActivity.this, EventListActivity.class);
+        startActivity(intent);
+        finish(); // Close MainActivity so user can't go back to it
     }
 
     /**

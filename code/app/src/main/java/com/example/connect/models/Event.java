@@ -3,6 +3,8 @@ package com.example.connect.models;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.PropertyName;
 
+import java.util.Objects;
+
 /**
  * Represents a single event in the Event Planner system.
  */
@@ -33,6 +35,9 @@ public class Event {
 
     @PropertyName("imageUrl")
     private String imageUrl;
+
+    @PropertyName("image_base64")  // FIXED: Changed from "imageBase64"
+    private String imageBase64;
 
     private String category;
 
@@ -105,6 +110,12 @@ public class Event {
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
+    @PropertyName("image_base64")  // FIXED: Changed from "imageBase64"
+    public String getImageBase64() { return imageBase64; }
+
+    @PropertyName("image_base64")  // FIXED: Changed from "imageBase64"
+    public void setImageBase64(String imageBase64) { this.imageBase64 = imageBase64; }
+
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
@@ -131,5 +142,34 @@ public class Event {
      */
     public boolean isFull() {
         return currentParticipants >= maxParticipants;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Event event = (Event) o;
+        return maxParticipants == event.maxParticipants &&
+                currentParticipants == event.currentParticipants &&
+                Objects.equals(eventId, event.eventId) &&
+                Objects.equals(name, event.name) &&
+                Objects.equals(description, event.description) &&
+                Objects.equals(dateTime, event.dateTime) &&
+                Objects.equals(location, event.location) &&
+                Objects.equals(price, event.price) &&
+                Objects.equals(organizerId, event.organizerId) &&
+                Objects.equals(imageUrl, event.imageUrl) &&
+                Objects.equals(imageBase64, event.imageBase64) &&
+                Objects.equals(category, event.category) &&
+                Objects.equals(regStart, event.regStart) &&
+                Objects.equals(regStop, event.regStop) &&
+                Objects.equals(waitingListCount, event.waitingListCount);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(eventId, name, description, dateTime, location, price,
+                maxParticipants, currentParticipants, organizerId, imageUrl, imageBase64,
+                category, regStart, regStop, waitingListCount);
     }
 }

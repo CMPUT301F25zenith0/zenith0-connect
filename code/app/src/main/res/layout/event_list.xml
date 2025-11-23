@@ -65,7 +65,7 @@
                 android:id="@+id/interest_filter_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Interest"
+                android:text="INTEREST"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#2C3E3F"
                 android:layout_marginEnd="8dp"
@@ -75,7 +75,7 @@
                 android:id="@+id/date_filter_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Date"
+                android:text="DATE"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#2C3E3F"
                 android:layout_marginEnd="8dp"
@@ -85,7 +85,7 @@
                 android:id="@+id/location_filter_btn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Location"
+                android:text="LOCATION"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#2C3E3F"
                 android:layout_marginEnd="8dp"
@@ -104,16 +104,15 @@
 
     </LinearLayout>
 
-    <!-- ListView for Events (Scrollable) -->
-    <ListView
-        android:id="@+id/events_ListView"
+    <!-- RecyclerView for Events (Scrollable) - CHANGED FROM LISTVIEW -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/events_RecyclerView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/headerSection"
         android:layout_above="@id/bottomNavigation"
         android:padding="16dp"
-        android:divider="@android:color/transparent"
-        android:dividerHeight="16dp"
+        android:clipToPadding="false"
         android:scrollbars="vertical"/>
 
     <!-- Bottom Navigation -->

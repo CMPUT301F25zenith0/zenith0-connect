@@ -1,5 +1,9 @@
 package com.example.connect.adapters;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -151,9 +155,9 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
 
     private boolean matchesSearch(Event event, String query) {
         return (event.getName() != null && event.getName().toLowerCase().contains(query)) ||
-               (event.getLocation() != null && event.getLocation().toLowerCase().contains(query)) ||
-               (event.getCategory() != null && event.getCategory().toLowerCase().contains(query)) ||
-               (event.getDescription() != null && event.getDescription().toLowerCase().contains(query));
+                (event.getLocation() != null && event.getLocation().toLowerCase().contains(query)) ||
+                (event.getCategory() != null && event.getCategory().toLowerCase().contains(query)) ||
+                (event.getDescription() != null && event.getDescription().toLowerCase().contains(query));
     }
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
@@ -182,9 +186,15 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
             eventLocation.setText(event.getLocation() != null ? event.getLocation() : "Location TBD");
             eventPrice.setText(event.getPrice() != null ? event.getPrice() : "Free");
 
-            if (event.getImageUrl() != null && !event.getImageUrl().isEmpty()) {
-                // TODO: Load image with Glide or Picasso
-                eventImage.setImageResource(R.drawable.placeholder_img);
+            if (event.getImageBase64() != null && !event.getImageBase64().isEmpty()) {
+                try {
+                    byte[] decoded = Base64.decode(event.getImageBase64(), Base64.DEFAULT);
+                    Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                    eventImage.setImageBitmap(bmp);
+                } catch (Exception e) {
+                    Log.e("EventListAdapter", "Error decoding image: " + e.getMessage());
+                    eventImage.setImageResource(R.drawable.placeholder_img);
+                }
             } else {
                 eventImage.setImageResource(R.drawable.placeholder_img);
             }
