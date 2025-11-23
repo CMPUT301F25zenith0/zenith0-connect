@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.connect.R;
 import com.example.connect.models.User;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.List;
 
@@ -25,10 +26,11 @@ public class AdminProfileAdapter extends RecyclerView.Adapter<AdminProfileAdapte
     private OnProfileClickListener listener;
 
     /**
-     * Interface for handling profile item clicks.
+     * Interface for handling profile item clicks and deletions.
      */
     public interface OnProfileClickListener {
         void onProfileClick(User profile);
+        void onProfileDelete(User profile);
     }
 
     /**
@@ -68,12 +70,14 @@ public class AdminProfileAdapter extends RecyclerView.Adapter<AdminProfileAdapte
         private TextView tvName;
         private TextView tvEmail;
         private TextView tvPhone;
+        private MaterialButton btnDelete;
 
         ProfileViewHolder(@NonNull View itemView) {
             super(itemView);
             tvName = itemView.findViewById(R.id.tvProfileName);
             tvEmail = itemView.findViewById(R.id.tvProfileEmail);
             tvPhone = itemView.findViewById(R.id.tvProfilePhone);
+            btnDelete = itemView.findViewById(R.id.btnDeleteProfile);
         }
 
         void bind(User profile, OnProfileClickListener listener) {
@@ -85,6 +89,12 @@ public class AdminProfileAdapter extends RecyclerView.Adapter<AdminProfileAdapte
             itemView.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onProfileClick(profile);
+                }
+            });
+            
+            btnDelete.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onProfileDelete(profile);
                 }
             });
         }

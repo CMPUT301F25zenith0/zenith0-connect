@@ -15,17 +15,47 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Profile Name -->
-        <TextView
-            android:id="@+id/tvProfileName"
+        <!-- Header Row: Name and Delete Button -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="John Doe"
-            android:textColor="@color/vision_text_primary"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:fontFamily="serif"
-            android:layout_marginBottom="8dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvProfileName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="John Doe"
+                android:textColor="@color/vision_text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:fontFamily="serif" />
+
+            <!-- Delete Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteProfile"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="36dp"
+                android:minWidth="80dp"
+                android:text="Delete"
+                android:textAllCaps="false"
+                android:textSize="12sp"
+                android:textColor="#D32F2F"
+                android:textStyle="bold"
+                app:cornerRadius="18dp"
+                app:strokeColor="#D32F2F"
+                app:strokeWidth="1.5dp"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconGravity="textStart"
+                app:iconPadding="4dp"
+                app:iconSize="16dp"
+                app:iconTint="#D32F2F" />
+        </LinearLayout>
 
         <!-- Email -->
         <LinearLayout
