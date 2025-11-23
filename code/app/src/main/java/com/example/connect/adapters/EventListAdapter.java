@@ -22,6 +22,8 @@ import com.example.connect.models.Event;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.meta.When;
+
 /**
  * Event list adapter is a recycle view adapter fo display a list of event objects
  * <p>
@@ -36,6 +38,8 @@ import java.util.List;
  */
 public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventViewHolder> {
 
+    private static final String TAG = "EventListAdapter";
+
     /**
      * Called when the user selects an event to view its details.
      * Or join the waitlist directly from the listView
@@ -43,7 +47,6 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
      * @param e is the event that was selected
      */
     public interface Listener {
-        // TODO - Complete the functionality of join from this button
         void onDetails(Event e);
         void onJoin(Event e);
     }
@@ -69,6 +72,7 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
             }
         });
         this.listener = listener;
+        Log.d(TAG, "EventListAdapter created with listener: " + (listener != null));
     }
 
     @NonNull
@@ -82,17 +86,19 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
     @Override
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = getItem(position);
+        Log.d(TAG, "Binding event at position " + position + ": " + (event != null ? event.getName() : "null"));
         holder.bind(event, listener);
     }
 
     public void submit(List<Event> events) {
         allEvents = events != null ? new ArrayList<>(events) : new ArrayList<>();
-        submitList(allEvents);
+        submitList(new ArrayList<>(allEvents));
+        Log.d(TAG, "Submitted " + allEvents.size() + " events to adapter");
     }
 
     public void filter(String query) {
         if (query == null || query.isEmpty()) {
-            submitList(allEvents);
+            submitList(new ArrayList<>(allEvents));
             return;
         }
 
@@ -108,7 +114,7 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
 
     public void filterByDate(String date) {
         if (date == null || date.isEmpty()) {
-            submitList(allEvents);
+            submitList(new ArrayList<>(allEvents));
             return;
         }
 
@@ -123,7 +129,7 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
 
     public void filterByInterest(String interest) {
         if (interest == null || interest.isEmpty()) {
-            submitList(allEvents);
+            submitList(new ArrayList<>(allEvents));
             return;
         }
 
@@ -138,7 +144,7 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
     }
 
     public void clearFilters() {
-        submitList(allEvents);
+        submitList(new ArrayList<>(allEvents));
     }
 
     public List<Event> getAllEvents() {
@@ -161,6 +167,8 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
     }
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
+        private static final String TAG = "EventViewHolder";
+
         private final ImageView eventImage;
         private final TextView eventTitle;
         private final TextView eventDateTime;
@@ -178,38 +186,60 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
             eventPrice = itemView.findViewById(R.id.eventPrice);
             btnViewDetails = itemView.findViewById(R.id.btnViewDetails);
             btnJoinWaitlist = itemView.findViewById(R.id.btnJoinWaitlist);
+
+            Log.d(TAG, "ViewHolder created - buttons found: " +
+                    (btnViewDetails != null) + ", " + (btnJoinWaitlist != null));
         }
 
         public void bind(Event event, Listener listener) {
+            Log.d(TAG, "Binding event: " + (event != null ? event.getName() : "null"));
+            Log.d(TAG, "Listener is: " + (listener != null ? "present" : "NULL"));
+
             eventTitle.setText(event.getName() != null ? event.getName() : "Untitled Event");
             eventDateTime.setText(event.getDateTime() != null ? event.getDateTime() : "TBD");
             eventLocation.setText(event.getLocation() != null ? event.getLocation() : "Location TBD");
             eventPrice.setText(event.getPrice() != null ? event.getPrice() : "Free");
 
+            // Handle image
             if (event.getImageBase64() != null && !event.getImageBase64().isEmpty()) {
                 try {
                     byte[] decoded = Base64.decode(event.getImageBase64(), Base64.DEFAULT);
                     Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
-                    eventImage.setImageBitmap(bmp);
+                    if (bmp != null) {
+                        eventImage.setImageBitmap(bmp);
+                    } else {
+                        eventImage.setImageResource(R.drawable.placeholder_img);
+                    }
                 } catch (Exception e) {
-                    Log.e("EventListAdapter", "Error decoding image: " + e.getMessage());
+                    Log.e(TAG, "Error decoding image: " + e.getMessage());
                     eventImage.setImageResource(R.drawable.placeholder_img);
                 }
             } else {
                 eventImage.setImageResource(R.drawable.placeholder_img);
             }
 
+            // Set up button clicks
             btnViewDetails.setOnClickListener(v -> {
+                Log.d(TAG, "View Details clicked for: " + event.getName());
                 if (listener != null) {
+                    Log.d(TAG, "Calling listener.onDetails()");
                     listener.onDetails(event);
+                } else {
+                    Log.e(TAG, "Listener is NULL - cannot handle click!");
                 }
             });
 
             btnJoinWaitlist.setOnClickListener(v -> {
+                Log.d(TAG, "Join Waitlist clicked for: " + event.getName());
                 if (listener != null) {
+                    Log.d(TAG, "Calling listener.onJoin()");
                     listener.onJoin(event);
+                } else {
+                    Log.e(TAG, "Listener is NULL - cannot handle click!");
                 }
             });
+
+            Log.d(TAG, "Bind complete for: " + event.getName());
         }
     }
 }

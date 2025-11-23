@@ -29,9 +29,9 @@ public class EventListActivity extends AppCompatActivity {
     private Button scanBtn, profileBtn, homeBtn, myEventsBtn, notificationBtn;
     private Button interestFilterBtn, dateFilterBtn, locationFilterBtn, clearFiltersBtn;
     private EditText searchBar;
-    private RecyclerView eventsRecyclerView;  // Changed from ListView
+    private RecyclerView eventsRecyclerView;
 
-    private EventListAdapter eventAdapter;  // Changed adapter type
+    private EventListAdapter eventAdapter;
     private List<Event> allEventsList;
     private EventRepository eventRepository;
 
@@ -68,7 +68,7 @@ public class EventListActivity extends AppCompatActivity {
 
         // Initialize search bar and RecyclerView
         searchBar = findViewById(R.id.search_Bar);
-        eventsRecyclerView = findViewById(R.id.events_RecyclerView);  // Changed ID
+        eventsRecyclerView = findViewById(R.id.events_RecyclerView);
 
         // Initialize repository
         eventRepository = new EventRepository();
@@ -81,19 +81,18 @@ public class EventListActivity extends AppCompatActivity {
         eventAdapter = new EventListAdapter(new EventListAdapter.Listener() {
             @Override
             public void onDetails(Event event) {
-                // Navigate to event details
+                // Navigate to event details - FIXED: Changed to "EVENT_ID" to match EventDetails
                 Intent intent = new Intent(EventListActivity.this, EventDetails.class);
-                intent.putExtra("event_id", event.getEventId());
+                intent.putExtra("EVENT_ID", event.getEventId());  // CHANGED FROM "event_id" to "EVENT_ID"
                 startActivity(intent);
             }
 
             @Override
             public void onJoin(Event event) {
-                // Handle join waitlist
-                Toast.makeText(EventListActivity.this,
-                        "Joining waitlist for " + event.getName(),
-                        Toast.LENGTH_SHORT).show();
-                // TODO: Implement actual waitlist join logic
+                // Handle join waitlist - Navigate to EventDetails to join
+                Intent intent = new Intent(EventListActivity.this, EventDetails.class);
+                intent.putExtra("EVENT_ID", event.getEventId());  // CHANGED FROM "event_id" to "EVENT_ID"
+                startActivity(intent);
             }
         });
 
@@ -144,7 +143,7 @@ public class EventListActivity extends AppCompatActivity {
         // Long press on date filter to clear
         dateFilterBtn.setOnLongClickListener(v -> {
             selectedDate = "";
-            dateFilterBtn.setText("Date");
+            dateFilterBtn.setText("DATE");
             applyAllFilters();
             return true;
         });
@@ -155,7 +154,7 @@ public class EventListActivity extends AppCompatActivity {
         // Long press on interest filter to clear
         interestFilterBtn.setOnLongClickListener(v -> {
             selectedInterest = "";
-            interestFilterBtn.setText("Interest");
+            interestFilterBtn.setText("INTEREST");
             applyAllFilters();
             return true;
         });
@@ -166,7 +165,7 @@ public class EventListActivity extends AppCompatActivity {
         // Long press on location filter to clear
         locationFilterBtn.setOnLongClickListener(v -> {
             selectedLocation = "";
-            locationFilterBtn.setText("Location");
+            locationFilterBtn.setText("LOCATION");
             applyAllFilters();
             return true;
         });
