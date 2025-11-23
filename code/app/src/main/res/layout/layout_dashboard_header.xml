@@ -95,6 +95,84 @@
             android:textSize="14sp"/>
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Filter Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="24dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFilterDate"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="92dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1.2"
+            android:ellipsize="none"
+            android:maxLines="1"
+            android:minHeight="44dp"
+            android:singleLine="true"
+            android:text="@string/filter_date"
+            android:textAllCaps="false"
+            android:textColor="@color/accent_orange"
+            android:textSize="10sp"
+            app:cornerRadius="22dp"
+            app:icon="@android:drawable/ic_menu_my_calendar"
+            app:iconGravity="textStart"
+            app:iconPadding="3dp"
+            app:iconSize="16dp"
+            app:iconTint="@color/accent_orange"
+            app:strokeColor="@color/accent_orange"
+            app:strokeWidth="1.5dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFilterInterest"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight=".0"
+            android:minHeight="44dp"
+            android:text="@string/filter_interest"
+            android:textAllCaps="false"
+            android:textColor="@color/accent_orange"
+            android:textSize="14sp"
+            app:cornerRadius="22dp"
+            app:icon="@drawable/ic_search"
+            app:iconGravity="textStart"
+            app:iconPadding="3dp"
+            app:iconSize="14dp"
+            app:iconTint="@color/accent_orange"
+            app:strokeColor="@color/accent_orange"
+            app:strokeWidth="1.5dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFilterLocation"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="2.5"
+            android:minHeight="44dp"
+            android:text="@string/filter_location"
+            android:textAllCaps="false"
+            android:textColor="@color/accent_orange"
+            android:textSize="12sp"
+            app:cornerRadius="22dp"
+            app:icon="@drawable/ic_location"
+            app:iconGravity="textStart"
+            app:iconPadding="3dp"
+            app:iconSize="14dp"
+            app:iconTint="@color/accent_orange"
+            app:strokeColor="@color/accent_orange"
+            app:strokeWidth="1.5dp" />
+
+
+    </LinearLayout>
+
     <!-- Popular Events Section -->
     <LinearLayout
         android:layout_width="match_parent"

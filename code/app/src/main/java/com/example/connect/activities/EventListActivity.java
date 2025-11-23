@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -23,9 +24,12 @@ import com.example.connect.adapters.PopularEventsAdapter;
 import com.example.connect.models.Event;
 import com.example.connect.network.EventRepository;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Activity that displays a list of events with filtering and search
@@ -44,7 +48,7 @@ import java.util.List;
  * </p>
  *
  * @author Zenith Team
- * @version 3.0
+ * @version  3.0
  */
 
 public class EventListActivity extends AppCompatActivity {
@@ -58,6 +62,7 @@ public class EventListActivity extends AppCompatActivity {
     private TextInputEditText searchBarHeader;
     private RecyclerView rvPopularEvents;
     private TextView tvCurrentLocation;
+    private MaterialButton btnFilterDate, btnFilterInterest, btnFilterLocation;
 
     private EventAdapter eventAdapter;
     private PopularEventsAdapter popularEventsAdapter;
@@ -67,6 +72,9 @@ public class EventListActivity extends AppCompatActivity {
     private EventRepository eventRepository;
 
     private String currentSearchQuery = "";
+    private String currentDateFilter = ""; // "today", "this_week", "this_month", or ""
+    private String currentInterestFilter = ""; // Category/interest filter
+    private String currentLocationFilter = ""; // Location filter
 
     /**
      * Called when the activity is first created.
@@ -111,6 +119,9 @@ public class EventListActivity extends AppCompatActivity {
         searchBarHeader = headerView.findViewById(R.id.etSearchHeader);
         rvPopularEvents = headerView.findViewById(R.id.rvPopularEvents);
         tvCurrentLocation = headerView.findViewById(R.id.tvCurrentLocation);
+        btnFilterDate = headerView.findViewById(R.id.btnFilterDate);
+        btnFilterInterest = headerView.findViewById(R.id.btnFilterInterest);
+        btnFilterLocation = headerView.findViewById(R.id.btnFilterLocation);
 
         // Add header to ListView
         eventsListView.addHeaderView(headerView);
@@ -201,6 +212,19 @@ public class EventListActivity extends AppCompatActivity {
                 public void afterTextChanged(Editable s) {
                 }
             });
+        }
+
+        // Filter button click listeners
+        if (btnFilterDate != null) {
+            btnFilterDate.setOnClickListener(v -> showDateFilterDialog());
+        }
+
+        if (btnFilterInterest != null) {
+            btnFilterInterest.setOnClickListener(v -> showInterestFilterDialog());
+        }
+
+        if (btnFilterLocation != null) {
+            btnFilterLocation.setOnClickListener(v -> showLocationFilterDialog());
         }
 
         // ListView Item Click
@@ -321,11 +345,14 @@ public class EventListActivity extends AppCompatActivity {
     /**
      * Applies all active filters to the event list.
      * <p>
-     * This chains together all active filters (search)
+     * This chains together all active filters (search, date, interest, location)
      * and updates the displayed list.
      * Filters are applied in sequence:
      * <ol>
      * <li>Search filter (if query is not empty)</li>
+     * <li>Date filter (if date filter is active)</li>
+     * <li>Interest filter (if interest filter is active)</li>
+     * <li>Location filter (if location filter is active)</li>
      * </ol>
      * After filtering, the adapter is notified to refresh the ListView.
      * </p>
@@ -344,12 +371,28 @@ public class EventListActivity extends AppCompatActivity {
             filteredEvents = filterBySearch(filteredEvents, currentSearchQuery);
         }
 
+        // Apply date filter
+        if (!currentDateFilter.isEmpty()) {
+            filteredEvents = filterByDate(filteredEvents, currentDateFilter);
+        }
+
+        // Apply interest filter
+        if (!currentInterestFilter.isEmpty()) {
+            filteredEvents = filterByInterest(filteredEvents, currentInterestFilter);
+        }
+
+        // Apply location filter
+        if (!currentLocationFilter.isEmpty()) {
+            filteredEvents = filterByLocation(filteredEvents, currentLocationFilter);
+        }
+
         // Update the displayed list
         eventList.addAll(filteredEvents);
         eventAdapter.notifyDataSetChanged();
 
         Log.d("EventListActivity", "Filtered to " + eventList.size() + " events. " +
-                "Search: \"" + currentSearchQuery + "\"");
+                "Search: \"" + currentSearchQuery + "\", Date: \"" + currentDateFilter + 
+                "\", Interest: \"" + currentInterestFilter + "\", Location: \"" + currentLocationFilter + "\"");
     }
 
     /**
@@ -387,6 +430,266 @@ public class EventListActivity extends AppCompatActivity {
         }
 
         return filtered;
+    }
+
+    /**
+     * Filters events based on date criteria.
+     * 
+     * @param events List of events to filter
+     * @param dateFilter Date filter type ("today", "this_week", "this_month")
+     * @return Filtered list of events matching the date criteria
+     */
+    private List<Event> filterByDate(List<Event> events, String dateFilter) {
+        List<Event> filtered = new ArrayList<>();
+        long currentTime = System.currentTimeMillis();
+        long oneDayInMillis = 24L * 60 * 60 * 1000;
+        long oneWeekInMillis = 7L * 24 * 60 * 60 * 1000;
+        long oneMonthInMillis = 30L * 24 * 60 * 60 * 1000;
+
+        for (Event event : events) {
+            if (event.getDateTime() != null && !event.getDateTime().isEmpty()) {
+                try {
+                    long eventTime = parseDateToMillis(event.getDateTime());
+                    long timeDiff = eventTime - currentTime;
+
+                    boolean matches = false;
+                    switch (dateFilter) {
+                        case "today":
+                            matches = timeDiff >= 0 && timeDiff <= oneDayInMillis;
+                            break;
+                        case "this_week":
+                            matches = timeDiff >= 0 && timeDiff <= oneWeekInMillis;
+                            break;
+                        case "this_month":
+                            matches = timeDiff >= 0 && timeDiff <= oneMonthInMillis;
+                            break;
+                    }
+
+                    if (matches) {
+                        filtered.add(event);
+                    }
+                } catch (Exception e) {
+                    // If parsing fails, skip this event
+                    Log.d("EventListActivity", "Could not parse date for event: " + event.getName());
+                }
+            }
+        }
+
+        return filtered;
+    }
+
+    /**
+     * Filters events based on interest (searches in event name and description).
+     * 
+     * @param events List of events to filter
+     * @param interestFilter Search query to filter by
+     * @return Filtered list of events matching the interest in name or description
+     */
+    private List<Event> filterByInterest(List<Event> events, String interestFilter) {
+        List<Event> filtered = new ArrayList<>();
+        String lowerFilter = interestFilter.toLowerCase();
+
+        for (Event event : events) {
+            boolean matchesName = event.getName() != null && 
+                event.getName().toLowerCase().contains(lowerFilter);
+            
+            boolean matchesDescription = event.getDescription() != null && 
+                event.getDescription().toLowerCase().contains(lowerFilter);
+
+            if (matchesName || matchesDescription) {
+                filtered.add(event);
+            }
+        }
+
+        return filtered;
+    }
+
+    /**
+     * Filters events based on location.
+     * 
+     * @param events List of events to filter
+     * @param locationFilter Location to filter by
+     * @return Filtered list of events matching the location
+     */
+    private List<Event> filterByLocation(List<Event> events, String locationFilter) {
+        List<Event> filtered = new ArrayList<>();
+        String lowerFilter = locationFilter.toLowerCase();
+
+        for (Event event : events) {
+            if (event.getLocation() != null && 
+                event.getLocation().toLowerCase().contains(lowerFilter)) {
+                filtered.add(event);
+            }
+        }
+
+        return filtered;
+    }
+
+    /**
+     * Shows a dialog to select date filter options.
+     */
+    private void showDateFilterDialog() {
+        String[] options = {"Today", "This Week", "This Month", "Clear"};
+        
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Filter by Date")
+            .setItems(options, (dialog, which) -> {
+                switch (which) {
+                    case 0:
+                        currentDateFilter = "today";
+                        updateFilterButtonState(btnFilterDate, true);
+                        break;
+                    case 1:
+                        currentDateFilter = "this_week";
+                        updateFilterButtonState(btnFilterDate, true);
+                        break;
+                    case 2:
+                        currentDateFilter = "this_month";
+                        updateFilterButtonState(btnFilterDate, true);
+                        break;
+                    case 3:
+                        currentDateFilter = "";
+                        updateFilterButtonState(btnFilterDate, false);
+                        break;
+                }
+                applyAllFilters();
+            })
+            .show();
+    }
+
+    /**
+     * Shows a dialog with text input to filter by interest (searches in event name and description).
+     */
+    private void showInterestFilterDialog() {
+        // Create an EditText for input
+        final EditText input = new EditText(this);
+        input.setHint("Enter keyword to search in event name or description");
+        input.setText(currentInterestFilter);
+        input.setPadding(50, 20, 50, 20);
+
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Filter by Interest")
+            .setMessage("Search events by name or description")
+            .setView(input)
+            .setPositiveButton("Apply", (dialog, which) -> {
+                String filterText = input.getText().toString().trim();
+                if (!filterText.isEmpty()) {
+                    currentInterestFilter = filterText;
+                    updateFilterButtonState(btnFilterInterest, true);
+                } else {
+                    currentInterestFilter = "";
+                    updateFilterButtonState(btnFilterInterest, false);
+                }
+                applyAllFilters();
+            })
+            .setNeutralButton("Clear", (dialog, which) -> {
+                currentInterestFilter = "";
+                updateFilterButtonState(btnFilterInterest, false);
+                applyAllFilters();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+
+    /**
+     * Shows a dialog to select location filter.
+     */
+    private void showLocationFilterDialog() {
+        // Get unique locations from all events
+        Set<String> locations = new HashSet<>();
+        for (Event event : allEventsList) {
+            if (event.getLocation() != null && !event.getLocation().isEmpty()) {
+                locations.add(event.getLocation());
+            }
+        }
+
+        if (locations.isEmpty()) {
+            Toast.makeText(this, "No locations available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] locationArray = locations.toArray(new String[0]);
+        String[] options = new String[locationArray.length + 1];
+        System.arraycopy(locationArray, 0, options, 0, locationArray.length);
+        options[options.length - 1] = "Clear";
+
+        new android.app.AlertDialog.Builder(this)
+            .setTitle("Filter by Location")
+            .setItems(options, (dialog, which) -> {
+                if (which == options.length - 1) {
+                    // Clear filter
+                    currentLocationFilter = "";
+                    updateFilterButtonState(btnFilterLocation, false);
+                } else {
+                    currentLocationFilter = options[which];
+                    updateFilterButtonState(btnFilterLocation, true);
+                }
+                applyAllFilters();
+            })
+            .show();
+    }
+
+    /**
+     * Clears all active filters and resets the UI.
+     */
+    private void clearAllFilters() {
+        currentSearchQuery = "";
+        currentDateFilter = "";
+        currentInterestFilter = "";
+        currentLocationFilter = "";
+
+        // Clear search bar
+        if (searchBarHeader != null) {
+            searchBarHeader.setText("");
+        }
+
+        // Reset filter button states
+        updateFilterButtonState(btnFilterDate, false);
+        updateFilterButtonState(btnFilterInterest, false);
+        updateFilterButtonState(btnFilterLocation, false);
+
+        // Apply filters (which will show all events now)
+        applyAllFilters();
+
+        Toast.makeText(this, "All filters cleared", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Updates the visual state of a filter button to indicate if it's active.
+     * 
+     * @param button The filter button to update
+     * @param isActive Whether the filter is currently active
+     */
+    private void updateFilterButtonState(MaterialButton button, boolean isActive) {
+        if (button == null) return;
+
+        if (isActive) {
+            // Active state - filled button with accent color
+            button.setBackgroundColor(ContextCompat.getColor(this, R.color.accent_orange));
+            button.setTextColor(ContextCompat.getColor(this, R.color.white));
+            // Update icon tint for date, interest and location buttons
+            if (button == btnFilterDate || button == btnFilterInterest || button == btnFilterLocation) {
+                try {
+                    button.setIconTint(ContextCompat.getColorStateList(this, R.color.white));
+                } catch (Exception e) {
+                    // Fallback if setIconTint is not available
+                    Log.d("EventListActivity", "Could not set icon tint: " + e.getMessage());
+                }
+            }
+        } else {
+            // Inactive state - outlined button
+            button.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent));
+            button.setTextColor(ContextCompat.getColor(this, R.color.accent_orange));
+            // Update icon tint for date, interest and location buttons
+            if (button == btnFilterDate || button == btnFilterInterest || button == btnFilterLocation) {
+                try {
+                    button.setIconTint(ContextCompat.getColorStateList(this, R.color.accent_orange));
+                } catch (Exception e) {
+                    // Fallback if setIconTint is not available
+                    Log.d("EventListActivity", "Could not set icon tint: " + e.getMessage());
+                }
+            }
+        }
     }
 
     /**
