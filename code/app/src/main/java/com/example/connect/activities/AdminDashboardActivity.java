@@ -137,8 +137,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
         });
 
         cardManageProfiles.setOnClickListener(v -> {
-            Toast.makeText(this, "Accessing User Database...", Toast.LENGTH_SHORT).show(); // Modified
-            // TODO: Navigate to AdminProfileListActivity
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminProfileListActivity.class);
+            startActivity(intent);
         });
 
         cardManageImages.setOnClickListener(v -> {
