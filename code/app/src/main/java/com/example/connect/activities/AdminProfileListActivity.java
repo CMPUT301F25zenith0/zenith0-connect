@@ -86,9 +86,13 @@ public class AdminProfileListActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                     List<User> users = new ArrayList<>();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        User user = document.toObject(User.class);
-                        user.setUserId(document.getId());
-                        users.add(user);
+                        // Check if the document has an "admin" field
+                        // Only add users who are NOT admins
+                        if (!document.contains("admin")) {
+                            User user = document.toObject(User.class);
+                            user.setUserId(document.getId());
+                            users.add(user);
+                        }
                     }
 
                     if (users.isEmpty()) {
