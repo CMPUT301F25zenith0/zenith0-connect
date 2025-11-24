@@ -2,6 +2,7 @@ package com.example.connect.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -9,7 +10,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.connect.R;
+import com.example.connect.adapters.OrganizerEventAdapter;
+import com.example.connect.models.Event;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Activity serving as the main dashboard for event organizers
@@ -18,6 +27,7 @@ import com.google.android.material.button.MaterialButton;
  * <ul>
  *   <li>View all events organized by the user</li>
  *   <li>Create new events</li>
+ *   <li>Edit existing events</li>
  *   <li>Filter events by status (all, open, closed, drawn)</li>
  *   <li>Navigate to messages, map, and profile sections</li>
  *   <li>Access event details and management features</li>
@@ -29,10 +39,11 @@ import com.google.android.material.button.MaterialButton;
  * </p>
  *
  * @author Digaant Chokkra
- * @version 2.0
-
+ * @version 3.0
  */
 public class OrganizerActivity extends AppCompatActivity {
+
+    private static final String TAG = "OrganizerActivity";
 
     // UI Components
     private MaterialButton btnNewEvent;
@@ -40,16 +51,27 @@ public class OrganizerActivity extends AppCompatActivity {
     private RecyclerView recyclerViewEvents;
     private MaterialButton btnNavDashboard, btnNavMessage, btnNavMap, btnNavProfile;
 
+    // Data
+    private OrganizerEventAdapter adapter;
+    private List<Event> allEvents = new ArrayList<>();
+    private List<Event> filteredEvents = new ArrayList<>();
     private String currentFilter = "all"; // Track current filter
+
+    // Firebase
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
+    private String currentUserId;
 
     /**
      * Called when the activity is first created.
      * <p>
      * Initializes the organizer dashboard by:
      * <ol>
+     *   <li>Setting up Firebase</li>
      *   <li>Setting up all UI components</li>
      *   <li>Configuring click listeners for navigation and filtering</li>
-     *   <li>Setting up the RecyclerView for event display</li>
+     *   <li>Setting up the RecyclerView with adapter</li>
+     *   <li>Loading events from Firestore</li>
      *   <li>Applying the default "Total Events" filter</li>
      * </ol>
      * </p>
@@ -61,9 +83,24 @@ public class OrganizerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_organizer_dashboard);
 
+        // Initialize Firebase
+        db = FirebaseFirestore.getInstance();
+        auth = FirebaseAuth.getInstance();
+
+        // Get current user
+        if (auth.getCurrentUser() == null) {
+            Toast.makeText(this, "Please sign in first", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        currentUserId = auth.getCurrentUser().getUid();
+
         initializeViews();
         setupClickListeners();
         setupRecyclerView();
+
+        // Load events
+        loadOrganizerEvents();
 
         // Set default filter to Total Events
         selectFilter(btnTotalEvents, "all");
@@ -143,11 +180,10 @@ public class OrganizerActivity extends AppCompatActivity {
     }
 
     /**
-     * TODO
-     * Configures the RecyclerView for displaying events.
+     * Configures the RecyclerView for displaying events with OrganizerEventAdapter.
      * <p>
-     * Sets up a LinearLayoutManager for vertical scrolling of events.
-     * The adapter will be connected once event data is retrieved from Firestore.
+     * Sets up a LinearLayoutManager for vertical scrolling of events and
+     * connects the adapter with event action listeners.
      * </p>
      */
     private void setupRecyclerView() {
@@ -155,13 +191,100 @@ public class OrganizerActivity extends AppCompatActivity {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerViewEvents.setLayoutManager(layoutManager);
 
-        // TODO: Set up adapter with event data from Firestore
-        // EventAdapter adapter = new EventAdapter(eventsList);
-        // recyclerViewEvents.setAdapter(adapter);
+        // Setup adapter with listeners
+        adapter = new OrganizerEventAdapter(new OrganizerEventAdapter.OrganizerEventListener() {
+            @Override
+            public void onEditEvent(Event event) {
+                // Navigate to CreateEvent activity in edit mode
+                Intent intent = new Intent(OrganizerActivity.this, CreateEvent.class);
+                intent.putExtra("EVENT_ID", event.getEventId());
+                intent.putExtra("EDIT_MODE", true);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onViewDetails(Event event) {
+                // Navigate to EventDetails activity
+                Intent intent = new Intent(OrganizerActivity.this, EventDetails.class);
+                intent.putExtra("EVENT_ID", event.getEventId());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onManageDraw(Event event) {
+                // Navigate to manage draw activity
+                Toast.makeText(OrganizerActivity.this,
+                        "Manage Draw: " + event.getName(),
+                        Toast.LENGTH_SHORT).show();
+
+                // TODO: Implement manage draw functionality
+                // Intent intent = new Intent(OrganizerActivity.this, ManageDrawActivity.class);
+                // intent.putExtra("EVENT_ID", event.getEventId());
+                // startActivity(intent);
+            }
+
+            @Override
+            public void onExportCSV(Event event) {
+                // Export event data to CSV
+                Toast.makeText(OrganizerActivity.this,
+                        "Export CSV: " + event.getName(),
+                        Toast.LENGTH_SHORT).show();
+
+                // TODO: Implement CSV export functionality
+            }
+
+            @Override
+            public void onImageClick(Event event) {
+                // Allow organizer to change/add event image
+                Toast.makeText(OrganizerActivity.this,
+                        "Change Image: " + event.getName(),
+                        Toast.LENGTH_SHORT).show();
+
+                // TODO: Implement image selection/update
+                // You could navigate to CreateEvent in edit mode
+                // or create a separate image update activity
+            }
+        });
+
+        recyclerViewEvents.setAdapter(adapter);
     }
 
     /**
-     * TODO
+     * Load all events created by the current organizer from Firestore.
+     * Queries events collection filtering by organizer_id.
+     */
+    private void loadOrganizerEvents() {
+        db.collection("events")
+                .whereEqualTo("organizer_id", currentUserId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    allEvents.clear();
+
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Event event = document.toObject(Event.class);
+                        event.setEventId(document.getId());
+                        allEvents.add(event);
+                    }
+
+                    Log.d(TAG, "Loaded " + allEvents.size() + " events for organizer: " + currentUserId);
+
+                    // Apply current filter
+                    filterEvents(currentFilter);
+
+                    if (allEvents.isEmpty()) {
+                        Toast.makeText(this, "No events found. Create your first event!",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading events", e);
+                    Toast.makeText(this,
+                            "Error loading events: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /**
      * Applies a filter to the event list and updates the UI accordingly.
      * <p>
      * This method:
@@ -187,7 +310,7 @@ public class OrganizerActivity extends AppCompatActivity {
         // Update current filter
         currentFilter = filter;
 
-        // TODO: Filter events based on selection
+        // Filter events based on selection
         filterEvents(filter);
     }
 
@@ -205,7 +328,6 @@ public class OrganizerActivity extends AppCompatActivity {
      */
     private void resetFilterButtons() {
         // Reset all filter buttons to default outlined style
-        int defaultColor = getResources().getColor(R.color.filter_default, null);
         int defaultTextColor = getResources().getColor(R.color.filter_text_default, null);
 
         // Note: For MaterialButton with outlined style, we set strokeColor instead of background
@@ -223,7 +345,6 @@ public class OrganizerActivity extends AppCompatActivity {
     }
 
     /**
-     * TODO
      * Filters the displayed events based on the specified filter type.
      * <p>
      * Filter types and their meanings:
@@ -234,32 +355,95 @@ public class OrganizerActivity extends AppCompatActivity {
      *   <li><b>drawn</b> - Shows only events where lottery/selection has been performed</li>
      * </ul>
      * </p>
-     * <p>
-     * <b>Note:</b> Currently displays toast messages. Firestore query implementation pending.
-     * </p>
      *
      * @param filter The filter type
      */
     private void filterEvents(String filter) {
-        // TODO: Implement Firestore query based on filter
+        filteredEvents.clear();
+
         switch (filter) {
             case "all":
                 // Load all events
-                Toast.makeText(this, "Showing all events", Toast.LENGTH_SHORT).show();
+                filteredEvents.addAll(allEvents);
+                Log.d(TAG, "Showing all events: " + filteredEvents.size());
                 break;
+
             case "open":
-                // Load only open events
-                Toast.makeText(this, "Showing open events", Toast.LENGTH_SHORT).show();
+                // Load only open events (registration is currently open)
+                for (Event event : allEvents) {
+                    if (isEventOpen(event)) {
+                        filteredEvents.add(event);
+                    }
+                }
+                Log.d(TAG, "Showing open events: " + filteredEvents.size());
                 break;
+
             case "closed":
-                // Load only closed events
-                Toast.makeText(this, "Showing closed events", Toast.LENGTH_SHORT).show();
+                // Load only closed events (registration has closed)
+                for (Event event : allEvents) {
+                    if (isEventClosed(event)) {
+                        filteredEvents.add(event);
+                    }
+                }
+                Log.d(TAG, "Showing closed events: " + filteredEvents.size());
                 break;
+
             case "drawn":
-                // Load only drawn events
-                Toast.makeText(this, "Showing drawn events", Toast.LENGTH_SHORT).show();
+                // Load only drawn events (lottery has been performed)
+                for (Event event : allEvents) {
+                    if (isEventDrawn(event)) {
+                        filteredEvents.add(event);
+                    }
+                }
+                Log.d(TAG, "Showing drawn events: " + filteredEvents.size());
                 break;
         }
+
+        // Update adapter with filtered list
+        adapter.submitList(new ArrayList<>(filteredEvents));
+    }
+
+    /**
+     * Check if event is currently open for registration.
+     *
+     * @param event The event to check
+     * @return true if event is open, false otherwise
+     */
+    private boolean isEventOpen(Event event) {
+        // Event is open if it has registration dates set
+        String regStart = event.getRegStart();
+        String regStop = event.getRegStop();
+
+        // Basic check - event has registration window defined
+        boolean hasRegWindow = regStart != null && !regStart.isEmpty() &&
+                regStop != null && !regStop.isEmpty();
+
+        // TODO: Add date comparison logic to check if current date is within registration window
+        return hasRegWindow;
+    }
+
+    /**
+     * Check if event registration has closed.
+     *
+     * @param event The event to check
+     * @return true if event is closed, false otherwise
+     */
+    private boolean isEventClosed(Event event) {
+        // TODO: Implement proper logic based on registration end date
+        // Check if current date is after reg_stop date
+        return false;
+    }
+
+    /**
+     * Check if event lottery has been drawn.
+     *
+     * @param event The event to check
+     * @return true if lottery drawn, false otherwise
+     */
+    private boolean isEventDrawn(Event event) {
+        // TODO: Implement proper logic based on draw status field
+        // You may need to add a "draw_status" field to your Event model
+        return false;
     }
 
     /**
@@ -267,13 +451,14 @@ public class OrganizerActivity extends AppCompatActivity {
      * <p>
      * Refreshes the event list with the currently active filter to ensure
      * the displayed data is up-to-date when the organizer returns to the dashboard.
+     * This is especially important after editing an event.
      * </p>
      */
-
     @Override
     protected void onResume() {
         super.onResume();
         // Refresh event list when returning to this activity
-        filterEvents(currentFilter);
+        // This ensures we see any updates made in CreateEvent
+        loadOrganizerEvents();
     }
 }

@@ -47,6 +47,7 @@ import java.util.Map;
  *   <li>Configure date/time and registration periods</li>
  *   <li>Set capacity limits and waiting list parameters</li>
  *   <li>Save drafts or publish events with QR code generation</li>
+ *   <li>Edit existing events</li>
  * </ul>
  * </p>
  * <p>
@@ -56,11 +57,15 @@ import java.util.Map;
  * </p>
  *
  * @author Digaant
- * @version 2.0
+ * @version 3.0
  */
 public class CreateEvent extends AppCompatActivity {
 
     private static final String TAG = "CreateEvent";
+
+    // Edit mode
+    private boolean isEditMode = false;
+    private String editEventId = null;
 
     // UI Components
     private EditText etEventName, etDescription, etDrawCapacity, etWaitingList, etLocation, etPrice;
@@ -74,6 +79,7 @@ public class CreateEvent extends AppCompatActivity {
 
     // Image Upload
     private Uri selectedImageUri;
+    private String existingBase64Image = null; // Store existing image when editing
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
     // Firebase
@@ -112,6 +118,13 @@ public class CreateEvent extends AppCompatActivity {
         }
         currentUserId = currentUser.getUid();
 
+        // Check if in edit mode
+        Intent intent = getIntent();
+        if (intent.hasExtra("EVENT_ID") && intent.hasExtra("EDIT_MODE")) {
+            isEditMode = intent.getBooleanExtra("EDIT_MODE", false);
+            editEventId = intent.getStringExtra("EVENT_ID");
+        }
+
         // Fetch organizer name from accounts collection
         fetchOrganizerName();
 
@@ -120,6 +133,119 @@ public class CreateEvent extends AppCompatActivity {
         initializeDateTimeFormats();
         setupImagePicker();
         setupClickListeners();
+
+        // Load event data if in edit mode
+        if (isEditMode && editEventId != null) {
+            loadEventForEditing(editEventId);
+        }
+    }
+
+    /**
+     * Load existing event data for editing
+     *
+     * @param eventId The ID of the event to edit
+     */
+    private void loadEventForEditing(String eventId) {
+        db.collection("events").document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Populate fields with existing data
+                        etEventName.setText(documentSnapshot.getString("event_title"));
+                        etDescription.setText(documentSnapshot.getString("description"));
+                        etLocation.setText(documentSnapshot.getString("location"));
+
+                        String price = documentSnapshot.getString("price");
+                        etPrice.setText(price != null && !price.equals("0") ? price : "");
+
+                        // Draw capacity and waiting list
+                        Long drawCapacity = documentSnapshot.getLong("draw_capacity");
+                        if (drawCapacity != null && drawCapacity > 0) {
+                            etDrawCapacity.setText(String.valueOf(drawCapacity));
+                        }
+
+                        Long waitingList = documentSnapshot.getLong("waiting_list");
+                        if (waitingList != null && waitingList > 0) {
+                            etWaitingList.setText(String.valueOf(waitingList));
+                        }
+
+                        // Parse and set date/time fields
+                        String dateTimeStr = documentSnapshot.getString("date_time");
+                        if (dateTimeStr != null && !dateTimeStr.isEmpty()) {
+                            try {
+                                startDateTime.setTime(dateTimeFormat.parse(dateTimeStr));
+                                btnStartDate.setText(dateFormat.format(startDateTime.getTime()));
+                                btnStartTime.setText(timeFormat.format(startDateTime.getTime()));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing start date", e);
+                            }
+                        }
+
+                        String endTimeStr = documentSnapshot.getString("end_time");
+                        if (endTimeStr != null && !endTimeStr.isEmpty()) {
+                            try {
+                                endDateTime.setTime(dateTimeFormat.parse(endTimeStr));
+                                btnEndDate.setText(dateFormat.format(endDateTime.getTime()));
+                                btnEndTime.setText(timeFormat.format(endDateTime.getTime()));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing end date", e);
+                            }
+                        }
+
+                        String regStartStr = documentSnapshot.getString("reg_start");
+                        if (regStartStr != null && !regStartStr.isEmpty()) {
+                            try {
+                                registrationOpens.setTime(dateTimeFormat.parse(regStartStr));
+                                String dateTimeText = dateFormat.format(registrationOpens.getTime()) + " " +
+                                        timeFormat.format(registrationOpens.getTime());
+                                btnRegistrationOpens.setText(dateTimeText);
+                                btnRegistrationOpens.setTextColor(getResources().getColor(android.R.color.black));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing reg start", e);
+                            }
+                        }
+
+                        String regStopStr = documentSnapshot.getString("reg_stop");
+                        if (regStopStr != null && !regStopStr.isEmpty()) {
+                            try {
+                                registrationCloses.setTime(dateTimeFormat.parse(regStopStr));
+                                String dateTimeText = dateFormat.format(registrationCloses.getTime()) + " " +
+                                        timeFormat.format(registrationCloses.getTime());
+                                btnRegistrationCloses.setText(dateTimeText);
+                                btnRegistrationCloses.setTextColor(getResources().getColor(android.R.color.black));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing reg stop", e);
+                            }
+                        }
+
+                        // Load image if available
+                        String base64Image = documentSnapshot.getString("image_base64");
+                        if (base64Image != null && !base64Image.isEmpty()) {
+                            existingBase64Image = base64Image; // Store for later use
+                            try {
+                                byte[] decoded = android.util.Base64.decode(base64Image, android.util.Base64.DEFAULT);
+                                Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                                ivEventImage.setImageBitmap(bmp);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error decoding image", e);
+                            }
+                        }
+
+                        // Change button text for edit mode
+                        btnPublishQR.setText("Update Event");
+                        btnSaveDraft.setText("Save Changes");
+
+                        Toast.makeText(this, "Loaded event for editing", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading event", e);
+                    Toast.makeText(this, "Error loading event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    finish();
+                });
     }
 
     /**
@@ -223,6 +349,7 @@ public class CreateEvent extends AppCompatActivity {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
                         ivEventImage.setImageURI(selectedImageUri);
+                        existingBase64Image = null; // Clear existing image when new one is selected
                     }
                 }
         );
@@ -396,11 +523,10 @@ public class CreateEvent extends AppCompatActivity {
     }
 
     /**
-     * Saves the current event as a draft in Firestore.
+     * Saves the current event as a draft in Firestore or updates existing draft.
      * <p>
      * Validates inputs, creates event data with "draft" status, and saves to the
      * "events" collection. Shows success/failure messages and closes activity on success.
-     * Drafts are saved without uploading images.
      * </p>
      */
     private void saveDraft() {
@@ -408,29 +534,55 @@ public class CreateEvent extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, "Saving draft...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Saving...", Toast.LENGTH_SHORT).show();
 
         // Create event data map
         Map<String, Object> eventData = createEventData(true);
 
-        // Save to Firestore
-        db.collection("events")
-                .add(eventData)
-                .addOnSuccessListener(documentReference -> {
-                    Log.d(TAG, "Draft saved with ID: " + documentReference.getId());
-                    Toast.makeText(this, "Draft saved successfully", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error saving draft", e);
-                    Toast.makeText(this, "Failed to save draft: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        // Add existing image if no new image selected
+        if (selectedImageUri == null && existingBase64Image != null) {
+            eventData.put("image_base64", existingBase64Image);
+        } else if (selectedImageUri != null) {
+            String base64Image = convertImageToBase64(selectedImageUri);
+            if (base64Image != null) {
+                eventData.put("image_base64", base64Image);
+            }
+        }
+
+        if (isEditMode && editEventId != null) {
+            // Update existing draft
+            db.collection("events").document(editEventId)
+                    .set(eventData, com.google.firebase.firestore.SetOptions.merge())
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d(TAG, "Draft updated with ID: " + editEventId);
+                        Toast.makeText(this, "Changes saved successfully", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Error updating draft", e);
+                        Toast.makeText(this, "Failed to save changes: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            // Save new draft
+            db.collection("events")
+                    .add(eventData)
+                    .addOnSuccessListener(documentReference -> {
+                        Log.d(TAG, "Draft saved with ID: " + documentReference.getId());
+                        Toast.makeText(this, "Draft saved successfully", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Error saving draft", e);
+                        Toast.makeText(this, "Failed to save draft: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        }
     }
 
     /**
      * Publishes the event and generates a QR code for registration.
      * <p>
      * Converts image to Base64 and stores directly in Firestore if selected.
+     * Updates existing event if in edit mode.
      * </p>
      */
     private void publishAndGenerateQR() {
@@ -438,16 +590,17 @@ public class CreateEvent extends AppCompatActivity {
             return;
         }
 
-        Toast.makeText(this, "Publishing event...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, isEditMode ? "Updating event..." : "Publishing event...", Toast.LENGTH_SHORT).show();
 
-        // If image is selected, convert to Base64
+        // Determine which image to use
+        String base64Image = null;
         if (selectedImageUri != null) {
-            String base64Image = convertImageToBase64(selectedImageUri);
-            publishEventWithBase64Image(base64Image);
-        } else {
-            // No image, publish directly
-            publishEventWithBase64Image(null);
+            base64Image = convertImageToBase64(selectedImageUri);
+        } else if (existingBase64Image != null) {
+            base64Image = existingBase64Image;
         }
+
+        publishEventWithBase64Image(base64Image);
     }
 
     /**
@@ -487,6 +640,7 @@ public class CreateEvent extends AppCompatActivity {
 
     /**
      * Publishes the event to Firestore with Base64 image.
+     * Updates existing event if in edit mode, creates new event otherwise.
      *
      * @param base64Image The Base64 encoded image string, or null if no image
      */
@@ -499,42 +653,58 @@ public class CreateEvent extends AppCompatActivity {
             eventData.put("image_base64", base64Image);
         }
 
-        // Save to Firestore
-        db.collection("events")
-                .add(eventData)
-                .addOnSuccessListener(documentReference -> {
-                    String eventId = documentReference.getId();
-                    Log.d(TAG, "Event published with ID: " + eventId);
+        if (isEditMode && editEventId != null) {
+            // Update existing event
+            db.collection("events").document(editEventId)
+                    .set(eventData, com.google.firebase.firestore.SetOptions.merge())
+                    .addOnSuccessListener(aVoid -> {
+                        Log.d(TAG, "Event updated with ID: " + editEventId);
+                        Toast.makeText(this, "Event updated successfully!", Toast.LENGTH_SHORT).show();
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Error updating event", e);
+                        Toast.makeText(this, "Failed to update event: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            // Create new event
+            db.collection("events")
+                    .add(eventData)
+                    .addOnSuccessListener(documentReference -> {
+                        String eventId = documentReference.getId();
+                        Log.d(TAG, "Event published with ID: " + eventId);
 
-                    // Generate QR code data
-                    String qrData = QRGeneration.generateEventQRCodeData(eventId);
+                        // Generate QR code data
+                        String qrData = QRGeneration.generateEventQRCodeData(eventId);
 
-                    // Update event document with QR code data
-                    Map<String, Object> qrUpdate = new HashMap<>();
-                    qrUpdate.put("qr_code_data", qrData);
+                        // Update event document with QR code data
+                        Map<String, Object> qrUpdate = new HashMap<>();
+                        qrUpdate.put("qr_code_data", qrData);
 
-                    db.collection("events").document(eventId)
-                            .set(qrUpdate, com.google.firebase.firestore.SetOptions.merge())
-                            .addOnSuccessListener(aVoid -> {
-                                Log.d(TAG, "QR code data saved to event");
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Error saving QR code data: " + e.getMessage(), e);
-                            });
+                        db.collection("events").document(eventId)
+                                .set(qrUpdate, com.google.firebase.firestore.SetOptions.merge())
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d(TAG, "QR code data saved to event");
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error saving QR code data: " + e.getMessage(), e);
+                                });
 
-                    // Create waiting list structure
-                    createWaitingList(eventId);
+                        // Create waiting list structure
+                        createWaitingList(eventId);
 
-                    // Show QR dialog
-                    showQRDialog(eventId, qrData);
+                        // Show QR dialog
+                        showQRDialog(eventId, qrData);
 
-                    Toast.makeText(this, "Event published successfully!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error publishing event", e);
-                    Toast.makeText(this, "Failed to publish event: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
-                });
+                        Toast.makeText(this, "Event published successfully!", Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Error publishing event", e);
+                        Toast.makeText(this, "Failed to publish event: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    });
+        }
     }
 
     /**
@@ -723,7 +893,14 @@ public class CreateEvent extends AppCompatActivity {
 
         // Status and metadata
         eventData.put("status", isDraft ? "draft" : "published");
-        eventData.put("created_at", System.currentTimeMillis());
+
+        // Only set created_at for new events
+        if (!isEditMode) {
+            eventData.put("created_at", System.currentTimeMillis());
+        }
+
+        // Always update the modified timestamp
+        eventData.put("updated_at", System.currentTimeMillis());
 
         // Organizer info
         eventData.put("organizer_id", currentUserId);
