@@ -220,9 +220,6 @@ public class AdminImageListActivity extends AppCompatActivity {
         if (image.displayName != null) {
             builder.append(image.displayName).append(" ");
         }
-        if (image.type != null) {
-            builder.append(image.type).append(" ");
-        }
         if (image.relatedId != null) {
             builder.append(image.relatedId);
         }
