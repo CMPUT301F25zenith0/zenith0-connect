@@ -24,12 +24,14 @@ public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.Vi
         public String url;
         public String type; // "Event Poster" or "Profile Picture"
         public String relatedId; // Event ID or User ID
+        public String displayName;
 
-        public ImageItem(String id, String url, String type, String relatedId) {
+        public ImageItem(String id, String url, String type, String relatedId, String displayName) {
             this.id = id;
             this.url = url;
             this.type = type;
             this.relatedId = relatedId;
+            this.displayName = displayName;
         }
     }
 
@@ -89,7 +91,11 @@ public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.Vi
         }
 
         public void bind(ImageItem image) {
-            tvType.setText(image.type);
+            if (image.displayName != null && !image.displayName.isEmpty()) {
+                tvType.setText(image.displayName);
+            } else {
+                tvType.setText(image.type);
+            }
             tvId.setText("ID: " + image.relatedId);
 
             if (image.url != null && (image.url.startsWith("http") || image.url.startsWith("https"))) {

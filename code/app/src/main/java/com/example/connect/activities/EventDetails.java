@@ -48,6 +48,7 @@ public class EventDetails extends AppCompatActivity {
     private TextView eventTitle, tvOrgName, tvDateTime, tvLocation, tvPrice, tvRegWindow, tvWaitingList;
     private String description;
     private Button btnInfo, btnJoinList, btnLeaveList;
+    private boolean isAdminView;
 
     // Initialize Firebase
     private FirebaseFirestore db;
@@ -64,7 +65,8 @@ public class EventDetails extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.event_details);
+        isAdminView = getIntent().getBooleanExtra("IS_ADMIN_VIEW", false);
+        setContentView(isAdminView ? R.layout.event_details_admin : R.layout.event_details);
 
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
@@ -543,7 +545,6 @@ public class EventDetails extends AppCompatActivity {
         btnInfo.setVisibility(View.VISIBLE);
 
         // Check if opened from Admin Dashboard
-        boolean isAdminView = getIntent().getBooleanExtra("IS_ADMIN_VIEW", false);
         if (isAdminView) {
             btnJoinList.setVisibility(View.GONE);
             btnLeaveList.setVisibility(View.GONE);
