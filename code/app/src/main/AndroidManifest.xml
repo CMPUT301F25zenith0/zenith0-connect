@@ -44,6 +44,7 @@
         <activity android:name=".activities.AdminImageListActivity" />
         <activity android:name=".activities.AdminOrganizerListActivity" />
         <activity android:name=".activities.AdminNotificationLogActivity" />
+        <activity android:name=".activities.ImageDetailsActivity" />
 
         <activity android:name=".activities.QRCodeScanner" />
         <activity

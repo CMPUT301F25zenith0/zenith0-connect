@@ -1,5 +1,6 @@
 package com.example.connect.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -60,9 +61,19 @@ public class AdminProfileListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        adapter = new AdminProfileAdapter(this::deleteProfile);
+        adapter = new AdminProfileAdapter(this::deleteProfile, this::openProfileDetails);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+    }
+
+    private void openProfileDetails(User user) {
+        if (user.getUserId() == null)
+            return;
+
+        Intent intent = new Intent(this, ProfileActivity.class);
+        intent.putExtra("user_id_admin_view", user.getUserId());
+        intent.putExtra("IS_ADMIN_VIEW", true);
+        startActivity(intent);
     }
 
     private void loadProfiles() {
@@ -101,7 +112,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
 
         // 1. Delete events organized by this user
         db.collection("events")
-                .whereEqualTo("org_name", userId) // Assuming org_name stores userId based on Event model
+                .whereEqualTo("organizer_id", userId) // Assuming org_name stores userId based on Event model
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {

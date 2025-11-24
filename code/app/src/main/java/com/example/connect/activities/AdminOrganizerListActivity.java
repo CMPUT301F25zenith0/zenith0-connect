@@ -60,9 +60,19 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        adapter = new AdminProfileAdapter(this::deleteOrganizer);
+        adapter = new AdminProfileAdapter(this::deleteOrganizer, this::openOrganizerDetails);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+    }
+
+    private void openOrganizerDetails(User user) {
+        if (user.getUserId() == null)
+            return;
+
+        android.content.Intent intent = new android.content.Intent(this, ProfileActivity.class);
+        intent.putExtra("user_id_admin_view", user.getUserId());
+        intent.putExtra("IS_ADMIN_VIEW", true);
+        startActivity(intent);
     }
 
     private void loadOrganizers() {
@@ -104,14 +114,57 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         if (user.getUserId() == null)
             return;
 
-        db.collection("accounts").document(user.getUserId())
-                .delete()
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Organizer removed", Toast.LENGTH_SHORT).show();
-                    loadOrganizers(); // Refresh list
+        String userId = user.getUserId();
+        progressBar.setVisibility(View.VISIBLE);
+
+        // 1. Find all events created by this organizer
+        db.collection("events")
+                .whereEqualTo("organizer_id", userId)
+                .get()
+                .addOnSuccessListener(eventSnapshots -> {
+                    // Create a batch for atomic operations if possible, but for now we'll do it
+                    // sequentially or parallel
+                    // Since we might have many events, we'll just iterate and delete.
+                    // A batch has a limit of 500 operations.
+
+                    List<com.google.android.gms.tasks.Task<Void>> tasks = new ArrayList<>();
+
+                    for (QueryDocumentSnapshot eventDoc : eventSnapshots) {
+                        String eventId = eventDoc.getId();
+                        // Delete event
+                        tasks.add(db.collection("events").document(eventId).delete());
+                        // Delete waiting list
+                        tasks.add(db.collection("waiting_lists").document(eventId).delete());
+                    }
+
+                    // Wait for all event deletions to complete
+                    com.google.android.gms.tasks.Tasks.whenAll(tasks)
+                            .addOnSuccessListener(aVoid -> {
+                                // 2. Delete the user account
+                                db.collection("accounts").document(userId)
+                                        .delete()
+                                        .addOnSuccessListener(aVoid2 -> {
+                                            progressBar.setVisibility(View.GONE);
+                                            Toast.makeText(this, "Organizer and their events removed",
+                                                    Toast.LENGTH_SHORT).show();
+                                            loadOrganizers(); // Refresh list
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            progressBar.setVisibility(View.GONE);
+                                            Toast.makeText(this, "Error removing organizer account: " + e.getMessage(),
+                                                    Toast.LENGTH_SHORT).show();
+                                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                progressBar.setVisibility(View.GONE);
+                                Toast.makeText(this, "Error removing organizer's events: " + e.getMessage(),
+                                        Toast.LENGTH_SHORT).show();
+                            });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error removing organizer: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(this, "Error finding organizer's events: " + e.getMessage(), Toast.LENGTH_SHORT)
+                            .show();
                 });
     }
 }

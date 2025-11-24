@@ -35,13 +35,19 @@ public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.Vi
 
     private List<ImageItem> images = new ArrayList<>();
     private final OnImageDeleteListener deleteListener;
+    private final OnImageClickListener clickListener;
 
     public interface OnImageDeleteListener {
         void onDelete(ImageItem image);
     }
 
-    public AdminImageAdapter(OnImageDeleteListener deleteListener) {
+    public interface OnImageClickListener {
+        void onImageClick(ImageItem image);
+    }
+
+    public AdminImageAdapter(OnImageDeleteListener deleteListener, OnImageClickListener clickListener) {
         this.deleteListener = deleteListener;
+        this.clickListener = clickListener;
     }
 
     public void setImages(List<ImageItem> images) {
@@ -112,6 +118,12 @@ public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.Vi
             btnDelete.setOnClickListener(v -> {
                 if (deleteListener != null) {
                     deleteListener.onDelete(image);
+                }
+            });
+
+            itemView.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onImageClick(image);
                 }
             });
         }

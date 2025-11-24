@@ -61,9 +61,19 @@ public class AdminImageListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        adapter = new AdminImageAdapter(this::deleteImage);
+        adapter = new AdminImageAdapter(this::deleteImage, this::openImageDetails);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+    }
+
+    private void openImageDetails(AdminImageAdapter.ImageItem image) {
+        android.content.Intent intent = new android.content.Intent(this, ImageDetailsActivity.class);
+        if (image.url != null && (image.url.startsWith("http") || image.url.startsWith("https"))) {
+            intent.putExtra("image_url", image.url);
+        } else {
+            intent.putExtra("image_base64", image.url);
+        }
+        startActivity(intent);
     }
 
     private void loadImages() {

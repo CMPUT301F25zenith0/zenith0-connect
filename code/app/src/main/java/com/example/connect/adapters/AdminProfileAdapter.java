@@ -21,13 +21,19 @@ public class AdminProfileAdapter extends RecyclerView.Adapter<AdminProfileAdapte
 
     private List<User> users = new ArrayList<>();
     private final OnProfileDeleteListener deleteListener;
+    private final OnProfileClickListener clickListener;
 
     public interface OnProfileDeleteListener {
         void onDelete(User user);
     }
 
-    public AdminProfileAdapter(OnProfileDeleteListener deleteListener) {
+    public interface OnProfileClickListener {
+        void onProfileClick(User user);
+    }
+
+    public AdminProfileAdapter(OnProfileDeleteListener deleteListener, OnProfileClickListener clickListener) {
         this.deleteListener = deleteListener;
+        this.clickListener = clickListener;
     }
 
     public void setUsers(List<User> users) {
@@ -92,6 +98,12 @@ public class AdminProfileAdapter extends RecyclerView.Adapter<AdminProfileAdapte
             btnDelete.setOnClickListener(v -> {
                 if (deleteListener != null) {
                     deleteListener.onDelete(user);
+                }
+            });
+
+            itemView.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onProfileClick(user);
                 }
             });
         }

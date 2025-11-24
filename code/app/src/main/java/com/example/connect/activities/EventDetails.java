@@ -28,10 +28,13 @@ import java.util.Map;
 /**
  * Activity for displaying detailed information about a specific event.
  * <p>
- * This activity retrieves event data from Firestore database and displays it to the user,
- * including event title, organization name, date & time, location, price, and registration details.
+ * This activity retrieves event data from Firestore database and displays it to
+ * the user,
+ * including event title, organization name, date & time, location, price, and
+ * registration details.
  * Users can join or leave the event's waiting list from this screen.
  * <p>
+ * 
  * @author Aakansh Chatterjee
  * @version 2.0
  */
@@ -54,7 +57,8 @@ public class EventDetails extends AppCompatActivity {
      * Called when the activity is first created.
      * Initializes the UI, Firestore connection, and loads event details.
      *
-     * @param savedInstanceState Bundle containing the activity's previously saved state
+     * @param savedInstanceState Bundle containing the activity's previously saved
+     *                           state
      */
 
     @Override
@@ -137,9 +141,11 @@ public class EventDetails extends AppCompatActivity {
 
     /**
      * Loads event details from Firestore using the provided eventID.
-     * Retrieves event information including title, organization, date/time, location,
+     * Retrieves event information including title, organization, date/time,
+     * location,
      * price, registration window, and waiting list count.
      * <p>
+     * 
      * @param eventId The unique identifier of the event to load
      */
     private void loadEventDetails(String eventId) {
@@ -170,7 +176,8 @@ public class EventDetails extends AppCompatActivity {
                         String formattedRegStart = formatRegistrationDate(regStartDate);
                         String formattedRegEnd = formatRegistrationDate(regEndDate);
 
-                        String registrationWindow = "Registration Window: " + formattedRegStart + " - " + formattedRegEnd;
+                        String registrationWindow = "Registration Window: " + formattedRegStart + " - "
+                                + formattedRegEnd;
 
                         // Get and save waiting list count
                         Long waitingListCount = documentSnapshot.getLong("waiting_list");
@@ -178,9 +185,11 @@ public class EventDetails extends AppCompatActivity {
                                 (waitingListCount != null ? waitingListCount : 0) + " Entrants";
 
                         // Display the details
-                        displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow, waitingListText);
+                        displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow,
+                                waitingListText);
 
-                        // TODO: Load event image --> need to figure out where to store images Firestore cannot for us
+                        // TODO: Load event image --> need to figure out where to store images Firestore
+                        // cannot for us
                         // You can use Glide or Picasso to load images:
                         // String imageUrl = documentSnapshot.getString("imageUrl");
                         // Glide.with(this).load(imageUrl).into(eventImage);
@@ -197,20 +206,22 @@ public class EventDetails extends AppCompatActivity {
     }
 
     /**
-     * Displays event details in the UI by populating all TextViews with loaded data.
+     * Displays event details in the UI by populating all TextViews with loaded
+     * data.
      * Also handles transition from loading state to content display.
      * <p>
-     * @param eventName The name/title of the event
-     * @param organizationName The name of the organizing entity
-     * @param dateTime The formatted date and time of the event
-     * @param location The location where the event will take place
-     * @param price The price to attend the event (or "Free")
+     * 
+     * @param eventName          The name/title of the event
+     * @param organizationName   The name of the organizing entity
+     * @param dateTime           The formatted date and time of the event
+     * @param location           The location where the event will take place
+     * @param price              The price to attend the event (or "Free")
      * @param registrationWindow The registration start and end dates
-     * @param waitingListCount The current number of people on the waiting list
+     * @param waitingListCount   The current number of people on the waiting list
      */
     private void displayEventDetails(String eventName, String organizationName,
-                                     String dateTime, String location, String price,
-                                     String registrationWindow, String waitingListCount) {
+            String dateTime, String location, String price,
+            String registrationWindow, String waitingListCount) {
         eventTitle.setText(eventName != null ? eventName : "Event Title");
         tvOrgName.setText(organizationName != null ? organizationName : "Organization Name");
         tvDateTime.setText(dateTime != null ? dateTime : "Date & Time");
@@ -230,9 +241,12 @@ public class EventDetails extends AppCompatActivity {
      * Handles Date objects, Firestore Timestamp objects, and pre-formatted strings.
      * <p>
      * Format: "hh:mm a, MMM dd, yyyy" (e.g., "05:00 PM, Oct 01, 2025")
-     *  <p>
-     * @param dateTimeObj The date/time object to format (can be Date, Timestamp, or String)
-     * @return A formatted date/time string, or "Date & Time" if the object is null or invalid
+     * <p>
+     * 
+     * @param dateTimeObj The date/time object to format (can be Date, Timestamp, or
+     *                    String)
+     * @return A formatted date/time string, or "Date & Time" if the object is null
+     *         or invalid
      */
     private String formatDateTime(Object dateTimeObj) {
         if (dateTimeObj instanceof Date) {
@@ -255,7 +269,8 @@ public class EventDetails extends AppCompatActivity {
      * Converts "2025-11-07T00:00:00" to "Nov 07, 2025"
      *
      * @param dateString The date string in ISO format (yyyy-MM-dd'T'HH:mm:ss)
-     * @return A formatted date string (MMM dd, yyyy), or the original string if parsing fails
+     * @return A formatted date string (MMM dd, yyyy), or the original string if
+     *         parsing fails
      */
     private String formatRegistrationDate(String dateString) {
         if (dateString == null || dateString.isEmpty()) {
@@ -285,12 +300,16 @@ public class EventDetails extends AppCompatActivity {
      * - Handling errors and edge cases
      */
     private void joinWaitingList() {
-        if (eventId == null) return;
+        if (eventId == null)
+            return;
 
         // Get current user ID from Firebase Auth
-        String userId = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+        String userId = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid()
+                : null;
 
-        // Edge case should never occur --> If it does, it tells us there is a mix up in the database
+        // Edge case should never occur --> If it does, it tells us there is a mix up in
+        // the database
         if (userId == null) {
             Toast.makeText(this, "Please sign in to join the waiting list", Toast.LENGTH_SHORT).show();
             return;
@@ -301,13 +320,15 @@ public class EventDetails extends AppCompatActivity {
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(eventDoc -> {
-                    // Checks if the event actually exists --> edge case, if the user was able to open this detail page, the event exits
+                    // Checks if the event actually exists --> edge case, if the user was able to
+                    // open this detail page, the event exits
                     if (!eventDoc.exists()) {
                         Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Check if user is the organizer --> organizer cannot join their own event as a user
+                    // Check if user is the organizer --> organizer cannot join their own event as a
+                    // user
                     String organizerId = eventDoc.getString("organizer_id");
                     if (organizerId != null && organizerId.equals(userId)) {
                         Toast.makeText(this, "Organizers cannot join their own event", Toast.LENGTH_SHORT).show();
@@ -341,7 +362,8 @@ public class EventDetails extends AppCompatActivity {
 
                                     // Check if user is already in the waiting list
                                     if (entries != null && entries.contains(userId)) {
-                                        Toast.makeText(this, "You're already on the waiting list", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(this, "You're already on the waiting list", Toast.LENGTH_SHORT)
+                                                .show();
                                         return;
                                     }
 
@@ -359,7 +381,8 @@ public class EventDetails extends AppCompatActivity {
                                                         Toast.LENGTH_SHORT).show();
                                             });
                                 } else {
-                                    // Waitlist doesnt exist so create new waiting list document with this user as first entry
+                                    // Waitlist doesnt exist so create new waiting list document with this user as
+                                    // first entry
                                     // First entry, no need to check capcaity
                                     Map<String, Object> waitlistData = new HashMap<>();
                                     List<String> entries = new ArrayList<>();
@@ -390,7 +413,6 @@ public class EventDetails extends AppCompatActivity {
                 });
     }
 
-
     /**
      * Removes the current user from the event's waiting list in Firestore.
      * Updates the waiting list count and displays a success message.
@@ -399,10 +421,13 @@ public class EventDetails extends AppCompatActivity {
      * - Handling errors and edge cases
      */
     private void leaveWaitingList() {
-        if (eventId == null) return;
+        if (eventId == null)
+            return;
 
         // Get current user ID from Firebase Auth
-        String userId = FirebaseAuth.getInstance().getCurrentUser() != null ? FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+        String userId = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid()
+                : null;
 
         // Edge Case --> shouldnt happen
         if (userId == null) {
@@ -465,7 +490,8 @@ public class EventDetails extends AppCompatActivity {
 
         // Make background transparetn
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
         }
 
         // Get views from layout
@@ -480,7 +506,6 @@ public class EventDetails extends AppCompatActivity {
 
         dialog.show();
     }
-
 
     /**
      * Hides all content views and displays the loading spinner.
@@ -516,9 +541,16 @@ public class EventDetails extends AppCompatActivity {
         tvRegWindow.setVisibility(View.VISIBLE);
         tvWaitingList.setVisibility(View.VISIBLE);
         btnInfo.setVisibility(View.VISIBLE);
-        btnJoinList.setVisibility(View.VISIBLE);
-        btnLeaveList.setVisibility(View.VISIBLE);
-    }
 
+        // Check if opened from Admin Dashboard
+        boolean isAdminView = getIntent().getBooleanExtra("IS_ADMIN_VIEW", false);
+        if (isAdminView) {
+            btnJoinList.setVisibility(View.GONE);
+            btnLeaveList.setVisibility(View.GONE);
+        } else {
+            btnJoinList.setVisibility(View.VISIBLE);
+            btnLeaveList.setVisibility(View.VISIBLE);
+        }
+    }
 
 }

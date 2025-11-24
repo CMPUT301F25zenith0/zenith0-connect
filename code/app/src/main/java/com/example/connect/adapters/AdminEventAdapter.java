@@ -19,13 +19,19 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
 
     private List<Event> events = new ArrayList<>();
     private final OnEventDeleteListener deleteListener;
+    private final OnEventClickListener clickListener;
 
     public interface OnEventDeleteListener {
         void onDelete(Event event);
     }
 
-    public AdminEventAdapter(OnEventDeleteListener deleteListener) {
+    public interface OnEventClickListener {
+        void onEventClick(Event event);
+    }
+
+    public AdminEventAdapter(OnEventDeleteListener deleteListener, OnEventClickListener clickListener) {
         this.deleteListener = deleteListener;
+        this.clickListener = clickListener;
     }
 
     public void setEvents(List<Event> events) {
@@ -75,6 +81,12 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Vi
             btnDelete.setOnClickListener(v -> {
                 if (deleteListener != null) {
                     deleteListener.onDelete(event);
+                }
+            });
+
+            itemView.setOnClickListener(v -> {
+                if (clickListener != null) {
+                    clickListener.onEventClick(event);
                 }
             });
         }

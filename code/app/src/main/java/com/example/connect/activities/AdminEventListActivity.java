@@ -1,5 +1,6 @@
 package com.example.connect.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -60,9 +61,16 @@ public class AdminEventListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        adapter = new AdminEventAdapter(this::deleteEvent);
+        adapter = new AdminEventAdapter(this::deleteEvent, this::openEventDetails);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+    }
+
+    private void openEventDetails(Event event) {
+        Intent intent = new Intent(this, EventDetails.class);
+        intent.putExtra("EVENT_ID", event.getEventId());
+        intent.putExtra("IS_ADMIN_VIEW", true);
+        startActivity(intent);
     }
 
     private void loadEvents() {
