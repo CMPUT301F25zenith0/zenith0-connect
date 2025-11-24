@@ -86,9 +86,9 @@ public class AdminProfileListActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                     List<User> users = new ArrayList<>();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        // Check if the document has an "admin" field
-                        // Only add users who are NOT admins
-                        if (!document.contains("admin")) {
+                        // Only show users who are NOT admins and NOT disabled
+                        if (!document.contains("admin") &&
+                                (document.getBoolean("disabled") == null || !document.getBoolean("disabled"))) {
                             User user = document.toObject(User.class);
                             user.setUserId(document.getId());
                             users.add(user);
@@ -113,44 +113,57 @@ public class AdminProfileListActivity extends AppCompatActivity {
             return;
 
         String userId = user.getUserId();
+        progressBar.setVisibility(View.VISIBLE);
 
-        // 1. Delete events organized by this user
-        db.collection("events")
-                .whereEqualTo("organizer_id", userId) // Assuming org_name stores userId based on Event model
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        String eventId = document.getId();
-                        // Delete the event
-                        db.collection("events").document(eventId).delete();
-                        // Delete the waiting list for this event
-                        db.collection("waiting_lists").document(eventId).delete();
-                    }
-                })
-                .addOnFailureListener(e -> Log.e("AdminProfileList", "Error deleting organized events", e));
-
-        // 2. Remove user from all waiting lists they joined
-        db.collection("waiting_lists")
-                .whereArrayContains("entries", userId)
-                .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                        String eventId = document.getId();
-                        db.collection("waiting_lists").document(eventId)
-                                .update("entries", com.google.firebase.firestore.FieldValue.arrayRemove(userId));
-                    }
-                })
-                .addOnFailureListener(e -> Log.e("AdminProfileList", "Error removing user from waiting lists", e));
-
-        // 3. Delete the user profile
+        // Step 1: Mark user as disabled in Firestore
         db.collection("accounts").document(userId)
-                .delete()
+                .update("disabled", true)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Profile and related data deleted", Toast.LENGTH_SHORT).show();
-                    loadProfiles(); // Refresh list
+                    Log.d("AdminProfileList", "User marked as disabled");
+
+                    // Step 2: Delete events organized by this user and their waiting lists
+                    db.collection("events")
+                            .whereEqualTo("organizer_id", userId)
+                            .get()
+                            .addOnSuccessListener(queryDocumentSnapshots -> {
+                                for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                                    String eventId = document.getId();
+                                    // Delete the event
+                                    db.collection("events").document(eventId).delete();
+                                    // Delete the waiting list for this event
+                                    db.collection("waiting_lists").document(eventId).delete();
+                                }
+
+                                // Step 3: Remove user from all waiting lists they joined
+                                db.collection("waiting_lists")
+                                        .whereArrayContains("entries", userId)
+                                        .get()
+                                        .addOnSuccessListener(waitingListSnapshots -> {
+                                            for (QueryDocumentSnapshot doc : waitingListSnapshots) {
+                                                db.collection("waiting_lists").document(doc.getId())
+                                                        .update("entries", com.google.firebase.firestore.FieldValue.arrayRemove(userId));
+                                            }
+
+                                            progressBar.setVisibility(View.GONE);
+                                            Toast.makeText(this, "User account disabled successfully", Toast.LENGTH_SHORT).show();
+                                            loadProfiles(); // Refresh list (user will disappear)
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            progressBar.setVisibility(View.GONE);
+                                            Toast.makeText(this, "Error removing user from waiting lists", Toast.LENGTH_SHORT).show();
+                                            Log.e("AdminProfileList", "Error removing user from waiting lists", e);
+                                        });
+                            })
+                            .addOnFailureListener(e -> {
+                                progressBar.setVisibility(View.GONE);
+                                Toast.makeText(this, "Error deleting organized events", Toast.LENGTH_SHORT).show();
+                                Log.e("AdminProfileList", "Error deleting organized events", e);
+                            });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error deleting profile: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    progressBar.setVisibility(View.GONE);
+                    Toast.makeText(this, "Error disabling user: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e("AdminProfileList", "Error disabling user", e);
                 });
     }
 }
