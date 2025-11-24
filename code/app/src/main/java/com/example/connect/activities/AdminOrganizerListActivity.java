@@ -86,14 +86,15 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         // TODO: Refine query to only show organizers
 
         db.collection("accounts")
+                .whereEqualTo("organizer", true)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     progressBar.setVisibility(View.GONE);
                     List<User> users = new ArrayList<>();
+
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         User user = document.toObject(User.class);
                         user.setUserId(document.getId());
-                        // Optional: Filter logic here
                         users.add(user);
                     }
 
@@ -108,6 +109,7 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                     Toast.makeText(this, "Error loading organizers: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     Log.e("AdminOrgList", "Error loading organizers", e);
                 });
+
     }
 
     private void deleteOrganizer(User user) {
