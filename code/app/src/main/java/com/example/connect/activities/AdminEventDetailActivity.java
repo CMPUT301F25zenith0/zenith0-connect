@@ -56,6 +56,8 @@ public class AdminEventDetailActivity extends AppCompatActivity {
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
+            toolbar.setNavigationIcon(R.drawable.ic_back_arrow);
+            toolbar.setNavigationIconTint(getResources().getColor(R.color.f3));
             toolbar.setNavigationOnClickListener(v -> finish());
         }
 

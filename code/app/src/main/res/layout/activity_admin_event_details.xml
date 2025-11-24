@@ -5,123 +5,223 @@
     android:layout_height="match_parent"
     android:background="@color/vision_bg">
 
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbar"
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
+        android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-        app:navigationIcon="@drawable/ic_back_arrow"
-        app:navigationIconTint="@color/f3"
-        app:title="Event Overview"
-        app:titleTextColor="@color/vision_text_primary" />
+        android:fitsSystemWindows="true">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@android:color/transparent"
+            app:title="Event Overview"
+            app:titleTextColor="@color/vision_text_primary" />
+
+    </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/content_group"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:layout_marginTop="?attr/actionBarSize">
+            android:padding="16dp"
+            android:clipToPadding="false"
+            android:gravity="center_horizontal">
 
+            <!-- Hero Section -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                app:cardBackgroundColor="@color/vision_card_bg"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
+                app:cardCornerRadius="24dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/vision_card_bg">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="24dp">
 
                     <TextView
                         android:id="@+id/tv_event_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="Event Title"
                         android:textColor="@color/vision_text_primary"
-                        android:textSize="22sp"
-                        android:textStyle="bold"
-                        android:text="Event Title" />
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tv_event_organizer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/vision_text_secondary"
-                        android:textSize="14sp"
-                        android:layout_marginTop="4dp"
-                        android:text="Organizer" />
+                        android:layout_marginTop="6dp"
+                        android:text="Organizer"
+                        android:textColor="@color/vision_text_secondary" />
 
                     <TextView
                         android:id="@+id/tv_status"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status_chip"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"
+                        android:text="Active"
                         android:textColor="@color/vision_accent_green"
-                        android:textStyle="bold"
-                        android:layout_marginTop="8dp"
-                        android:text="Status" />
+                        android:textStyle="bold" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Two column stats -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:weightSum="2">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardBackgroundColor="@color/vision_card_bg"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Schedule"
+                            android:textColor="@color/vision_text_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tv_event_date"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Date"
+                            android:textColor="@color/vision_text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="6dp" />
+
+                        <TextView
+                            android:id="@+id/tv_event_location"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Location"
+                            android:textColor="@color/vision_text_secondary"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    app:cardCornerRadius="20dp"
+                    app:cardBackgroundColor="@color/vision_card_bg"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Attendance"
+                            android:textColor="@color/vision_text_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tv_event_price"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Price"
+                            android:textColor="@color/vision_text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:layout_marginTop="6dp" />
+
+                        <TextView
+                            android:id="@+id/tv_waiting_list"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Waiting list"
+                            android:textColor="@color/vision_text_secondary"
+                            android:layout_marginTop="6dp" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Registration card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/vision_card_bg"
+                android:layout_marginTop="16dp"
                 app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="@color/vision_card_bg"
                 app:cardElevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="16dp">
 
                     <TextView
-                        android:id="@+id/tv_event_date"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="Registration Window"
                         android:textColor="@color/vision_text_primary"
-                        android:text="Date" />
+                        android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/tv_event_location"
+                        android:id="@+id/tv_reg_window"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:text="Registration"
                         android:textColor="@color/vision_text_secondary"
-                        android:text="Location"
-                        android:layout_marginTop="4dp" />
-
-                    <TextView
-                        android:id="@+id/tv_event_price"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/vision_text_secondary"
-                        android:text="Price"
-                        android:layout_marginTop="8dp" />
+                        android:layout_marginTop="6dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Description card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/vision_card_bg"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
                 app:cardCornerRadius="20dp"
+                app:cardBackgroundColor="@color/vision_card_bg"
                 app:cardElevation="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="16dp">
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -134,42 +234,11 @@
                         android:id="@+id/tv_event_description"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:text="Description body"
                         android:textColor="@color/vision_text_secondary"
-                        android:layout_marginTop="8dp"
-                        android:text="Description body" />
+                        android:layout_marginTop="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/vision_card_bg"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:id="@+id/tv_reg_window"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/vision_text_primary"
-                        android:text="Registration Window" />
-
-                    <TextView
-                        android:id="@+id/tv_waiting_list"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/vision_text_secondary"
-                        android:layout_marginTop="8dp"
-                        android:text="Waiting List" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
