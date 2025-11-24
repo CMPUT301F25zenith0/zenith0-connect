@@ -2,6 +2,7 @@ package com.example.connect.activities;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,6 +14,7 @@ import com.example.connect.R;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 /**
  * Displays detailed information about a single event to administrators.
@@ -24,10 +26,11 @@ public class AdminEventDetailActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private ProgressBar progressBar;
     private View contentGroup;
+    private ListenerRegistration waitlistListener;
+    private String currentEventId;
 
     private TextView tvTitle;
     private TextView tvOrganizer;
-    private TextView tvStatus;
     private TextView tvDate;
     private TextView tvLocation;
     private TextView tvPrice;
@@ -43,14 +46,15 @@ public class AdminEventDetailActivity extends AppCompatActivity {
         db = FirebaseFirestore.getInstance();
         initViews();
 
-        String eventId = getIntent().getStringExtra(EXTRA_EVENT_ID);
-        if (eventId == null || eventId.isEmpty()) {
+        currentEventId = getIntent().getStringExtra(EXTRA_EVENT_ID);
+        if (currentEventId == null || currentEventId.isEmpty()) {
             Toast.makeText(this, "Event reference missing", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        loadEvent(eventId);
+        loadEvent(currentEventId);
+        listenForWaitlist(currentEventId);
     }
 
     private void initViews() {
@@ -64,9 +68,9 @@ public class AdminEventDetailActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progress_bar);
         contentGroup = findViewById(R.id.content_group);
 
+        ImageView heroImage = findViewById(R.id.hero_image);
         tvTitle = findViewById(R.id.tv_event_title);
         tvOrganizer = findViewById(R.id.tv_event_organizer);
-        tvStatus = findViewById(R.id.tv_status);
         tvDate = findViewById(R.id.tv_event_date);
         tvLocation = findViewById(R.id.tv_event_location);
         tvPrice = findViewById(R.id.tv_event_price);
@@ -98,7 +102,6 @@ public class AdminEventDetailActivity extends AppCompatActivity {
 
         tvTitle.setText(valueOrFallback(doc.getString("event_title"), "Unnamed Event"));
         tvOrganizer.setText(valueOrFallback(doc.getString("org_name"), "Unknown Organizer"));
-        tvStatus.setText(valueOrFallback(doc.getString("status"), "Draft"));
         tvDate.setText(valueOrFallback(doc.getString("date_time"), "Date TBD"));
         tvLocation.setText(valueOrFallback(doc.getString("location"), "Location TBD"));
 
@@ -119,8 +122,8 @@ public class AdminEventDetailActivity extends AppCompatActivity {
             tvRegWindow.setText("Registration window not configured");
         }
 
-        Long waiting = doc.getLong("waiting_list");
-        tvWaitingList.setText("Waiting list entries: " + (waiting != null ? waiting : 0));
+        // Waitlist text updated by live listener
+        tvWaitingList.setText("Live Waitlist: --");
 
         progressBar.setVisibility(View.GONE);
         contentGroup.setVisibility(View.VISIBLE);
@@ -128,6 +131,41 @@ public class AdminEventDetailActivity extends AppCompatActivity {
 
     private String valueOrFallback(String value, String fallback) {
         return value == null || value.isEmpty() ? fallback : value;
+    }
+
+    private void listenForWaitlist(String eventId) {
+        if (eventId == null) return;
+
+        if (waitlistListener != null) {
+            waitlistListener.remove();
+        }
+
+        waitlistListener = db.collection("waiting_lists")
+                .document(eventId)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        return;
+                    }
+                    int count = 0;
+                    if (snapshot != null && snapshot.exists()) {
+                        java.util.List<String> entries = (java.util.List<String>) snapshot.get("entries");
+                        count = entries != null ? entries.size() : 0;
+                    }
+                    tvWaitingList.setText(formatLiveWaitlist(count));
+                });
+    }
+
+    private String formatLiveWaitlist(int count) {
+        return "Live Waitlist: " + count + " entrant" + (count == 1 ? "" : "s");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (waitlistListener != null) {
+            waitlistListener.remove();
+            waitlistListener = null;
+        }
     }
 }
 
