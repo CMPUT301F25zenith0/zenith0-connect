@@ -2,8 +2,11 @@ package com.example.connect.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,14 +24,17 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class AdminProfileListActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView tvEmptyState;
+    private EditText etSearch;
     private AdminProfileAdapter adapter;
     private FirebaseFirestore db;
+    private List<User> allProfiles = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +46,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
 
             initViews();
             setupRecyclerView();
+            setupSearch();
             loadProfiles();
         } catch (Exception e) {
             Log.e("AdminProfileList", "Error in onCreate", e);
@@ -58,6 +65,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
         tvEmptyState = findViewById(R.id.tv_empty_state);
+        etSearch = findViewById(R.id.et_search);
     }
 
     private void setupRecyclerView() {
@@ -76,6 +84,55 @@ public class AdminProfileListActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    // Setup TextWatcher
+    private void setupSearch() {
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                // Trigger the filter logic every time the text changes
+                filterList(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+    }
+
+    // Filters the list based on search input (Name, ID, Email)
+    private void filterList(String searchText) {
+        String query = searchText.toLowerCase(Locale.getDefault()).trim();
+        List<User> filteredList = new ArrayList<>();
+
+        if (query.isEmpty()) {
+            filteredList.addAll(allProfiles);
+        } else {
+            for (User user : allProfiles) {
+                String name = user.getName() != null ? user.getName().toLowerCase(Locale.getDefault()) : "";
+                String userId = user.getUserId() != null ? user.getUserId().toLowerCase(Locale.getDefault()) : "";
+                String email = user.getEmail() != null ? user.getEmail().toLowerCase(Locale.getDefault()) : "";
+
+                // Check if the query is in any of chosen fields
+                if (name.contains(query) || userId.contains(query) || email.contains(query)) {
+                    filteredList.add(user);
+                }
+            }
+        }
+
+        adapter.setUsers(filteredList);
+
+        // Update the empty state TextView
+        if (filteredList.isEmpty()) {
+            String emptyMessage = query.isEmpty() ? "No profiles found." : "No profiles found matching \"" + searchText + "\".";
+            tvEmptyState.setText(emptyMessage);
+            tvEmptyState.setVisibility(View.VISIBLE);
+        } else {
+            tvEmptyState.setVisibility(View.GONE);
+        }
+    }
+
     private void loadProfiles() {
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
@@ -84,27 +141,29 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     progressBar.setVisibility(View.GONE);
-                    List<User> users = new ArrayList<>();
+                    allProfiles.clear(); // Clear previous data
+
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         // Only show users who are NOT admins and NOT disabled
                         if (!document.contains("admin") &&
                                 (document.getBoolean("disabled") == null || !document.getBoolean("disabled"))) {
                             User user = document.toObject(User.class);
                             user.setUserId(document.getId());
-                            users.add(user);
+                            allProfiles.add(user); // Add to the master list
                         }
                     }
 
-                    if (users.isEmpty()) {
-                        tvEmptyState.setVisibility(View.VISIBLE);
-                    } else {
-                        adapter.setUsers(users);
-                    }
+                    // Display the initial list or the filtered list if the search bar already has text
+                    filterList(etSearch.getText().toString());
+
                 })
                 .addOnFailureListener(e -> {
                     progressBar.setVisibility(View.GONE);
                     Toast.makeText(this, "Error loading profiles: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     Log.e("AdminProfileList", "Error loading profiles", e);
+                    // Ensure empty state is shown on failure
+                    tvEmptyState.setText("Failed to load profiles.");
+                    tvEmptyState.setVisibility(View.VISIBLE);
                 });
     }
 
