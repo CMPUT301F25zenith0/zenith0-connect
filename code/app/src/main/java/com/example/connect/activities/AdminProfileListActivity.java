@@ -34,9 +34,9 @@ import java.util.List;
  * Activity for admin to browse and view all user profiles.
  * Displays a list of all non-admin users with their basic information.
  * Supports searching/filtering profiles by name, email, or phone.
- * 
+ *
  * Implements US 03.05.01: Admin browses profiles
- * 
+ *
  * @author Zenith Team
  * @version 1.0
  */
@@ -72,7 +72,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
     private void initViews() {
         recyclerViewProfiles = findViewById(R.id.recyclerViewProfiles);
         etSearch = findViewById(R.id.etSearchProfiles);
-        
+
         // Setup toolbar back button
         Toolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -103,11 +103,11 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 confirmDeleteProfile(profile);
             }
         });
-        
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerViewProfiles.setLayoutManager(layoutManager);
         recyclerViewProfiles.setAdapter(profileAdapter);
-        
+
         // Optimize RecyclerView for smooth scrolling
         recyclerViewProfiles.setHasFixedSize(true);
         recyclerViewProfiles.setItemAnimator(null); // Disable animations for smoother scrolling
@@ -139,45 +139,45 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     allProfiles.clear();
-                    
+
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         // Skip admin accounts
                         Boolean isAdmin = document.getBoolean("admin");
                         if (isAdmin != null && isAdmin) {
                             continue;
                         }
-                        
+
                         // Extract user data
                         String userId = document.getId();
                         String name = document.getString("full_name");
                         String email = document.getString("email");
                         String phone = document.getString("mobile_num");
                         String profileImageUrl = document.getString("profile_image_url");
-                        
+
                         // Create User object
-                        User user = new User(userId, 
+                        User user = new User(userId,
                                 name != null ? name : "Unknown",
                                 email != null ? email : "",
                                 phone != null ? phone : "",
                                 profileImageUrl);
-                        
+
                         allProfiles.add(user);
                     }
-                    
+
                     // Update filtered list and adapter
                     filteredProfiles.clear();
                     filteredProfiles.addAll(allProfiles);
                     profileAdapter.notifyDataSetChanged();
-                    
+
                     Log.d("AdminProfileList", "Loaded " + allProfiles.size() + " profiles");
-                    
+
                     if (allProfiles.isEmpty()) {
                         Toast.makeText(this, "No profiles found", Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
                     Log.e("AdminProfileList", "Error loading profiles", e);
-                    Toast.makeText(this, "Error loading profiles: " + e.getMessage(), 
+                    Toast.makeText(this, "Error loading profiles: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
     }
@@ -185,36 +185,36 @@ public class AdminProfileListActivity extends AppCompatActivity {
     /**
      * Filters profiles based on search query.
      * Searches in name, email, and phone number.
-     * 
+     *
      * @param query The search query string
      */
     private void filterProfiles(String query) {
         filteredProfiles.clear();
-        
+
         if (query.isEmpty()) {
             filteredProfiles.addAll(allProfiles);
         } else {
             String lowerQuery = query.toLowerCase();
             for (User user : allProfiles) {
-                boolean matchesName = user.getName() != null && 
+                boolean matchesName = user.getName() != null &&
                         user.getName().toLowerCase().contains(lowerQuery);
-                boolean matchesEmail = user.getEmail() != null && 
+                boolean matchesEmail = user.getEmail() != null &&
                         user.getEmail().toLowerCase().contains(lowerQuery);
-                boolean matchesPhone = user.getPhone() != null && 
+                boolean matchesPhone = user.getPhone() != null &&
                         user.getPhone().contains(query);
-                
+
                 if (matchesName || matchesEmail || matchesPhone) {
                     filteredProfiles.add(user);
                 }
             }
         }
-        
+
         profileAdapter.notifyDataSetChanged();
     }
 
     /**
      * Shows a confirmation dialog before deleting a profile.
-     * 
+     *
      * @param profile The user profile to delete
      */
     private void confirmDeleteProfile(User profile) {
@@ -231,14 +231,14 @@ public class AdminProfileListActivity extends AppCompatActivity {
     /**
      * Deletes a user profile with cascade deletion of all related data.
      * Implements US 03.02.01: Admin removes profiles
-     * 
+     *
      * @param profile The user profile to delete
      */
     private void deleteProfile(User profile) {
         String userIdToDelete = profile.getUserId();
         Log.d("AdminProfileList", "Delete button clicked for profile: " + profile.getName());
         Log.d("AdminProfileList", "Profile userId: " + userIdToDelete);
-        
+
         if (userIdToDelete == null || userIdToDelete.isEmpty()) {
             Log.e("AdminProfileList", "❌ Invalid user ID - cannot delete");
             Toast.makeText(this, "Error: Invalid user ID", Toast.LENGTH_SHORT).show();
@@ -256,7 +256,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     final boolean isOrganizerFromOrgName = !queryDocumentSnapshots.isEmpty();
-                    
+
                     // Also check organizer_id field if org_name didn't match
                     if (!isOrganizerFromOrgName) {
                         db.collection("events")
@@ -288,14 +288,14 @@ public class AdminProfileListActivity extends AppCompatActivity {
      */
     private void proceedWithDeletion(String userIdToDelete, User profile, boolean isOrganizer) {
         Log.d("AdminProfileList", "Proceeding with deletion. UserId: " + userIdToDelete + ", IsOrganizer: " + isOrganizer);
-        
+
         if (isOrganizer) {
             Log.d("AdminProfileList", "User is an organizer, will delete all their events");
         }
-        
+
         // Delete account first for immediate feedback, then do cascade cleanup in background
         deleteAccountAndAuth(userIdToDelete, profile);
-        
+
         // Perform cascade deletion in background (doesn't block UI update)
         cascadeDeleteUserData(userIdToDelete, isOrganizer, () -> {
             Log.d("AdminProfileList", "✅ Background cascade deletion completed");
@@ -305,7 +305,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
     /**
      * Checks if a user is an organizer by checking if they have created any events.
      * This is done asynchronously during cascade deletion.
-     * 
+     *
      * @param userId The user ID to check
      * @return true if user is an organizer, false otherwise
      */
@@ -318,19 +318,19 @@ public class AdminProfileListActivity extends AppCompatActivity {
     /**
      * Performs cascade deletion of all user-related data.
      * If user is an organizer, also deletes all their events and related data.
-     * 
+     *
      * @param userIdToDelete The user ID to delete
      * @param isOrganizer Whether the user is an organizer
      * @param onComplete Callback when cascade deletion completes
      */
     private void cascadeDeleteUserData(String userIdToDelete, boolean isOrganizer, Runnable onComplete) {
         Log.d("AdminProfileList", "Starting cascade deletion for userId: " + userIdToDelete);
-        
+
         // Use a simpler approach: run all operations and use a timeout to ensure completion
         // Track completion of all operations
         final int[] completedOperations = {0};
         final int totalOperations = isOrganizer ? 4 : 3; // More operations if organizer
-        
+
         Runnable checkCompletion = () -> {
             synchronized (completedOperations) {
                 completedOperations[0]++;
@@ -343,23 +343,23 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 }
             }
         };
-        
+
         // 1. Remove user from waiting_lists collection
         removeUserFromWaitingLists(userIdToDelete, checkCompletion);
-        
+
         // 2. Remove user from events/{eventId}/waitingList subcollections
         removeUserFromEventWaitingLists(userIdToDelete, checkCompletion);
-        
+
         // 3. If organizer, delete all their events and related data
         if (isOrganizer) {
             deleteOrganizerEvents(userIdToDelete, checkCompletion);
         } else {
             checkCompletion.run(); // Skip if not organizer
         }
-        
+
         // 4. Remove user from other collections (messages, notifications, etc.)
         removeUserFromOtherCollections(userIdToDelete, checkCompletion);
-        
+
         // Safety timeout: ensure completion callback is called even if operations hang
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
             synchronized (completedOperations) {
@@ -383,7 +383,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     final int[] updateCount = {0};
                     final int totalDocs = queryDocumentSnapshots.size();
-                    
+
                     if (totalDocs == 0) {
                         Log.d("AdminProfileList", "No waiting_lists documents found");
                         if (onComplete != null) {
@@ -391,9 +391,9 @@ public class AdminProfileListActivity extends AppCompatActivity {
                         }
                         return;
                     }
-                    
+
                     Log.d("AdminProfileList", "Processing " + totalDocs + " waiting_lists documents");
-                    
+
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         List<String> entries = (List<String>) document.get("entries");
                         if (entries != null && entries.contains(userIdToDelete)) {
@@ -453,7 +453,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     final int[] deleteCount = {0};
                     final int totalEvents = queryDocumentSnapshots.size();
-                    
+
                     if (totalEvents == 0) {
                         Log.d("AdminProfileList", "No events found");
                         if (onComplete != null) {
@@ -461,9 +461,9 @@ public class AdminProfileListActivity extends AppCompatActivity {
                         }
                         return;
                     }
-                    
+
                     Log.d("AdminProfileList", "Processing " + totalEvents + " events for waitingList cleanup");
-                    
+
                     for (QueryDocumentSnapshot eventDoc : queryDocumentSnapshots) {
                         String eventId = eventDoc.getId();
                         eventDoc.getReference()
@@ -509,19 +509,19 @@ public class AdminProfileListActivity extends AppCompatActivity {
     /**
      * Deletes all events created by an organizer and all related data.
      * This includes event documents, waiting lists, participants, etc.
-     * 
+     *
      * @param organizerId The organizer's user ID
      * @param onComplete Callback when deletion completes
      */
     private void deleteOrganizerEvents(String organizerId, Runnable onComplete) {
         Log.d("AdminProfileList", "Deleting all events for organizer: " + organizerId);
-        
+
         // Find all events where org_name OR organizer_id matches the organizer ID
         // We need to query both fields separately as Firestore doesn't support OR queries easily
         final int[] completedQueries = {0};
         final List<QueryDocumentSnapshot> allEventsToDelete = new ArrayList<>();
         final int totalQueries = 2;
-        
+
         Runnable checkQueriesComplete = () -> {
             completedQueries[0]++;
             if (completedQueries[0] >= totalQueries) {
@@ -529,7 +529,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 deleteFoundEvents(allEventsToDelete, organizerId, onComplete);
             }
         };
-        
+
         // Query by org_name
         db.collection("events")
                 .whereEqualTo("org_name", organizerId)
@@ -544,7 +544,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
                     Log.e("AdminProfileList", "Error querying events by org_name", e);
                     checkQueriesComplete.run();
                 });
-        
+
         // Query by organizer_id
         db.collection("events")
                 .whereEqualTo("organizer_id", organizerId)
@@ -577,26 +577,26 @@ public class AdminProfileListActivity extends AppCompatActivity {
      */
     private void deleteFoundEvents(List<QueryDocumentSnapshot> eventsToDelete, String organizerId, Runnable onComplete) {
         int totalEvents = eventsToDelete.size();
-        
+
         if (totalEvents == 0) {
             Log.d("AdminProfileList", "No events found for organizer");
             onComplete.run();
             return;
         }
-        
+
         Log.d("AdminProfileList", "Found " + totalEvents + " events to delete for organizer");
-        
+
         final int[] deleteCount = {0};
-        
+
         for (QueryDocumentSnapshot eventDoc : eventsToDelete) {
             String eventId = eventDoc.getId();
-            
+
             // Delete waiting_lists document for this event if it exists
             db.collection("waiting_lists").document(eventId).delete()
                     .addOnCompleteListener(task -> {
                         // Continue regardless of success
                     });
-            
+
             // Delete event subcollections first (waitingList, participants, etc.)
             deleteEventSubcollections(eventId, () -> {
                 // Then delete the event document itself
@@ -623,7 +623,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
 
     /**
      * Deletes all subcollections of an event (waitingList, participants, etc.).
-     * 
+     *
      * @param eventId The event ID
      * @param onComplete Callback when deletion completes
      */
@@ -635,12 +635,12 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     final int[] deleteCount = {0};
                     final int totalDocs = queryDocumentSnapshots.size();
-                    
+
                     if (totalDocs == 0) {
                         onComplete.run();
                         return;
                     }
-                    
+
                     for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
                         doc.getReference()
                                 .delete()
@@ -660,7 +660,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
 
     /**
      * Removes user from other collections (messages, notifications, etc.).
-     * 
+     *
      * @param userIdToDelete The user ID to remove
      * @param onComplete Callback when operation completes
      */
@@ -669,20 +669,20 @@ public class AdminProfileListActivity extends AppCompatActivity {
         // - Messages sent by the user
         // - Notifications related to the user
         // - Any other user-related data
-        
+
         Log.d("AdminProfileList", "Other collections cleanup completed");
         onComplete.run();
     }
 
     /**
      * Deletes the account document and Firebase Auth account.
-     * 
+     *
      * @param userIdToDelete The user ID to delete
      * @param profile The user profile (for display purposes)
      */
     private void deleteAccountAndAuth(String userIdToDelete, User profile) {
         Log.d("AdminProfileList", "Attempting to delete account document: " + userIdToDelete);
-        
+
         // First verify the document exists
         db.collection("accounts").document(userIdToDelete)
                 .get()
@@ -696,15 +696,15 @@ public class AdminProfileListActivity extends AppCompatActivity {
                         });
                         return;
                     }
-                    
+
                     Log.d("AdminProfileList", "Account document exists, proceeding with deletion");
-                    
+
                     // Delete Firestore account document
                     db.collection("accounts").document(userIdToDelete)
                             .delete()
                             .addOnSuccessListener(aVoid -> {
                                 Log.d("AdminProfileList", "✅ Account document deleted from Firestore");
-                                
+
                                 // Verify deletion
                                 db.collection("accounts").document(userIdToDelete)
                                         .get()
@@ -714,10 +714,10 @@ public class AdminProfileListActivity extends AppCompatActivity {
                                             } else {
                                                 Log.w("AdminProfileList", "⚠️ Warning: Account document still exists after deletion");
                                             }
-                                            
+
                                             // Delete from Firebase Auth
                                             deleteFirebaseAuthUser(userIdToDelete);
-                                            
+
                                             // Remove from local lists and refresh UI
                                             runOnUiThread(() -> {
                                                 removeFromLocalLists(userIdToDelete);
@@ -760,7 +760,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
                             });
                 });
     }
-    
+
     /**
      * Removes profile from local lists and updates UI.
      */
@@ -768,25 +768,25 @@ public class AdminProfileListActivity extends AppCompatActivity {
         int initialSize = allProfiles.size();
         allProfiles.removeIf(user -> user.getUserId() != null && user.getUserId().equals(userIdToDelete));
         filteredProfiles.removeIf(user -> user.getUserId() != null && user.getUserId().equals(userIdToDelete));
-        
+
         int removedCount = initialSize - allProfiles.size();
         Log.d("AdminProfileList", "Removed " + removedCount + " profile(s) from local lists");
-        
+
         profileAdapter.notifyDataSetChanged();
     }
-    
+
     /**
      * Deletes user from Firebase Authentication.
      * For admin deleting other users, this requires Admin SDK (server-side).
      * Attempts to call a Cloud Function if available, otherwise logs the requirement.
-     * 
+     *
      * @param userId The user ID to delete from Auth
      */
     private void deleteFirebaseAuthUser(String userId) {
         Log.d("AdminProfileList", "Attempting to delete user from Firebase Auth: " + userId);
-        
+
         FirebaseAuth auth = FirebaseAuth.getInstance();
-        
+
         // Check if user is deleting themselves
         if (auth.getCurrentUser() != null && auth.getCurrentUser().getUid().equals(userId)) {
             // User is deleting themselves - can use client SDK
@@ -803,19 +803,19 @@ public class AdminProfileListActivity extends AppCompatActivity {
             callDeleteUserCloudFunction(userId);
         }
     }
-    
+
     /**
      * Calls a Cloud Function to delete a user from Firebase Auth.
      * The Cloud Function must use Firebase Admin SDK to delete the user.
-     * 
+     *
      * IMPORTANT: You must deploy the Cloud Function first!
      * See CLOUD_FUNCTION_SETUP.md for deployment instructions.
-     * 
+     *
      * @param userId The user ID to delete
      */
     private void callDeleteUserCloudFunction(String userId) {
         Log.d("AdminProfileList", "🔵 Attempting to delete user via Cloud Function: " + userId);
-        
+
         // Get current user's ID token for authentication
         FirebaseAuth auth = FirebaseAuth.getInstance();
         if (auth.getCurrentUser() == null) {
@@ -825,16 +825,16 @@ public class AdminProfileListActivity extends AppCompatActivity {
             });
             return;
         }
-        
+
         String currentUserUid = auth.getCurrentUser().getUid();
         Log.d("AdminProfileList", "Current admin user: " + currentUserUid);
-        
+
         // Prepare data for Cloud Function
         Map<String, Object> data = new HashMap<>();
         data.put("uid", userId);
-        
+
         Log.d("AdminProfileList", "Calling Cloud Function 'deleteUser' with data: " + data.toString());
-        
+
         // Call the Cloud Function
         functions.getHttpsCallable("deleteUser")
                 .call(data)
@@ -852,51 +852,50 @@ public class AdminProfileListActivity extends AppCompatActivity {
                     String errorMessage = e.getMessage();
                     String errorCode = "";
                     if (e instanceof com.google.firebase.functions.FirebaseFunctionsException) {
-                        com.google.firebase.functions.FirebaseFunctionsException fe = 
-                            (com.google.firebase.functions.FirebaseFunctionsException) e;
+                        com.google.firebase.functions.FirebaseFunctionsException fe =
+                                (com.google.firebase.functions.FirebaseFunctionsException) e;
                         errorCode = fe.getCode().toString();
                         Log.e("AdminProfileList", "❌ Cloud Function error code: " + errorCode);
                     }
-                    
+
                     Log.e("AdminProfileList", "❌❌❌ Error calling Cloud Function: " + errorMessage, e);
                     Log.e("AdminProfileList", "Full exception: " + e.getClass().getName());
-                    
+
                     // Check for specific error types
                     if (errorMessage != null) {
-                        if (errorMessage.contains("NOT_FOUND") || 
-                            errorMessage.contains("not found") ||
-                            errorCode.contains("NOT_FOUND")) {
+                        if (errorMessage.contains("NOT_FOUND") ||
+                                errorMessage.contains("not found") ||
+                                errorCode.contains("NOT_FOUND")) {
                             Log.w("AdminProfileList", "⚠️⚠️⚠️ Cloud Function 'deleteUser' NOT DEPLOYED!");
                             Log.w("AdminProfileList", "⚠️ Please deploy the Cloud Function first.");
                             Log.w("AdminProfileList", "⚠️ See CLOUD_FUNCTION_SETUP.md for instructions.");
                             runOnUiThread(() -> {
-                                Toast.makeText(this, 
-                                    "⚠️ Cloud Function not deployed!\nUser deleted from Firestore only.\nDeploy function to delete from Auth.", 
-                                    Toast.LENGTH_LONG).show();
+                                Toast.makeText(this,
+                                        "⚠️ Cloud Function not deployed!\nUser deleted from Firestore only.\nDeploy function to delete from Auth.",
+                                        Toast.LENGTH_LONG).show();
                             });
-                        } else if (errorMessage.contains("permission-denied") || 
-                                   errorCode.contains("PERMISSION_DENIED")) {
+                        } else if (errorMessage.contains("permission-denied") ||
+                                errorCode.contains("PERMISSION_DENIED")) {
                             Log.e("AdminProfileList", "❌ Permission denied - check if user is admin");
                             runOnUiThread(() -> {
-                                Toast.makeText(this, 
-                                    "Permission denied. Check admin status.", 
-                                    Toast.LENGTH_LONG).show();
+                                Toast.makeText(this,
+                                        "Permission denied. Check admin status.",
+                                        Toast.LENGTH_LONG).show();
                             });
                         } else {
                             runOnUiThread(() -> {
-                                Toast.makeText(this, 
-                                    "Error deleting from Auth:\n" + errorMessage, 
-                                    Toast.LENGTH_LONG).show();
+                                Toast.makeText(this,
+                                        "Error deleting from Auth:\n" + errorMessage,
+                                        Toast.LENGTH_LONG).show();
                             });
                         }
                     } else {
                         runOnUiThread(() -> {
-                            Toast.makeText(this, 
-                                "Error calling Cloud Function. Check logs.", 
-                                Toast.LENGTH_LONG).show();
+                            Toast.makeText(this,
+                                    "Error calling Cloud Function. Check logs.",
+                                    Toast.LENGTH_LONG).show();
                         });
                     }
                 });
     }
 }
-
