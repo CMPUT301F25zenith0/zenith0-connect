@@ -41,5 +41,7 @@
     <color name="vision_accent_green">#00E396</color>
     <color name="vision_text_primary">#FFFFFF</color>
     <color name="vision_text_secondary">#A0AEC0</color>
+    <color name="vision_text_hint">#718096</color>
     <color name="vision_icon_bg">#0075FF</color>
+    <color name="vision_error">#FF5252</color>
 </resources>
