@@ -32,19 +32,27 @@ public class AdminProfileListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_admin_list);
+        try {
+            setContentView(R.layout.activity_admin_list);
 
-        db = FirebaseFirestore.getInstance();
+            db = FirebaseFirestore.getInstance();
 
-        initViews();
-        setupRecyclerView();
-        loadProfiles();
+            initViews();
+            setupRecyclerView();
+            loadProfiles();
+        } catch (Exception e) {
+            Log.e("AdminProfileList", "Error in onCreate", e);
+            Toast.makeText(this, "Error starting activity: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            finish();
+        }
     }
 
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("Manage Profiles");
-        toolbar.setNavigationOnClickListener(v -> finish());
+        if (toolbar != null) {
+            toolbar.setTitle("Manage Profiles");
+            toolbar.setNavigationOnClickListener(v -> finish());
+        }
 
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
@@ -61,7 +69,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
 
-        db.collection("users")
+        db.collection("accounts")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     progressBar.setVisibility(View.GONE);
@@ -89,10 +97,41 @@ public class AdminProfileListActivity extends AppCompatActivity {
         if (user.getUserId() == null)
             return;
 
-        db.collection("users").document(user.getUserId())
+        String userId = user.getUserId();
+
+        // 1. Delete events organized by this user
+        db.collection("events")
+                .whereEqualTo("org_name", userId) // Assuming org_name stores userId based on Event model
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        String eventId = document.getId();
+                        // Delete the event
+                        db.collection("events").document(eventId).delete();
+                        // Delete the waiting list for this event
+                        db.collection("waiting_lists").document(eventId).delete();
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("AdminProfileList", "Error deleting organized events", e));
+
+        // 2. Remove user from all waiting lists they joined
+        db.collection("waiting_lists")
+                .whereArrayContains("entries", userId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        String eventId = document.getId();
+                        db.collection("waiting_lists").document(eventId)
+                                .update("entries", com.google.firebase.firestore.FieldValue.arrayRemove(userId));
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("AdminProfileList", "Error removing user from waiting lists", e));
+
+        // 3. Delete the user profile
+        db.collection("accounts").document(userId)
                 .delete()
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Profile deleted", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Profile and related data deleted", Toast.LENGTH_SHORT).show();
                     loadProfiles(); // Refresh list
                 })
                 .addOnFailureListener(e -> {

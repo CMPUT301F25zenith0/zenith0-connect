@@ -64,23 +64,59 @@ public class User {
     }
 
     // Getters and setters
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
+    public String getUserId() {
+        return userId;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    @com.google.firebase.firestore.PropertyName("full_name")
+    public String getName() {
+        return name;
+    }
 
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
+    @com.google.firebase.firestore.PropertyName("full_name")
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getProfileImageUrl() { return profileImageUrl; }
-    public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
+    public String getEmail() {
+        return email;
+    }
 
-    public boolean isRememberMe() { return rememberMe; }
-    public void setRememberMe(boolean rememberMe) { this.rememberMe = rememberMe; }
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    @com.google.firebase.firestore.PropertyName("mobile_num")
+    public String getPhone() {
+        return phone;
+    }
+
+    @com.google.firebase.firestore.PropertyName("mobile_num")
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    @com.google.firebase.firestore.PropertyName("profile_image_url")
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    @com.google.firebase.firestore.PropertyName("profile_image_url")
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
+    }
 
     @Override
     public String toString() {

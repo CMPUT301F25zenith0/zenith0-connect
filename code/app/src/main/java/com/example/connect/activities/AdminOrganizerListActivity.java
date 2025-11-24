@@ -32,19 +32,27 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_admin_list);
+        try {
+            setContentView(R.layout.activity_admin_list);
 
-        db = FirebaseFirestore.getInstance();
+            db = FirebaseFirestore.getInstance();
 
-        initViews();
-        setupRecyclerView();
-        loadOrganizers();
+            initViews();
+            setupRecyclerView();
+            loadOrganizers();
+        } catch (Exception e) {
+            Log.e("AdminOrgList", "Error in onCreate", e);
+            Toast.makeText(this, "Error starting activity: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            finish();
+        }
     }
 
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("Manage Organizers");
-        toolbar.setNavigationOnClickListener(v -> finish());
+        if (toolbar != null) {
+            toolbar.setTitle("Manage Organizers");
+            toolbar.setNavigationOnClickListener(v -> finish());
+        }
 
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
@@ -67,7 +75,7 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         // Since the schema isn't fully clear on roles, I'll fetch all users for now
         // TODO: Refine query to only show organizers
 
-        db.collection("users")
+        db.collection("accounts")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     progressBar.setVisibility(View.GONE);
@@ -96,7 +104,7 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         if (user.getUserId() == null)
             return;
 
-        db.collection("users").document(user.getUserId())
+        db.collection("accounts").document(user.getUserId())
                 .delete()
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Organizer removed", Toast.LENGTH_SHORT).show();
