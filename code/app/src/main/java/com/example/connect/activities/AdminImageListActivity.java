@@ -197,16 +197,13 @@ public class AdminImageListActivity extends AppCompatActivity {
             query = "";
         }
 
-        String lowerQuery = query.toLowerCase().trim();
+        String lowerQuery = normalize(query);
         List<AdminImageAdapter.ImageItem> filtered = new ArrayList<>();
         if (lowerQuery.isEmpty()) {
             filtered.addAll(allImages);
         } else {
             for (AdminImageAdapter.ImageItem image : allImages) {
-                String name = image.displayName != null ? image.displayName.toLowerCase() : "";
-                String type = image.type != null ? image.type.toLowerCase() : "";
-                String id = image.relatedId != null ? image.relatedId.toLowerCase() : "";
-                if (name.contains(lowerQuery) || type.contains(lowerQuery) || id.contains(lowerQuery)) {
+                if (buildSearchSource(image).contains(lowerQuery)) {
                     filtered.add(image);
                 }
             }
@@ -216,6 +213,27 @@ public class AdminImageListActivity extends AppCompatActivity {
         if (tvEmptyState != null) {
             tvEmptyState.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
         }
+    }
+
+    private String buildSearchSource(AdminImageAdapter.ImageItem image) {
+        StringBuilder builder = new StringBuilder();
+        if (image.displayName != null) {
+            builder.append(image.displayName).append(" ");
+        }
+        if (image.type != null) {
+            builder.append(image.type).append(" ");
+        }
+        if (image.relatedId != null) {
+            builder.append(image.relatedId);
+        }
+        return normalize(builder.toString());
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toLowerCase().replaceAll("\\s+", " ").trim();
     }
 
     private void deleteImage(AdminImageAdapter.ImageItem image) {

@@ -95,9 +95,8 @@ public class AdminEventListActivity extends AppCompatActivity {
     }
 
     private void openEventDetails(Event event) {
-        Intent intent = new Intent(this, EventDetails.class);
-        intent.putExtra("EVENT_ID", event.getEventId());
-        intent.putExtra("IS_ADMIN_VIEW", true);
+        Intent intent = new Intent(this, AdminEventDetailActivity.class);
+        intent.putExtra(AdminEventDetailActivity.EXTRA_EVENT_ID, event.getEventId());
         startActivity(intent);
     }
 
