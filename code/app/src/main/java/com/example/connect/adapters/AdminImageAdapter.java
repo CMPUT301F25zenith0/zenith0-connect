@@ -86,11 +86,28 @@ public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.Vi
             tvType.setText(image.type);
             tvId.setText("ID: " + image.relatedId);
 
-            Glide.with(itemView.getContext())
-                    .load(image.url)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .error(android.R.drawable.stat_notify_error)
-                    .into(ivImage);
+            if (image.url != null && (image.url.startsWith("http") || image.url.startsWith("https"))) {
+                // Load URL
+                Glide.with(itemView.getContext())
+                        .load(image.url)
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .error(android.R.drawable.stat_notify_error)
+                        .into(ivImage);
+            } else if (image.url != null) {
+                // Try to load as Base64
+                try {
+                    byte[] decodedString = android.util.Base64.decode(image.url, android.util.Base64.DEFAULT);
+                    Glide.with(itemView.getContext())
+                            .load(decodedString)
+                            .placeholder(android.R.drawable.ic_menu_gallery)
+                            .error(android.R.drawable.stat_notify_error)
+                            .into(ivImage);
+                } catch (Exception e) {
+                    ivImage.setImageResource(android.R.drawable.stat_notify_error);
+                }
+            } else {
+                ivImage.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
 
             btnDelete.setOnClickListener(v -> {
                 if (deleteListener != null) {

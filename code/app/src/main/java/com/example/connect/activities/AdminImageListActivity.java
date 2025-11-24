@@ -18,7 +18,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AdminImageListActivity extends AppCompatActivity {
 
@@ -31,19 +33,27 @@ public class AdminImageListActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_admin_list);
+        try {
+            setContentView(R.layout.activity_admin_list);
 
-        db = FirebaseFirestore.getInstance();
+            db = FirebaseFirestore.getInstance();
 
-        initViews();
-        setupRecyclerView();
-        loadImages();
+            initViews();
+            setupRecyclerView();
+            loadImages();
+        } catch (Exception e) {
+            Log.e("AdminImageList", "Error in onCreate", e);
+            Toast.makeText(this, "Error starting activity: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            finish();
+        }
     }
 
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setTitle("Manage Images");
-        toolbar.setNavigationOnClickListener(v -> finish());
+        if (toolbar != null) {
+            toolbar.setTitle("Manage Images");
+            toolbar.setNavigationOnClickListener(v -> finish());
+        }
 
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
@@ -68,21 +78,30 @@ public class AdminImageListActivity extends AppCompatActivity {
                 .addOnSuccessListener(eventSnapshots -> {
                     for (QueryDocumentSnapshot doc : eventSnapshots) {
                         String imageUrl = doc.getString("imageUrl");
+                        String imageBase64 = doc.getString("image_base64");
+
                         if (imageUrl != null && !imageUrl.isEmpty()) {
                             images.add(new AdminImageAdapter.ImageItem(
                                     doc.getId(),
                                     imageUrl,
                                     "Event Poster",
                                     doc.getId()));
+                        } else if (imageBase64 != null && !imageBase64.isEmpty()) {
+                            images.add(new AdminImageAdapter.ImageItem(
+                                    doc.getId(),
+                                    imageBase64,
+                                    "Event Poster",
+                                    doc.getId()));
                         }
                     }
 
-                    // 2. Fetch Profile Pictures
-                    db.collection("users")
+                    // 2. Fetch Profile Pictures from "accounts" collection
+                    db.collection("accounts")
                             .get()
                             .addOnSuccessListener(userSnapshots -> {
                                 for (QueryDocumentSnapshot doc : userSnapshots) {
-                                    String profileUrl = doc.getString("profileImageUrl");
+                                    // Use correct field name based on User model annotation
+                                    String profileUrl = doc.getString("profile_image_url");
                                     if (profileUrl != null && !profileUrl.isEmpty()) {
                                         images.add(new AdminImageAdapter.ImageItem(
                                                 doc.getId(),
@@ -102,28 +121,43 @@ public class AdminImageListActivity extends AppCompatActivity {
                             .addOnFailureListener(e -> {
                                 progressBar.setVisibility(View.GONE);
                                 Log.e("AdminImageList", "Error loading user images", e);
+                                Toast.makeText(this, "Error loading user images", Toast.LENGTH_SHORT).show();
                             });
                 })
                 .addOnFailureListener(e -> {
                     progressBar.setVisibility(View.GONE);
                     Log.e("AdminImageList", "Error loading event images", e);
+                    Toast.makeText(this, "Error loading event images", Toast.LENGTH_SHORT).show();
                 });
     }
 
     private void deleteImage(AdminImageAdapter.ImageItem image) {
-        // Determine collection based on type
-        String collection = image.type.equals("Event Poster") ? "events" : "users";
-        String field = image.type.equals("Event Poster") ? "imageUrl" : "profileImageUrl";
+        if (image.type.equals("Event Poster")) {
+            // Delete both possible fields for events
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("imageUrl", null);
+            updates.put("image_base64", null);
 
-        // Update document to remove image URL
-        db.collection(collection).document(image.id)
-                .update(field, null) // Or "" depending on your schema preference
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Image removed", Toast.LENGTH_SHORT).show();
-                    loadImages(); // Refresh
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error removing image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+            db.collection("events").document(image.id)
+                    .update(updates)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Image removed", Toast.LENGTH_SHORT).show();
+                        loadImages(); // Refresh
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error removing image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        } else {
+            // Delete profile image
+            db.collection("accounts").document(image.id)
+                    .update("profile_image_url", null)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "Image removed", Toast.LENGTH_SHORT).show();
+                        loadImages(); // Refresh
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Error removing image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        }
     }
 }
