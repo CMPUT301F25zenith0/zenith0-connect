@@ -132,8 +132,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         cardManageEvents.setOnClickListener(v -> {
-            Toast.makeText(this, "Accessing Event Protocol...", Toast.LENGTH_SHORT).show(); // Modified
-            // TODO: Navigate to AdminEventListActivity
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminEventListActivity.class);
+            startActivity(intent);
         });
 
         cardManageProfiles.setOnClickListener(v -> {
