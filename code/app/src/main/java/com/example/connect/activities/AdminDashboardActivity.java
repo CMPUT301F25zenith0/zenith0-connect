@@ -147,8 +147,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
         });
 
         cardManageOrganizers.setOnClickListener(v -> {
-            Toast.makeText(this, "Accessing Organizer Controls...", Toast.LENGTH_SHORT).show(); // Modified
-            // TODO: Navigate to AdminOrganizerListActivity
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminOrganizerListActivity.class);
+            startActivity(intent);
         });
 
         cardNotificationLogs.setOnClickListener(v -> { // Modified
