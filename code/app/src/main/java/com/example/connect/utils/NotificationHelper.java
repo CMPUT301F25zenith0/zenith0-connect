@@ -26,7 +26,7 @@ public class NotificationHelper {
      * Notify users who were chosen for an event
      */
     public void notifyChosenEntrants(String eventId, List<String> chosenEntrantIds,
-                                     String eventName, NotificationCallback callback) {
+            String eventName, NotificationCallback callback) {
         Log.d(TAG, "notifyChosenEntrants called | eventId=" + eventId +
                 " | entrants=" + chosenEntrantIds.size() + " | eventName=" + eventName);
 
@@ -47,7 +47,7 @@ public class NotificationHelper {
      * Notify users who were NOT chosen for an event
      */
     public void notifyNotChosenEntrants(String eventId, List<String> notChosenEntrantIds,
-                                        String eventName, NotificationCallback callback) {
+            String eventName, NotificationCallback callback) {
         Log.d(TAG, "notifyNotChosenEntrants called | eventId=" + eventId +
                 " | entrants=" + notChosenEntrantIds.size() + " | eventName=" + eventName);
 
@@ -69,7 +69,7 @@ public class NotificationHelper {
      * Notify all users in the waiting list for an event
      */
     public void notifyAllWaitingListEntrants(String eventId, List<String> waitingListIds,
-                                             String eventName, NotificationCallback callback) {
+            String eventName, NotificationCallback callback) {
         Log.d(TAG, "notifyAllWaitingListEntrants called | eventId=" + eventId +
                 " | entrants=" + waitingListIds.size() + " | eventName=" + eventName);
 
@@ -88,11 +88,12 @@ public class NotificationHelper {
     }
 
     /**
-     * Send notifications to a list of users, respecting their notification preferences
+     * Send notifications to a list of users, respecting their notification
+     * preferences
      */
     private void sendNotificationsToUsers(List<String> userIds, String title, String body,
-                                          String type, String eventId, String eventName,
-                                          NotificationCallback callback) {
+            String type, String eventId, String eventName,
+            NotificationCallback callback) {
 
         if (userIds.isEmpty()) {
             callback.onFailure("No users to notify");
@@ -101,9 +102,9 @@ public class NotificationHelper {
 
         // Use atomic counters to track progress
         final int totalUsers = userIds.size();
-        final int[] processedCount = {0};
-        final int[] notifiedCount = {0};
-        final int[] skippedCount = {0};
+        final int[] processedCount = { 0 };
+        final int[] notifiedCount = { 0 };
+        final int[] skippedCount = { 0 };
 
         for (String userId : userIds) {
             db.collection("accounts").document(userId).get()
@@ -138,6 +139,7 @@ public class NotificationHelper {
                         notificationData.put("timestamp", FieldValue.serverTimestamp());
                         notificationData.put("read", false);
 
+                        // 1. Send to user's private collection
                         db.collection("accounts").document(userId)
                                 .collection("notifications")
                                 .add(notificationData)
@@ -145,6 +147,11 @@ public class NotificationHelper {
                                     Log.d(TAG, "✅ Notification saved for user: " + userId);
                                     notifiedCount[0]++;
                                     processedCount[0]++;
+
+                                    // 2. Log to central admin collection (fire and forget)
+                                    Map<String, Object> logData = new HashMap<>(notificationData);
+                                    logData.put("recipientId", userId);
+                                    db.collection("notification_logs").add(logData);
 
                                     // Check if all users processed
                                     if (processedCount[0] == totalUsers) {
@@ -184,6 +191,7 @@ public class NotificationHelper {
 
     public interface NotificationCallback {
         void onSuccess(String message);
+
         void onFailure(String error);
     }
 }

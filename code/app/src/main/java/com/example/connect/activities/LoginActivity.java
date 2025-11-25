@@ -139,8 +139,8 @@ public class LoginActivity extends AppCompatActivity {
                     FirebaseUser user = mAuth.getCurrentUser();
                     Log.d("LoginActivity", "Authentication successful! UID: " );
 
-                    // Check admin status in Firestore
-                    checkAdminStatus(user);
+                    // Check admin status and disabled status in Firestore
+                    checkUserStatus(user);
                 })
                 .addOnFailureListener(e -> {
                     // Login failed
@@ -156,18 +156,32 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     /**
-     * Checks if the authenticated user has admin privileges.
-     * Retrieves the user document from Firestore and checks for the 'admin' attribute.
+     * Checks if the authenticated user has admin privileges and if the account is disabled.
+     * Retrieves the user document from Firestore and checks for the 'admin' and 'disabled' attributes.
+     * If disabled is true, signs user out and prevents login.
      * If admin is true, navigates to admin activity. Otherwise, proceeds with regular login.
      *
      * @param user The authenticated FirebaseUser
      */
-    private void checkAdminStatus(FirebaseUser user) {
+    private void checkUserStatus(FirebaseUser user) {
         // Query Firestore for user document
         db.collection("accounts").document(user.getUid())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
+                        // Check if account is disabled
+                        Boolean isDisabled = documentSnapshot.getBoolean("disabled");
+                        if (isDisabled != null && isDisabled) {
+                            // Account is disabled, sign out and prevent login
+                            Log.d("LoginActivity", "Disabled account detected! UID: " + user.getUid());
+                            mAuth.signOut();
+                            resetButton();
+                            Toast.makeText(LoginActivity.this,
+                                    "This account has been disabled by an administrator.",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
                         // Check if admin field exists and is true
                         Boolean isAdmin = documentSnapshot.getBoolean("admin");
 

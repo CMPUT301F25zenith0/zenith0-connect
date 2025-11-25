@@ -39,6 +39,14 @@
         <activity android:name=".activities.OrganizerActivity" />
         <activity android:name=".activities.OrganizerMessagesActivity" />
         <activity android:name=".activities.AdminDashboardActivity" />
+        <activity android:name=".activities.AdminEventListActivity" />
+        <activity android:name=".activities.AdminProfileListActivity" />
+        <activity android:name=".activities.AdminImageListActivity" />
+        <activity android:name=".activities.AdminEventDetailActivity"
+            android:exported="false"/>
+        <activity android:name=".activities.AdminOrganizerListActivity" />
+        <activity android:name=".activities.AdminNotificationLogActivity" />
+        <activity android:name=".activities.ImageDetailsActivity" />
 
         <activity android:name=".activities.QRCodeScanner" />
         <activity
