@@ -42,6 +42,8 @@
         <activity android:name=".activities.AdminEventListActivity" />
         <activity android:name=".activities.AdminProfileListActivity" />
         <activity android:name=".activities.AdminImageListActivity" />
+        <activity android:name=".activities.AdminEventDetailActivity"
+            android:exported="false"/>
         <activity android:name=".activities.AdminOrganizerListActivity" />
         <activity android:name=".activities.AdminNotificationLogActivity" />
         <activity android:name=".activities.ImageDetailsActivity" />

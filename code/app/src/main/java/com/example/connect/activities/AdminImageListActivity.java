@@ -1,6 +1,8 @@
 package com.example.connect.activities;
 
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -14,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.connect.R;
 import com.example.connect.adapters.AdminImageAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -29,6 +32,9 @@ public class AdminImageListActivity extends AppCompatActivity {
     private TextView tvEmptyState;
     private AdminImageAdapter adapter;
     private FirebaseFirestore db;
+    private TextInputEditText searchInput;
+    private View searchLayout;
+    private final List<AdminImageAdapter.ImageItem> allImages = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +64,28 @@ public class AdminImageListActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
         tvEmptyState = findViewById(R.id.tv_empty_state);
+        searchLayout = findViewById(R.id.search_layout);
+        searchInput = findViewById(R.id.search_input);
+
+        if (searchLayout != null) {
+            searchLayout.setVisibility(View.VISIBLE);
+        }
+
+        if (searchInput != null) {
+            searchInput.setHint("Search images");
+            searchInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterImages(s != null ? s.toString() : "");
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) { }
+            });
+        }
     }
 
     private void setupRecyclerView() {
@@ -90,18 +118,25 @@ public class AdminImageListActivity extends AppCompatActivity {
                         String imageUrl = doc.getString("imageUrl");
                         String imageBase64 = doc.getString("image_base64");
 
+                        String eventTitle = doc.getString("event_title");
+                        if (eventTitle == null || eventTitle.isEmpty()) {
+                            eventTitle = doc.getString("name");
+                        }
+
                         if (imageUrl != null && !imageUrl.isEmpty()) {
                             images.add(new AdminImageAdapter.ImageItem(
                                     doc.getId(),
                                     imageUrl,
                                     "Event Poster",
-                                    doc.getId()));
+                                    doc.getId(),
+                                    eventTitle));
                         } else if (imageBase64 != null && !imageBase64.isEmpty()) {
                             images.add(new AdminImageAdapter.ImageItem(
                                     doc.getId(),
                                     imageBase64,
                                     "Event Poster",
-                                    doc.getId()));
+                                    doc.getId(),
+                                    eventTitle));
                         }
                     }
 
@@ -112,21 +147,22 @@ public class AdminImageListActivity extends AppCompatActivity {
                                 for (QueryDocumentSnapshot doc : userSnapshots) {
                                     // Use correct field name based on User model annotation
                                     String profileUrl = doc.getString("profile_image_url");
+                            String displayName = doc.getString("display_name");
+                            if (displayName == null || displayName.isEmpty()) {
+                                displayName = doc.getString("full_name");
+                            }
                                     if (profileUrl != null && !profileUrl.isEmpty()) {
                                         images.add(new AdminImageAdapter.ImageItem(
                                                 doc.getId(),
                                                 profileUrl,
                                                 "Profile Picture",
-                                                doc.getId()));
+                                        doc.getId(),
+                                        displayName));
                                     }
                                 }
 
                                 progressBar.setVisibility(View.GONE);
-                                if (images.isEmpty()) {
-                                    tvEmptyState.setVisibility(View.VISIBLE);
-                                } else {
-                                    adapter.setImages(images);
-                                }
+                        updateImages(images);
                             })
                             .addOnFailureListener(e -> {
                                 progressBar.setVisibility(View.GONE);
@@ -139,6 +175,62 @@ public class AdminImageListActivity extends AppCompatActivity {
                     Log.e("AdminImageList", "Error loading event images", e);
                     Toast.makeText(this, "Error loading event images", Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void updateImages(List<AdminImageAdapter.ImageItem> images) {
+        allImages.clear();
+        allImages.addAll(images);
+        applyCurrentFilter();
+    }
+
+    private void applyCurrentFilter() {
+        String query = searchInput != null && searchInput.getText() != null
+                ? searchInput.getText().toString()
+                : "";
+        filterImages(query);
+    }
+
+    private void filterImages(String query) {
+        if (adapter == null) return;
+
+        if (query == null) {
+            query = "";
+        }
+
+        String lowerQuery = normalize(query);
+        List<AdminImageAdapter.ImageItem> filtered = new ArrayList<>();
+        if (lowerQuery.isEmpty()) {
+            filtered.addAll(allImages);
+        } else {
+            for (AdminImageAdapter.ImageItem image : allImages) {
+                if (buildSearchSource(image).contains(lowerQuery)) {
+                    filtered.add(image);
+                }
+            }
+        }
+
+        adapter.setImages(filtered);
+        if (tvEmptyState != null) {
+            tvEmptyState.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private String buildSearchSource(AdminImageAdapter.ImageItem image) {
+        StringBuilder builder = new StringBuilder();
+        if (image.displayName != null) {
+            builder.append(image.displayName).append(" ");
+        }
+        if (image.relatedId != null) {
+            builder.append(image.relatedId);
+        }
+        return normalize(builder.toString());
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.toLowerCase().replaceAll("\\s+", " ").trim();
     }
 
     private void deleteImage(AdminImageAdapter.ImageItem image) {

@@ -46,8 +46,10 @@ public class EventDetails extends AppCompatActivity {
     private ScrollView scrollContent;
     private ImageView btnBack, eventImage;
     private TextView eventTitle, tvOrgName, tvDateTime, tvLocation, tvPrice, tvRegWindow, tvWaitingList;
+    private com.google.firebase.firestore.ListenerRegistration waitlistRegistration;
     private String description;
     private Button btnInfo, btnJoinList, btnLeaveList;
+    private boolean isAdminView;
 
     // Initialize Firebase
     private FirebaseFirestore db;
@@ -64,7 +66,8 @@ public class EventDetails extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.event_details);
+        isAdminView = getIntent().getBooleanExtra("IS_ADMIN_VIEW", false);
+        setContentView(isAdminView ? R.layout.event_details_admin : R.layout.event_details);
 
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
@@ -128,14 +131,10 @@ public class EventDetails extends AppCompatActivity {
 
         // ------TO BE IMPLEMENTED-----
         // Join waiting list button
-        btnJoinList.setOnClickListener(v -> {
-            joinWaitingList();
-        });
+        btnJoinList.setOnClickListener(v -> joinWaitingList());
 
         // Leave waiting list button
-        btnLeaveList.setOnClickListener(v -> {
-            leaveWaitingList();
-        });
+        btnLeaveList.setOnClickListener(v -> leaveWaitingList());
 
     }
 
@@ -180,13 +179,9 @@ public class EventDetails extends AppCompatActivity {
                                 + formattedRegEnd;
 
                         // Get and save waiting list count
-                        Long waitingListCount = documentSnapshot.getLong("waiting_list");
-                        String waitingListText = "Waiting List Count: " +
-                                (waitingListCount != null ? waitingListCount : 0) + " Entrants";
-
                         // Display the details
-                        displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow,
-                                waitingListText);
+                        displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow);
+                        listenForWaitlist(eventId);
 
                         // TODO: Load event image --> need to figure out where to store images Firestore
                         // cannot for us
@@ -221,19 +216,50 @@ public class EventDetails extends AppCompatActivity {
      */
     private void displayEventDetails(String eventName, String organizationName,
             String dateTime, String location, String price,
-            String registrationWindow, String waitingListCount) {
+            String registrationWindow) {
         eventTitle.setText(eventName != null ? eventName : "Event Title");
         tvOrgName.setText(organizationName != null ? organizationName : "Organization Name");
         tvDateTime.setText(dateTime != null ? dateTime : "Date & Time");
         tvLocation.setText(location != null ? location : "Location");
         tvPrice.setText(price != null ? price : "Price");
         tvRegWindow.setText(registrationWindow);
-        tvWaitingList.setText(waitingListCount);
+        tvWaitingList.setText("Live Waitlist: --");
 
         // Show content and hide spinner
         loadingSpinner.setVisibility(View.GONE);
         scrollContent.setVisibility(View.VISIBLE);
         showContent();
+    }
+
+    private void listenForWaitlist(String eventId) {
+        if (waitlistRegistration != null) {
+            waitlistRegistration.remove();
+        }
+
+        waitlistRegistration = db.collection("waiting_lists")
+                .document(eventId)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        return;
+                    }
+
+                    int count = 0;
+                    if (snapshot != null && snapshot.exists()) {
+                        java.util.List<String> entries = (java.util.List<String>) snapshot.get("entries");
+                        count = entries != null ? entries.size() : 0;
+                    }
+
+                    tvWaitingList.setText("Live Waitlist: " + count + " entrant" + (count == 1 ? "" : "s"));
+                });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (waitlistRegistration != null) {
+            waitlistRegistration.remove();
+            waitlistRegistration = null;
+        }
     }
 
     /**
@@ -543,7 +569,6 @@ public class EventDetails extends AppCompatActivity {
         btnInfo.setVisibility(View.VISIBLE);
 
         // Check if opened from Admin Dashboard
-        boolean isAdminView = getIntent().getBooleanExtra("IS_ADMIN_VIEW", false);
         if (isAdminView) {
             btnJoinList.setVisibility(View.GONE);
             btnLeaveList.setVisibility(View.GONE);

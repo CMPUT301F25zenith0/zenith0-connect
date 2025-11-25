@@ -14,38 +14,49 @@
         app:title="Admin List"
         app:titleTextColor="@color/vision_text_primary"
         app:navigationIcon="@drawable/ic_back_arrow"
+        app:navigationIconTint="@color/f3"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <LinearLayout
-        android:id="@+id/search_container"
-        android:layout_width="match_parent"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/search_layout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="8dp"
-        android:gravity="center_vertical"
-        android:background="@android:color/transparent"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="12dp"
+        android:visibility="gone"
+        app:boxBackgroundColor="@color/vision_card_bg"
+        app:boxCornerRadiusBottomEnd="16dp"
+        app:boxCornerRadiusBottomStart="16dp"
+        app:boxCornerRadiusTopEnd="16dp"
+        app:boxCornerRadiusTopStart="16dp"
+        app:boxStrokeColor="@color/vision_accent_blue"
+        app:endIconMode="clear_text"
+        app:endIconTint="@color/vision_text_secondary"
+        app:startIconDrawable="@drawable/ic_search"
+        app:startIconTint="@color/vision_text_secondary"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <EditText
-            android:id="@+id/et_search"
-            android:layout_width="0dp"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/search_input"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:padding="12dp"
-            android:hint="Search by name or ID..."
-            android:textColorHint="@color/vision_text_secondary"
-            android:textColor="@color/search_text"
-            android:background="@drawable/rounded_search_background"
+            android:hint="Search"
+            android:imeOptions="actionDone"
             android:inputType="text"
-            android:imeOptions="actionSearch"
-            android:singleLine="true"/>
+            android:maxLines="1"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:textColor="@color/vision_text_primary"
+            android:textColorHint="@color/vision_text_hint"/>
 
-    </LinearLayout>
+    </com.google.android.material.textfield.TextInputLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="0dp"
@@ -53,7 +64,7 @@
         android:paddingHorizontal="16dp"
         android:paddingTop="8dp"
         android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/search_container"
+        app:layout_constraintTop_toBottomOf="@id/search_layout"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
