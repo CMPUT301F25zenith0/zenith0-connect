@@ -109,15 +109,6 @@ public class User {
     @PropertyName("mobile_num")
     public void setPhone(String phone) { this.phone = phone; }
 
-    @com.google.firebase.firestore.PropertyName("mobile_num")
-    public String getPhone() {
-        return phone;
-    }
-
-    @com.google.firebase.firestore.PropertyName("mobile_num")
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
 
     @com.google.firebase.firestore.PropertyName("profile_image_url")
     public String getProfileImageUrl() {
