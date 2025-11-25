@@ -31,6 +31,7 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView tvEmptyState;
     private EditText etSearch;
+    private View searchLayout;
     private AdminProfileAdapter adapter;
     private FirebaseFirestore db;
     private List<User> allOrganizers = new ArrayList<>(); // Stores the original, full list
@@ -64,7 +65,15 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recycler_view);
         progressBar = findViewById(R.id.progress_bar);
         tvEmptyState = findViewById(R.id.tv_empty_state);
-        etSearch = findViewById(R.id.et_search);
+
+
+        searchLayout = findViewById(R.id.search_layout);
+
+        etSearch = findViewById(R.id.search_input);
+
+        if (searchLayout != null) {
+            searchLayout.setVisibility(View.VISIBLE);
+        }
     }
 
     private void setupRecyclerView() {
