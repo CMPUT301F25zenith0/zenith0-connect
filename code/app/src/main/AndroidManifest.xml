@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- for notifications -->
+
+    <!-- Internet and Notifications -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
+    <!-- Camera and Media -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:name=".ConnectApplication"
@@ -19,7 +25,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Connect">
 
-
         <!-- ✅ Start the app with MainActivity -->
         <activity
             android:name=".activities.MainActivity"
@@ -30,19 +35,50 @@
             </intent-filter>
         </activity>
 
-        <!-- Other activities (no launcher intent-filter) -->
-        <activity android:name=".activities.LoginActivity" />
-        <activity android:name=".activities.EventListActivity" />
-        <activity android:name=".activities.EventDetails" />
-        <activity android:name=".activities.ProfileActivity" />
-        <activity android:name=".activities.CreateAcctActivity" />
-        <activity android:name=".activities.OrganizerActivity" />
-        <activity android:name=".activities.OrganizerMessagesActivity" />
-        <activity android:name=".activities.AdminDashboardActivity" />
+        <!-- Authentication Activities -->
+        <activity
+            android:name=".activities.LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.CreateAcctActivity"
+            android:exported="false" />
 
-        <activity android:name=".activities.QRCodeScanner" />
+        <!-- Event Activities -->
+        <activity
+            android:name=".activities.EventListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.EventDetails"
+            android:exported="false" />
         <activity
             android:name=".activities.CreateEvent"
+            android:exported="false" />
+
+        <!-- Organizer Activities -->
+        <activity
+            android:name=".activities.OrganizerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.OrganizerMessagesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.ManageDrawActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Connect" />
+
+        <!-- Admin Activities -->
+        <activity
+            android:name=".activities.AdminDashboardActivity"
+            android:exported="false" />
+
+        <!-- User Profile -->
+        <activity
+            android:name=".activities.ProfileActivity"
+            android:exported="false" />
+
+        <!-- QR Code Scanner -->
+        <activity
+            android:name=".activities.QRCodeScanner"
             android:exported="false" />
 
         <!-- Notifications for Entrant -->
@@ -51,21 +87,14 @@
             android:exported="false"
             android:label="My Notifications"/>
 
+        <!-- Services -->
+        <!-- Notification Listener Service -->
         <service
             android:name=".network.NotificationListenerService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync"/>
-        <activity
-            android:name=".activities.ManageDrawActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Connect" />
-    </application>
 
-    <!-- Permission to Use Camera -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    </application>
 
 </manifest>

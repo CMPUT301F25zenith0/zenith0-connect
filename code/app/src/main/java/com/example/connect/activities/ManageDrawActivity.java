@@ -244,15 +244,24 @@ public class ManageDrawActivity extends AppCompatActivity {
         // Set event name
         tvEventName.setText(currentEvent.getName() != null ? currentEvent.getName() : "Unknown Event");
 
-        // Set status
+        // Set status with draw info
         String status = determineEventStatus(currentEvent);
+        if (currentEvent.isDrawCompleted()) {
+            status = "Draw Completed ✓";
+            // Format draw date if available
+            if (currentEvent.getDrawDate() != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
+                Date drawDate = currentEvent.getDrawDate().toDate();
+                status += " (" + sdf.format(drawDate) + ")";
+            }
+        }
         tvStatus.setText("Status: " + status);
 
         // Set capacity (draw_capacity from Firestore)
         int capacity = currentEvent.getDrawCapacity();
         tvCapacity.setText("👥 Capacity: " + capacity);
 
-        // Set waiting count to 0 initially (will be updated after loading entries)
+        // Set waiting count to 0 initially (will be updated after loading)
         tvWaiting.setText("👥 Waiting: 0");
 
         // Set location
@@ -323,7 +332,7 @@ public class ManageDrawActivity extends AppCompatActivity {
                         // Fetch user data for this entry
                         String userId = entry.getUserId();
                         if (userId != null && !userId.isEmpty()) {
-                            db.collection("users")
+                            db.collection("accounts")
                                     .document(userId)
                                     .get()
                                     .addOnSuccessListener(userDoc -> {
@@ -419,6 +428,12 @@ public class ManageDrawActivity extends AppCompatActivity {
         // Update waiting count display
         tvWaiting.setText("👥 Waiting: " + waitingCount);
 
+        // Update tab labels to show counts
+        btnTabWaiting.setText("Waiting (" + waitingCount + ")");
+        btnTabSelected.setText("Selected (" + selectedCount + ")");
+        btnTabEnrolled.setText("Enrolled (" + enrolledCount + ")");
+        btnTabCanceled.setText("Canceled (" + canceledCount + ")");
+
         // Log all counts for debugging
         Log.d(TAG, "Status counts - Waiting: " + waitingCount +
                 ", Selected: " + selectedCount +
@@ -484,11 +499,15 @@ public class ManageDrawActivity extends AppCompatActivity {
         // Update adapter
         adapter.submitList(new ArrayList<>(filteredEntries));
     }
+    private boolean isFirstLoad = true;
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh entries when returning to this activity
-        loadWaitingListEntries();
+        // Only refresh if not first load
+        if (!isFirstLoad) {
+            loadWaitingListEntries();
+        }
+        isFirstLoad = false;
     }
 }
