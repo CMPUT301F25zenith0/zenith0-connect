@@ -1,7 +1,10 @@
 package com.example.connect.models;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.PropertyName;
+
+import java.util.Objects;
 
 /**
  * Represents a single event in the Event Planner system.
@@ -34,6 +37,9 @@ public class Event {
     @PropertyName("imageUrl")
     private String imageUrl;
 
+    @PropertyName("image_base64")
+    private String imageBase64;
+
     private String category;
 
     @PropertyName("reg_start")
@@ -44,6 +50,22 @@ public class Event {
 
     @PropertyName("waiting_list")
     private Long waitingListCount;
+
+    @PropertyName("draw_capacity")
+    private int drawCapacity;
+
+    @PropertyName("end_time")
+    private String endTime;
+
+    // NEW: Lottery-related fields
+    @PropertyName("draw_completed")
+    private boolean drawCompleted = false;
+
+    @PropertyName("draw_date")
+    private Timestamp drawDate;
+
+    @PropertyName("selected_count")
+    private int selectedCount = 0;
 
     /** Default constructor required for Firestore */
     public Event() {
@@ -57,6 +79,8 @@ public class Event {
         this.maxParticipants = maxParticipants;
         this.currentParticipants = 0;
         this.price = "Free";
+        this.drawCompleted = false;
+        this.selectedCount = 0;
     }
 
     // Getters and setters
@@ -105,6 +129,12 @@ public class Event {
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
+    @PropertyName("image_base64")
+    public String getImageBase64() { return imageBase64; }
+
+    @PropertyName("image_base64")
+    public void setImageBase64(String imageBase64) { this.imageBase64 = imageBase64; }
+
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
@@ -126,10 +156,76 @@ public class Event {
     @PropertyName("waiting_list")
     public void setWaitingListCount(Long waitingListCount) { this.waitingListCount = waitingListCount; }
 
+    @PropertyName("draw_capacity")
+    public int getDrawCapacity() { return drawCapacity; }
+
+    @PropertyName("draw_capacity")
+    public void setDrawCapacity(int drawCapacity) { this.drawCapacity = drawCapacity; }
+
+    @PropertyName("end_time")
+    public String getEndTime() { return endTime; }
+
+    @PropertyName("end_time")
+    public void setEndTime(String endTime) { this.endTime = endTime; }
+
+    // NEW: Lottery getters and setters
+    @PropertyName("draw_completed")
+    public boolean isDrawCompleted() { return drawCompleted; }
+
+    @PropertyName("draw_completed")
+    public void setDrawCompleted(boolean drawCompleted) { this.drawCompleted = drawCompleted; }
+
+    @PropertyName("draw_date")
+    public Timestamp getDrawDate() { return drawDate; }
+
+    @PropertyName("draw_date")
+    public void setDrawDate(Timestamp drawDate) { this.drawDate = drawDate; }
+
+    @PropertyName("selected_count")
+    public int getSelectedCount() { return selectedCount; }
+
+    @PropertyName("selected_count")
+    public void setSelectedCount(int selectedCount) { this.selectedCount = selectedCount; }
+
     /**
      * Check if event is at capacity
      */
     public boolean isFull() {
         return currentParticipants >= maxParticipants;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Event event = (Event) o;
+        return maxParticipants == event.maxParticipants &&
+                currentParticipants == event.currentParticipants &&
+                drawCapacity == event.drawCapacity &&
+                drawCompleted == event.drawCompleted &&
+                selectedCount == event.selectedCount &&
+                Objects.equals(eventId, event.eventId) &&
+                Objects.equals(name, event.name) &&
+                Objects.equals(description, event.description) &&
+                Objects.equals(dateTime, event.dateTime) &&
+                Objects.equals(location, event.location) &&
+                Objects.equals(price, event.price) &&
+                Objects.equals(organizerId, event.organizerId) &&
+                Objects.equals(imageUrl, event.imageUrl) &&
+                Objects.equals(imageBase64, event.imageBase64) &&
+                Objects.equals(category, event.category) &&
+                Objects.equals(regStart, event.regStart) &&
+                Objects.equals(regStop, event.regStop) &&
+                Objects.equals(endTime, event.endTime) &&
+                Objects.equals(drawDate, event.drawDate) &&
+                Objects.equals(waitingListCount, event.waitingListCount);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(eventId, name, description, dateTime, location, price,
+                maxParticipants, currentParticipants, organizerId, imageUrl, imageBase64,
+                category, regStart, regStop, waitingListCount, drawCapacity, endTime,
+                drawCompleted, drawDate, selectedCount);
     }
 }
