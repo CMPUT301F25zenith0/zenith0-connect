@@ -257,8 +257,32 @@ public class CreateEvent extends AppCompatActivity {
 
         // Bottom Buttons
         btnSaveDraft.setOnClickListener(v -> saveDraft());
-        btnPublishQR.setOnClickListener(v -> publishAndGenerateQR());
+        btnPublishQR.setOnClickListener(v -> {
+            publishAndGenerateQR();
+            updateUserStatus();
+        });
     }
+
+    private void updateUserStatus() {
+
+        // Ensure currentUserId is not null
+        if (currentUserId == null) {
+            Log.e("UpdateStatus", "No current user ID found!");
+            return;
+        }
+
+        // Update the field "organizer" to true
+        db.collection("accounts")
+                .document(currentUserId)
+                .update("organizer", true)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("UpdateStatus", "User set as organizer");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("UpdateStatus", "Failed to update organizer", e);
+                });
+    }
+
 
     /**
      * Launches the system image picker to select an event image.

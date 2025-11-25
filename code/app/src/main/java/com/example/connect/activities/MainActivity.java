@@ -11,6 +11,7 @@ import android.os.Bundle;
 import com.example.connect.network.NotificationListenerService;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -92,10 +93,10 @@ public class MainActivity extends AppCompatActivity {
 
         // If Remember Me is enabled and user is logged in, auto-login
         if (rememberMe && currentUser != null) {
-            Log.d("MainActivity", "Auto-login enabled, checking admin status");
+            Log.d("MainActivity", "Auto-login enabled, checking user status");
 
-            // Check admin status before navigating
-            checkAdminStatus(currentUser);
+            // Check admin and disabled status before navigating
+            checkUserStatus(currentUser);
         } else {
             // Show MainActivity screen normally
             setContentView(R.layout.open_screen);
@@ -106,18 +107,41 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Checks if the authenticated user has admin privileges.
-     * Retrieves the user document from Firestore and checks for the 'admin' attribute.
+     * Checks if the authenticated user has admin privileges and if the account is disabled.
+     * Retrieves the user document from Firestore and checks for the 'admin' and 'disabled' attributes.
+     * If disabled is true, signs user out and shows the main screen.
      * If admin is true, navigates to admin activity. Otherwise, proceeds with regular login.
      *
      * @param user The authenticated FirebaseUser
      */
-    private void checkAdminStatus(FirebaseUser user) {
+    private void checkUserStatus(FirebaseUser user) {
         // Query Firestore for user document
         db.collection("accounts").document(user.getUid())
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
                     if (documentSnapshot.exists()) {
+                        // Check if account is disabled
+                        Boolean isDisabled = documentSnapshot.getBoolean("disabled");
+                        if (isDisabled != null && isDisabled) {
+                            // Account is disabled, sign out and show main screen
+                            Log.d("MainActivity", "Disabled account detected! UID: " + user.getUid());
+                            mAuth.signOut();
+
+                            // Clear Remember Me preference
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putBoolean(KEY_REMEMBER_ME, false);
+                            editor.apply();
+
+                            // Show main screen
+                            setContentView(R.layout.open_screen);
+                            setupMainActivityUI();
+
+                            Toast.makeText(MainActivity.this,
+                                    "Your account has been disabled by an administrator.",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
+
                         // Check if admin field exists and is true
                         Boolean isAdmin = documentSnapshot.getBoolean("admin");
 
@@ -137,8 +161,19 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         // User document doesn't exist, show main screen
                         Log.e("MainActivity", "User document not found in Firestore");
+                        mAuth.signOut();
+
+                        // Clear Remember Me preference
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putBoolean(KEY_REMEMBER_ME, false);
+                        editor.apply();
+
                         setContentView(R.layout.open_screen);
                         setupMainActivityUI();
+
+                        Toast.makeText(MainActivity.this,
+                                "Account not found. Please log in again.",
+                                Toast.LENGTH_SHORT).show();
                     }
                 })
                 .addOnFailureListener(e -> {
