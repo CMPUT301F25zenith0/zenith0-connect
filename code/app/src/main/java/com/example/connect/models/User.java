@@ -109,11 +109,33 @@ public class User {
     @PropertyName("mobile_num")
     public void setPhone(String phone) { this.phone = phone; }
 
-    public String getProfileImageUrl() { return profileImageUrl; }
-    public void setProfileImageUrl(String profileImageUrl) { this.profileImageUrl = profileImageUrl; }
+    @com.google.firebase.firestore.PropertyName("mobile_num")
+    public String getPhone() {
+        return phone;
+    }
 
-    public boolean isRememberMe() { return rememberMe; }
-    public void setRememberMe(boolean rememberMe) { this.rememberMe = rememberMe; }
+    @com.google.firebase.firestore.PropertyName("mobile_num")
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    @com.google.firebase.firestore.PropertyName("profile_image_url")
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    @com.google.firebase.firestore.PropertyName("profile_image_url")
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public boolean isRememberMe() {
+        return rememberMe;
+    }
+
+    public void setRememberMe(boolean rememberMe) {
+        this.rememberMe = rememberMe;
+    }
 
     @PropertyName("is_active")
     public boolean isActive() { return isActive; }

@@ -21,7 +21,9 @@ import java.util.List;
 
 /**
  * Activity for the Admin Dashboard.
- * Provides access to administrative features like managing events, profiles, images, and organizers.
+ * Provides access to administrative features like managing events, profiles,
+ * images, and organizers.
+ * 
  * @author Vansh Taneja
  * @version 1.0
  */
@@ -42,7 +44,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     // Firebase
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    
+
     // Active users tracking
     private int activeUsersCount = 0;
 
@@ -77,7 +79,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvStatSystem = findViewById(R.id.tv_stat_system);
     }
 
-    // This Method updates data on the starting dashboard screen | E.g, Total User and Total Active Users
+    // This Method updates data on the starting dashboard screen | E.g, Total User
+    // and Total Active Users
     private void loadDashboardStats() {
         // TODO - Implement System stat update
 
@@ -132,28 +135,23 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         cardManageEvents.setOnClickListener(v -> {
-            Toast.makeText(this, "Accessing Event Protocol...", Toast.LENGTH_SHORT).show(); // Modified
-            // TODO: Navigate to AdminEventListActivity
+            startActivity(new Intent(this, AdminEventListActivity.class));
         });
 
         cardManageProfiles.setOnClickListener(v -> {
-            Toast.makeText(this, "Accessing User Database...", Toast.LENGTH_SHORT).show(); // Modified
-            // TODO: Navigate to AdminProfileListActivity
+            startActivity(new Intent(this, AdminProfileListActivity.class));
         });
 
         cardManageImages.setOnClickListener(v -> {
-            Toast.makeText(this, "Accessing Media Archives...", Toast.LENGTH_SHORT).show(); // Modified
-            // TODO: Navigate to AdminImageListActivity
+            startActivity(new Intent(this, AdminImageListActivity.class));
         });
 
         cardManageOrganizers.setOnClickListener(v -> {
-            Toast.makeText(this, "Accessing Organizer Controls...", Toast.LENGTH_SHORT).show(); // Modified
-            // TODO: Navigate to AdminOrganizerListActivity
+            startActivity(new Intent(this, AdminOrganizerListActivity.class));
         });
 
-        cardNotificationLogs.setOnClickListener(v -> { // Modified
-            Toast.makeText(this, "Accessing Comm Logs...", Toast.LENGTH_SHORT).show(); // Modified
-            // TODO: Navigate to AdminNotificationLogActivity
+        cardNotificationLogs.setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminNotificationLogActivity.class));
         });
 
         btnLogout.setOnClickListener(v -> {
@@ -166,7 +164,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
             finish();
         });
     }
-    
+
     /**
      * Called when the activity is resumed.
      * Marks the admin user as active and refreshes the dashboard data.
@@ -179,11 +177,13 @@ public class AdminDashboardActivity extends AppCompatActivity {
         // Refresh dashboard data
         loadDashboardStats();
     }
-    
+
     /**
      * Called when the activity is paused (user navigates away).
-     * Note: We don't mark users inactive here because they might be navigating to another activity.
-     * The Application class handles marking users inactive when the app goes to background.
+     * Note: We don't mark users inactive here because they might be navigating to
+     * another activity.
+     * The Application class handles marking users inactive when the app goes to
+     * background.
      */
     @Override
     protected void onPause() {
@@ -191,11 +191,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     }
 
-
-
-    
     /**
      * Gets the list of currently active users from Firestore (excluding admins).
+     * 
      * @param callback Callback to receive the list of active user IDs
      */
     public void getActiveUsers(ActiveUsersCallback callback) {
@@ -203,23 +201,23 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<String> activeUserIds = new ArrayList<>();
-                    
+
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         // Skip admin accounts
                         Boolean isAdmin = document.getBoolean("admin");
                         if (isAdmin != null && isAdmin) {
                             continue;
                         }
-                        
+
                         Boolean isActive = document.getBoolean("is_active");
                         Long lastActive = document.getLong("last_active_timestamp");
-                        
+
                         // Check if user is currently active
                         if (UserActivityTracker.isUserCurrentlyActive(isActive, lastActive)) {
                             activeUserIds.add(document.getId());
                         }
                     }
-                    
+
                     callback.onSuccess(activeUserIds);
                     Log.d("AdminDashboard", "Found " + activeUserIds.size() + " active users");
                 })
@@ -228,17 +226,19 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     callback.onFailure(e.getMessage());
                 });
     }
-    
+
     /**
      * Callback interface for active users query results.
      */
     public interface ActiveUsersCallback {
         void onSuccess(List<String> activeUserIds);
+
         void onFailure(String error);
     }
 
     /**
      * Formats a number with commas for better readability (e.g., 1204 -> "1,204")
+     * 
      * @param number The number to format
      * @return Formatted string with commas
      */
