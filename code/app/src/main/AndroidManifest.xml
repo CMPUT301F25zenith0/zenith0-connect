@@ -56,7 +56,10 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync"/>
-
+        <activity
+            android:name=".activities.ManageDrawActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Connect" />
     </application>
 
     <!-- Permission to Use Camera -->

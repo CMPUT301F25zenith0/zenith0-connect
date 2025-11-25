@@ -24,7 +24,7 @@ import com.google.android.material.button.MaterialButton;
  * Handles event display with edit, details, manage draw, and export CSV actions
  *
  * @author Zenith Team
- * @version 1.0
+ * @version 2.0
  */
 public class OrganizerEventAdapter extends ListAdapter<Event, OrganizerEventAdapter.OrganizerEventViewHolder> {
 
@@ -128,7 +128,7 @@ public class OrganizerEventAdapter extends ListAdapter<Event, OrganizerEventAdap
                     Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
                     if (bmp != null) {
                         ivEventImage.setImageBitmap(bmp);
-                        ivAddIcon.setVisibility(View.GONE); // Hide add icon when image exists
+                        ivAddIcon.setVisibility(View.GONE);
                     } else {
                         ivEventImage.setImageResource(android.R.drawable.ic_menu_gallery);
                         ivAddIcon.setVisibility(View.VISIBLE);
@@ -142,6 +142,12 @@ public class OrganizerEventAdapter extends ListAdapter<Event, OrganizerEventAdap
                 ivEventImage.setImageResource(android.R.drawable.ic_menu_gallery);
                 ivAddIcon.setVisibility(View.VISIBLE);
             }
+
+            // Clear old listeners to prevent conflicts
+            btnEditEvent.setOnClickListener(null);
+            btnDetails.setOnClickListener(null);
+            btnManageDraw.setOnClickListener(null);
+            btnExportCSV.setOnClickListener(null);
 
             // Set up button click listeners
             btnEditEvent.setOnClickListener(v -> {
@@ -189,17 +195,12 @@ public class OrganizerEventAdapter extends ListAdapter<Event, OrganizerEventAdap
          * @return Status string (Open, Closed, Draft, etc.)
          */
         private String determineEventStatus(Event event) {
-            // Check if event has status field
-            // For now, return based on registration dates
             String regStart = event.getRegStart();
             String regStop = event.getRegStop();
 
             if (regStart == null || regStart.isEmpty()) {
                 return "Draft";
             }
-
-            // You can add more sophisticated date checking here
-            // For now, return a simple status
             return "Open";
         }
     }

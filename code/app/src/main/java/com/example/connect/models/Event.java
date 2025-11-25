@@ -36,7 +36,7 @@ public class Event {
     @PropertyName("imageUrl")
     private String imageUrl;
 
-    @PropertyName("image_base64")  // FIXED: Changed from "imageBase64"
+    @PropertyName("image_base64")
     private String imageBase64;
 
     private String category;
@@ -49,6 +49,13 @@ public class Event {
 
     @PropertyName("waiting_list")
     private Long waitingListCount;
+
+    // ADD THESE NEW FIELDS
+    @PropertyName("draw_capacity")
+    private int drawCapacity;
+
+    @PropertyName("end_time")
+    private String endTime;
 
     /** Default constructor required for Firestore */
     public Event() {
@@ -110,10 +117,10 @@ public class Event {
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    @PropertyName("image_base64")  // FIXED: Changed from "imageBase64"
+    @PropertyName("image_base64")
     public String getImageBase64() { return imageBase64; }
 
-    @PropertyName("image_base64")  // FIXED: Changed from "imageBase64"
+    @PropertyName("image_base64")
     public void setImageBase64(String imageBase64) { this.imageBase64 = imageBase64; }
 
     public String getCategory() { return category; }
@@ -137,6 +144,19 @@ public class Event {
     @PropertyName("waiting_list")
     public void setWaitingListCount(Long waitingListCount) { this.waitingListCount = waitingListCount; }
 
+    // ADD THESE NEW GETTERS/SETTERS
+    @PropertyName("draw_capacity")
+    public int getDrawCapacity() { return drawCapacity; }
+
+    @PropertyName("draw_capacity")
+    public void setDrawCapacity(int drawCapacity) { this.drawCapacity = drawCapacity; }
+
+    @PropertyName("end_time")
+    public String getEndTime() { return endTime; }
+
+    @PropertyName("end_time")
+    public void setEndTime(String endTime) { this.endTime = endTime; }
+
     /**
      * Check if event is at capacity
      */
@@ -151,6 +171,7 @@ public class Event {
         Event event = (Event) o;
         return maxParticipants == event.maxParticipants &&
                 currentParticipants == event.currentParticipants &&
+                drawCapacity == event.drawCapacity &&
                 Objects.equals(eventId, event.eventId) &&
                 Objects.equals(name, event.name) &&
                 Objects.equals(description, event.description) &&
@@ -163,6 +184,7 @@ public class Event {
                 Objects.equals(category, event.category) &&
                 Objects.equals(regStart, event.regStart) &&
                 Objects.equals(regStop, event.regStop) &&
+                Objects.equals(endTime, event.endTime) &&
                 Objects.equals(waitingListCount, event.waitingListCount);
     }
 
@@ -170,6 +192,6 @@ public class Event {
     public int hashCode() {
         return Objects.hash(eventId, name, description, dateTime, location, price,
                 maxParticipants, currentParticipants, organizerId, imageUrl, imageBase64,
-                category, regStart, regStop, waitingListCount);
+                category, regStart, regStop, waitingListCount, drawCapacity, endTime);
     }
 }

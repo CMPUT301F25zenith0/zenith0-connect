@@ -62,22 +62,6 @@ public class OrganizerActivity extends AppCompatActivity {
     private FirebaseAuth auth;
     private String currentUserId;
 
-    /**
-     * Called when the activity is first created.
-     * <p>
-     * Initializes the organizer dashboard by:
-     * <ol>
-     *   <li>Setting up Firebase</li>
-     *   <li>Setting up all UI components</li>
-     *   <li>Configuring click listeners for navigation and filtering</li>
-     *   <li>Setting up the RecyclerView with adapter</li>
-     *   <li>Loading events from Firestore</li>
-     *   <li>Applying the default "Total Events" filter</li>
-     * </ol>
-     * </p>
-     *
-     * @param savedInstanceState Bundle containing the activity's previously saved state, if any
-     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -106,18 +90,6 @@ public class OrganizerActivity extends AppCompatActivity {
         selectFilter(btnTotalEvents, "all");
     }
 
-    /**
-     * Initializes all view components from the layout.
-     * <p>
-     * Finds and assigns references to:
-     * <ul>
-     *   <li>Action buttons (new event)</li>
-     *   <li>Filter tab buttons</li>
-     *   <li>RecyclerView for events</li>
-     *   <li>Bottom navigation buttons</li>
-     * </ul>
-     * </p>
-     */
     private void initializeViews() {
         // Top buttons
         btnNewEvent = findViewById(R.id.btnNewEvent);
@@ -138,9 +110,6 @@ public class OrganizerActivity extends AppCompatActivity {
         btnNavProfile = findViewById(R.id.btnNavProfile);
     }
 
-    /**
-     * Configures click listeners for all interactive UI components.
-     */
     private void setupClickListeners() {
         // Navigate to CreateEvent
         btnNewEvent.setOnClickListener(v -> {
@@ -154,10 +123,16 @@ public class OrganizerActivity extends AppCompatActivity {
         btnClosed.setOnClickListener(v -> selectFilter(btnClosed, "closed"));
         btnDrawn.setOnClickListener(v -> selectFilter(btnDrawn, "drawn"));
 
-        // Bottom navigation
         btnNavDashboard.setOnClickListener(v -> {
-            // Already on dashboard
-            Toast.makeText(this, "Already on Dashboard", Toast.LENGTH_SHORT).show();
+            // Already on dashboard - just refresh
+            loadOrganizerEvents();
+            selectFilter(btnTotalEvents, "all");
+
+            if (recyclerViewEvents != null && allEvents.size() > 0) {
+                recyclerViewEvents.smoothScrollToPosition(0);
+            }
+
+            Toast.makeText(this, "Dashboard refreshed", Toast.LENGTH_SHORT).show();
         });
 
         btnNavMessage.setOnClickListener(v -> {
@@ -173,19 +148,11 @@ public class OrganizerActivity extends AppCompatActivity {
 
         btnNavProfile.setOnClickListener(v -> {
             Intent profileIntent = new Intent(OrganizerActivity.this, ProfileActivity.class);
-            profileIntent.putExtra("from_organizer", true); // Mark that it's opened from organizer view
+            profileIntent.putExtra("from_organizer", true);
             startActivity(profileIntent);
-            // Don't finish() here - let user navigate back if needed
         });
     }
 
-    /**
-     * Configures the RecyclerView for displaying events with OrganizerEventAdapter.
-     * <p>
-     * Sets up a LinearLayoutManager for vertical scrolling of events and
-     * connects the adapter with event action listeners.
-     * </p>
-     */
     private void setupRecyclerView() {
         // Set layout manager
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
@@ -213,14 +180,9 @@ public class OrganizerActivity extends AppCompatActivity {
             @Override
             public void onManageDraw(Event event) {
                 // Navigate to manage draw activity
-                Toast.makeText(OrganizerActivity.this,
-                        "Manage Draw: " + event.getName(),
-                        Toast.LENGTH_SHORT).show();
-
-                // TODO: Implement manage draw functionality
-                // Intent intent = new Intent(OrganizerActivity.this, ManageDrawActivity.class);
-                // intent.putExtra("EVENT_ID", event.getEventId());
-                // startActivity(intent);
+                Intent intent = new Intent(OrganizerActivity.this, ManageDrawActivity.class);
+                intent.putExtra("EVENT_ID", event.getEventId());
+                startActivity(intent);
             }
 
             @Override
@@ -241,18 +203,12 @@ public class OrganizerActivity extends AppCompatActivity {
                         Toast.LENGTH_SHORT).show();
 
                 // TODO: Implement image selection/update
-                // You could navigate to CreateEvent in edit mode
-                // or create a separate image update activity
             }
         });
 
         recyclerViewEvents.setAdapter(adapter);
     }
 
-    /**
-     * Load all events created by the current organizer from Firestore.
-     * Queries events collection filtering by organizer_id.
-     */
     private void loadOrganizerEvents() {
         db.collection("events")
                 .whereEqualTo("organizer_id", currentUserId)
@@ -284,21 +240,6 @@ public class OrganizerActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * Applies a filter to the event list and updates the UI accordingly.
-     * <p>
-     * This method:
-     * <ol>
-     *   <li>Resets all filter buttons to default appearance</li>
-     *   <li>Highlights the selected filter button</li>
-     *   <li>Updates the current filter state</li>
-     *   <li>Triggers event filtering based on the selection</li>
-     * </ol>
-     * </p>
-     *
-     * @param selectedButton The MaterialButton that was clicked
-     * @param filter The filter type to apply ("all", "open", "closed", or "drawn")
-     */
     private void selectFilter(MaterialButton selectedButton, String filter) {
         // Reset all buttons to default state
         resetFilterButtons();
@@ -314,23 +255,10 @@ public class OrganizerActivity extends AppCompatActivity {
         filterEvents(filter);
     }
 
-    /**
-     * Resets all filter buttons to their default appearance.
-     * <p>
-     * Sets all filter buttons (Total Events, Open, Closed, Drawn) to:
-     * <ul>
-     *   <li>Transparent background</li>
-     *   <li>Default text color</li>
-     *   <li>Outlined style (via XML)</li>
-     * </ul>
-     * This method is called before highlighting the newly selected filter.
-     * </p>
-     */
     private void resetFilterButtons() {
         // Reset all filter buttons to default outlined style
         int defaultTextColor = getResources().getColor(R.color.filter_text_default, null);
 
-        // Note: For MaterialButton with outlined style, we set strokeColor instead of background
         btnTotalEvents.setBackgroundColor(android.graphics.Color.TRANSPARENT);
         btnTotalEvents.setTextColor(defaultTextColor);
 
@@ -344,32 +272,16 @@ public class OrganizerActivity extends AppCompatActivity {
         btnDrawn.setTextColor(defaultTextColor);
     }
 
-    /**
-     * Filters the displayed events based on the specified filter type.
-     * <p>
-     * Filter types and their meanings:
-     * <ul>
-     *   <li><b>all</b> - Shows all events regardless of status</li>
-     *   <li><b>open</b> - Shows only events that are currently accepting registrations</li>
-     *   <li><b>closed</b> - Shows only events that are no longer accepting registrations</li>
-     *   <li><b>drawn</b> - Shows only events where lottery/selection has been performed</li>
-     * </ul>
-     * </p>
-     *
-     * @param filter The filter type
-     */
     private void filterEvents(String filter) {
         filteredEvents.clear();
 
         switch (filter) {
             case "all":
-                // Load all events
                 filteredEvents.addAll(allEvents);
                 Log.d(TAG, "Showing all events: " + filteredEvents.size());
                 break;
 
             case "open":
-                // Load only open events (registration is currently open)
                 for (Event event : allEvents) {
                     if (isEventOpen(event)) {
                         filteredEvents.add(event);
@@ -379,7 +291,6 @@ public class OrganizerActivity extends AppCompatActivity {
                 break;
 
             case "closed":
-                // Load only closed events (registration has closed)
                 for (Event event : allEvents) {
                     if (isEventClosed(event)) {
                         filteredEvents.add(event);
@@ -389,7 +300,6 @@ public class OrganizerActivity extends AppCompatActivity {
                 break;
 
             case "drawn":
-                // Load only drawn events (lottery has been performed)
                 for (Event event : allEvents) {
                     if (isEventDrawn(event)) {
                         filteredEvents.add(event);
@@ -403,62 +313,31 @@ public class OrganizerActivity extends AppCompatActivity {
         adapter.submitList(new ArrayList<>(filteredEvents));
     }
 
-    /**
-     * Check if event is currently open for registration.
-     *
-     * @param event The event to check
-     * @return true if event is open, false otherwise
-     */
     private boolean isEventOpen(Event event) {
-        // Event is open if it has registration dates set
         String regStart = event.getRegStart();
         String regStop = event.getRegStop();
 
-        // Basic check - event has registration window defined
         boolean hasRegWindow = regStart != null && !regStart.isEmpty() &&
                 regStop != null && !regStop.isEmpty();
 
-        // TODO: Add date comparison logic to check if current date is within registration window
+        // TODO: Add date comparison logic
         return hasRegWindow;
     }
 
-    /**
-     * Check if event registration has closed.
-     *
-     * @param event The event to check
-     * @return true if event is closed, false otherwise
-     */
     private boolean isEventClosed(Event event) {
         // TODO: Implement proper logic based on registration end date
-        // Check if current date is after reg_stop date
         return false;
     }
 
-    /**
-     * Check if event lottery has been drawn.
-     *
-     * @param event The event to check
-     * @return true if lottery drawn, false otherwise
-     */
     private boolean isEventDrawn(Event event) {
         // TODO: Implement proper logic based on draw status field
-        // You may need to add a "draw_status" field to your Event model
         return false;
     }
 
-    /**
-     * Called when the activity is resumed after being paused.
-     * <p>
-     * Refreshes the event list with the currently active filter to ensure
-     * the displayed data is up-to-date when the organizer returns to the dashboard.
-     * This is especially important after editing an event.
-     * </p>
-     */
     @Override
     protected void onResume() {
         super.onResume();
         // Refresh event list when returning to this activity
-        // This ensures we see any updates made in CreateEvent
         loadOrganizerEvents();
     }
 }

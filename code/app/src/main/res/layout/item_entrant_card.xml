@@ -46,43 +46,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center">
-
-            <Button
-                android:id="@+id/btnDraw"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="Draw"
-                android:textColor="#2C4E4E"
-                android:textSize="12sp"
-                android:backgroundTint="#A5D8D8"
-                android:layout_marginEnd="8dp"
-                app:cornerRadius="20dp" />
-
-            <Button
-                android:id="@+id/btnSelected"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="Selected"
-                android:textColor="#2C4E4E"
-                android:textSize="12sp"
-                android:backgroundTint="#A5D8D8"
-                android:layout_marginEnd="8dp"
-                app:cornerRadius="20dp" />
-
-            <Button
-                android:id="@+id/btnNotify"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="Notify"
-                android:textColor="#2C4E4E"
-                android:textSize="12sp"
-                android:backgroundTint="#A5D8D8"
-                app:cornerRadius="20dp" />
-        </LinearLayout>
+            android:gravity="center"/>
 
     </LinearLayout>
 
