@@ -29,6 +29,7 @@ import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
@@ -733,23 +734,23 @@ public class CreateEvent extends AppCompatActivity {
 
     /**
      * Creates the waiting list structure in Firestore for the published event.
-     * <p>
-     * Creates a document in the "waiting_lists" collection with event ID,
-     * creation timestamp, and total capacity.
-     * </p>
+     * Creates a document in "waiting_lists" collection with event metadata.
+     * The entrants subcollection will be created automatically when first user joins.
      *
      * @param eventId The unique identifier of the event
      */
     private void createWaitingList(String eventId) {
         Map<String, Object> waitingListData = new HashMap<>();
         waitingListData.put("event_id", eventId);
-        waitingListData.put("created_at", System.currentTimeMillis());
+        waitingListData.put("created_at", FieldValue.serverTimestamp());
         waitingListData.put("total_capacity", getWaitingListCapacity());
+        // DON'T add "entries" array - we're using subcollection structure
 
         db.collection("waiting_lists").document(eventId)
                 .set(waitingListData)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Waiting list created for event: " + eventId);
+                    Log.d(TAG, "Waiting list document created for event: " + eventId);
+                    Log.d(TAG, "Entrants subcollection will be created when first user joins");
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error creating waiting list", e);
@@ -863,14 +864,6 @@ public class CreateEvent extends AppCompatActivity {
 
     /**
      * Creates a comprehensive map of event data for Firestore storage.
-     * <p>
-     * Includes all event information: basic details, date/time, capacity limits,
-     * price, status, organizer information, and metadata.
-     * Image URL is added separately during publish.
-     * </p>
-     *
-     * @param isDraft True if saving as draft, false if publishing
-     * @return Map containing all event data ready for Firestore storage
      */
     private Map<String, Object> createEventData(boolean isDraft) {
         Map<String, Object> eventData = new HashMap<>();
@@ -897,19 +890,30 @@ public class CreateEvent extends AppCompatActivity {
             eventData.put("reg_stop", dateTimeFormat.format(registrationCloses.getTime()));
         }
 
-        // Capacity and waiting list
-        String drawCapacity = etDrawCapacity.getText().toString().trim();
-        if (!drawCapacity.isEmpty()) {
+        // ⭐ FIX: Capacity - Parse draw_capacity properly
+        String drawCapacityStr = etDrawCapacity.getText().toString().trim();
+        int drawCapacity = 0;
+        if (!drawCapacityStr.isEmpty()) {
             try {
-                eventData.put("draw_capacity", Integer.parseInt(drawCapacity));
+                // Remove any non-numeric characters and parse
+                String cleanNumber = drawCapacityStr.replaceAll("[^0-9]", "");
+                if (!cleanNumber.isEmpty()) {
+                    drawCapacity = Integer.parseInt(cleanNumber);
+                }
             } catch (NumberFormatException e) {
-                eventData.put("draw_capacity", 0);
+                Log.e(TAG, "Error parsing draw capacity", e);
+                drawCapacity = 0;
             }
-        } else {
-            eventData.put("draw_capacity", 0);
         }
 
-        eventData.put("waiting_list", getWaitingListCapacity());
+        eventData.put("draw_capacity", drawCapacity);
+        Log.d(TAG, "Saving draw_capacity: " + drawCapacity);
+
+        // ⭐ Also set max_participants to same value
+        eventData.put("max_participants", drawCapacity);
+
+        // Waiting list (starts at 0, updated as users join)
+        eventData.put("waiting_list", 0);
 
         // Price
         String price = etPrice.getText().toString().trim();
@@ -929,6 +933,10 @@ public class CreateEvent extends AppCompatActivity {
         // Organizer info
         eventData.put("organizer_id", currentUserId);
         eventData.put("org_name", organizerName != null ? organizerName : "Organizer");
+
+        // ⭐ ADD: Initialize lottery fields
+        eventData.put("draw_completed", false);
+        eventData.put("selected_count", 0);
 
         return eventData;
     }
