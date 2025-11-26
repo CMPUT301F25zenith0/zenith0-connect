@@ -45,7 +45,7 @@ import java.util.Map;
  * registration details.
  * Users can join or leave the event's waiting list from this screen.
  * <p>
- * 
+ *
  * @author Aakansh Chatterjee
  * @version 2.0
  */
@@ -168,21 +168,13 @@ public class EventDetails extends AppCompatActivity {
             return;
         }
 
-        if (!geolocationVerificationEnabled) {
-            pendingDeviceLocation = null;
-            joinWaitingList();
-            return;
-        }
-
-        if (eventGeoPoint == null) {
-            Toast.makeText(this, "Event location not configured for geolocation verification", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
+        // Always try to capture location if permission is available (optional)
         if (hasLocationPermission()) {
             captureLocationAndJoin();
         } else {
-            ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
+            // If no permission, proceed without location (optional feature)
+            pendingDeviceLocation = null;
+            joinWaitingList();
         }
     }
 
@@ -194,7 +186,9 @@ public class EventDetails extends AppCompatActivity {
     @SuppressLint("MissingPermission")
     private void captureLocationAndJoin() {
         if (!hasLocationPermission()) {
-            ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
+            // No permission, proceed without location
+            pendingDeviceLocation = null;
+            joinWaitingList();
             return;
         }
 
@@ -202,60 +196,49 @@ public class EventDetails extends AppCompatActivity {
             fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         }
 
+        // Try to get current location (optional - don't block if it fails)
         fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
                 .addOnSuccessListener(location -> {
                     if (location != null) {
-                        verifyDistanceAndJoin(new GeoPoint(location.getLatitude(), location.getLongitude()));
+                        // Successfully captured location, store it and proceed
+                        pendingDeviceLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
+                        joinWaitingList();
                     } else {
+                        // Try last known location as fallback
                         fetchLastKnownLocationFallback();
                     }
                 })
-                .addOnFailureListener(e -> fetchLastKnownLocationFallback());
+                .addOnFailureListener(e -> {
+                    // Location capture failed, try fallback or proceed without location
+                    fetchLastKnownLocationFallback();
+                });
     }
 
     @SuppressLint("MissingPermission")
     private void fetchLastKnownLocationFallback() {
-        if (!hasLocationPermission()) {
-            Toast.makeText(this, "Location permission required to join the waiting list", Toast.LENGTH_SHORT).show();
+        if (!hasLocationPermission() || fusedLocationClient == null) {
+            // No permission or client not initialized, proceed without location
+            pendingDeviceLocation = null;
+            joinWaitingList();
             return;
         }
 
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(location -> {
                     if (location != null) {
-                        verifyDistanceAndJoin(new GeoPoint(location.getLatitude(), location.getLongitude()));
+                        // Successfully got last known location
+                        pendingDeviceLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
                     } else {
-                        Toast.makeText(this, "Unable to capture device location. Please try again.", Toast.LENGTH_SHORT).show();
+                        // No location available, proceed without it (optional feature)
+                        pendingDeviceLocation = null;
                     }
+                    joinWaitingList();
                 })
-                .addOnFailureListener(e -> Toast.makeText(this, "Unable to capture device location. Please try again.", Toast.LENGTH_SHORT).show());
-    }
-
-    private void verifyDistanceAndJoin(GeoPoint deviceLocationPoint) {
-        if (eventGeoPoint == null) {
-            Toast.makeText(this, "Event location is missing. Unable to verify geolocation.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        float[] results = new float[1];
-        Location.distanceBetween(
-                deviceLocationPoint.getLatitude(), deviceLocationPoint.getLongitude(),
-                eventGeoPoint.getLatitude(), eventGeoPoint.getLongitude(),
-                results
-        );
-
-        double distanceKm = results[0] / 1000.0;
-        if (Double.isNaN(distanceKm)) {
-            Toast.makeText(this, "Unable to calculate distance for geolocation verification", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (distanceKm <= GEO_ALLOWED_RADIUS_KM) {
-            pendingDeviceLocation = deviceLocationPoint;
-            joinWaitingList();
-        } else {
-            Toast.makeText(this, "You must be within 60 km of the event location to join", Toast.LENGTH_LONG).show();
-        }
+                .addOnFailureListener(e -> {
+                    // Location unavailable, proceed without it (optional feature)
+                    pendingDeviceLocation = null;
+                    joinWaitingList();
+                });
     }
 
     /**
@@ -264,7 +247,7 @@ public class EventDetails extends AppCompatActivity {
      * location,
      * price, registration window, and waiting list count.
      * <p>
-     * 
+     *
      * @param eventId The unique identifier of the event to load
      */
     private void loadEventDetails(String eventId) {
@@ -328,7 +311,7 @@ public class EventDetails extends AppCompatActivity {
      * data.
      * Also handles transition from loading state to content display.
      * <p>
-     * 
+     *
      * @param eventName          The name/title of the event
      * @param organizationName   The name of the organizing entity
      * @param dateTime           The formatted date and time of the event
@@ -405,13 +388,11 @@ public class EventDetails extends AppCompatActivity {
             }
 
             if (granted) {
-                if (geolocationVerificationEnabled) {
-                    captureLocationAndJoin();
-                } else {
-                    joinWaitingList();
-                }
+                captureLocationAndJoin();
             } else {
-                Toast.makeText(this, "Location permission is required to join the waiting list", Toast.LENGTH_SHORT).show();
+                // Permission denied, proceed without location (optional feature)
+                pendingDeviceLocation = null;
+                joinWaitingList();
             }
         }
     }
@@ -422,7 +403,7 @@ public class EventDetails extends AppCompatActivity {
      * <p>
      * Format: "hh:mm a, MMM dd, yyyy" (e.g., "05:00 PM, Oct 01, 2025")
      * <p>
-     * 
+     *
      * @param dateTimeObj The date/time object to format (can be Date, Timestamp, or
      *                    String)
      * @return A formatted date/time string, or "Date & Time" if the object is null
@@ -482,11 +463,6 @@ public class EventDetails extends AppCompatActivity {
     private void joinWaitingList() {
         if (eventId == null)
             return;
-
-        if (geolocationVerificationEnabled && pendingDeviceLocation == null) {
-            Toast.makeText(this, "Location verification required before joining", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // Get current user ID from Firebase Auth
         String userId = FirebaseAuth.getInstance().getCurrentUser() != null
