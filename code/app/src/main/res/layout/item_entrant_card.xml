@@ -14,6 +14,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Entrant info -->
         <TextView
             android:id="@+id/tvEntrantName"
             android:layout_width="wrap_content"
@@ -33,20 +34,33 @@
             android:textSize="13sp"
             android:layout_marginBottom="4dp" />
 
-        <TextView
-            android:id="@+id/tvEntrantStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Status: Waiting"
-            android:textColor="#666666"
-            android:textSize="13sp"
-            android:layout_marginBottom="12dp" />
-
+        <!-- Status and button row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center"/>
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvEntrantStatus"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Status: Waiting"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/btnSendCustomNotification"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send Custom Notification"
+                android:backgroundTint="#2C4E4E"
+                android:textColor="#FFFFFF"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:layout_marginStart="8dp"/>
+        </LinearLayout>
 
     </LinearLayout>
 

@@ -115,6 +115,8 @@
         android:clipToPadding="false"
         android:scrollbars="vertical"/>
 
+
+
     <!-- Bottom Navigation -->
     <LinearLayout
         android:id="@+id/bottomNavigation"
@@ -126,56 +128,94 @@
         android:paddingVertical="8dp"
         android:gravity="center">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/home_btn"
-            android:textSize="@dimen/nav_bar_txt_size"
-            android:background="@drawable/nav_bar_btns"
-            android:layout_width="1dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Home"
-            android:textColor="#FFFFFF" />
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:layout_marginEnd="6dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/myevents_btn"
-            android:textSize="@dimen/nav_bar_txt_size"
-            android:background="@drawable/nav_bar_btns"
-            android:layout_width="20dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="My Events"
-            android:textColor="#FFFFFF" />
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:layout_marginEnd="6dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/scan_btn"
-            android:textSize="@dimen/nav_bar_txt_size"
-            android:background="@drawable/nav_bar_btns"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Scan"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:layout_marginEnd="6dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/profile_btn"
-            android:layout_width="5dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/nav_bar_btns"
             android:text="Profile"
             android:textColor="#FFFFFF"
-            android:textSize="@dimen/nav_bar_txt_size" />
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:layout_marginEnd="6dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/notificaton_btn"
-            android:textSize="@dimen/nav_bar_txt_size"
-            android:background="@drawable/nav_bar_btns"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Noti"
-            android:textColor="#FFFFFF"/>
-
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:textAllCaps="false"
+            android:minHeight="44dp"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:backgroundTint="#1A2828"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            app:cornerRadius="24dp" />
     </LinearLayout>
 
 </RelativeLayout>

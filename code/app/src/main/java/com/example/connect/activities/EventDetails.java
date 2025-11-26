@@ -2,6 +2,7 @@ package com.example.connect.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -248,6 +249,7 @@ public class EventDetails extends AppCompatActivity {
                         java.util.List<String> entries = (java.util.List<String>) snapshot.get("entries");
                         count = entries != null ? entries.size() : 0;
                     }
+                    Log.d("EventDetails", "Count" + String.valueOf(count));
 
                     tvWaitingList.setText("Live Waitlist: " + count + " entrant" + (count == 1 ? "" : "s"));
                 });

@@ -118,7 +118,7 @@ public class EventListActivity extends AppCompatActivity {
         });
 
         notificationBtn.setOnClickListener(v -> {
-            Intent notifIntent = new Intent(EventListActivity.this, NotificationsActivity.class);
+            Intent notifIntent = new Intent(EventListActivity.this, UserNotificationsActivity.class);
             startActivity(notifIntent);
         });
 
