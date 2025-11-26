@@ -74,6 +74,8 @@ public class EventDetails extends AppCompatActivity {
     private static final double GEO_ALLOWED_RADIUS_KM = 60.0;
     private static final String FIELD_GEO_VERIFICATION_ENABLED = "geo_verification_enabled";
     private static final String FIELD_GEO_LOCATION = "geo_location";
+    private static final String FIELD_WAITLIST_COUNT = "wait_list";
+    private static final String FIELD_WAITLIST_COUNT_LEGACY = "waiting_list";
     private GeoPoint pendingDeviceLocation;
     private boolean geolocationVerificationEnabled;
     private GeoPoint eventGeoPoint;
@@ -300,9 +302,13 @@ public class EventDetails extends AppCompatActivity {
                         String registrationWindow = "Registration Window: " + formattedRegStart + " - "
                                 + formattedRegEnd;
 
-                        // Get and save waiting list count
+                        Long waitListCount = documentSnapshot.getLong(FIELD_WAITLIST_COUNT);
+                        if (waitListCount == null) {
+                            waitListCount = documentSnapshot.getLong(FIELD_WAITLIST_COUNT_LEGACY);
+                        }
+
                         // Display the details
-                        displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow);
+                        displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow, waitListCount);
                         listenForWaitlist(eventId);
 
                         // TODO: Load event image --> need to figure out where to store images Firestore
@@ -338,14 +344,18 @@ public class EventDetails extends AppCompatActivity {
      */
     private void displayEventDetails(String eventName, String organizationName,
             String dateTime, String location, String price,
-            String registrationWindow) {
+            String registrationWindow, Long waitListCount) {
         eventTitle.setText(eventName != null ? eventName : "Event Title");
         tvOrgName.setText(organizationName != null ? organizationName : "Organization Name");
         tvDateTime.setText(dateTime != null ? dateTime : "Date & Time");
         tvLocation.setText(location != null ? location : "Location");
         tvPrice.setText(price != null ? price : "Price");
         tvRegWindow.setText(registrationWindow);
-        tvWaitingList.setText("Live Waitlist: --");
+        if (waitListCount != null) {
+            tvWaitingList.setText(formatWaitlistCount(waitListCount.intValue()));
+        } else {
+            tvWaitingList.setText("Live Waitlist: --");
+        }
 
         // Show content and hide spinner
         loadingSpinner.setVisibility(View.GONE);
@@ -358,21 +368,27 @@ public class EventDetails extends AppCompatActivity {
             waitlistRegistration.remove();
         }
 
-        waitlistRegistration = db.collection("waiting_lists")
+        waitlistRegistration = db.collection("events")
                 .document(eventId)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
                         return;
                     }
 
-                    int count = 0;
                     if (snapshot != null && snapshot.exists()) {
-                        java.util.List<String> entries = (java.util.List<String>) snapshot.get("entries");
-                        count = entries != null ? entries.size() : 0;
+                        Long waitListCount = snapshot.getLong(FIELD_WAITLIST_COUNT);
+                        if (waitListCount == null) {
+                            waitListCount = snapshot.getLong(FIELD_WAITLIST_COUNT_LEGACY);
+                        }
+                        if (waitListCount != null) {
+                            tvWaitingList.setText(formatWaitlistCount(waitListCount.intValue()));
+                        }
                     }
-
-                    tvWaitingList.setText("Live Waitlist: " + count + " entrant" + (count == 1 ? "" : "s"));
                 });
+    }
+
+    private String formatWaitlistCount(int count) {
+        return "Live Waitlist: " + count + " entrant" + (count == 1 ? "" : "s");
     }
 
     @Override
@@ -519,44 +535,38 @@ public class EventDetails extends AppCompatActivity {
                         return;
                     }
 
-                    // Check if user already in waiting list
+                    // Check if user already in waiting list by checking the entries array
                     db.collection("waiting_lists")
                             .document(eventId)
-                            .collection("entrants")
-                            .document(userId)
                             .get()
-                            .addOnSuccessListener(entrantDoc -> {
-                                if (entrantDoc.exists()) {
+                            .addOnSuccessListener(waitingListDoc -> {
+                                // Check if user is already in entries array
+                                List<String> entries = (List<String>) waitingListDoc.get("entries");
+                                if (entries != null && entries.contains(userId)) {
                                     Toast.makeText(this, "You're already on the waiting list", Toast.LENGTH_SHORT).show();
                                     return;
                                 }
 
-                                // Check current waiting list size
-                                db.collection("waiting_lists")
-                                        .document(eventId)
-                                        .collection("entrants")
-                                        .whereEqualTo("status", "waiting")
-                                        .get()
-                                        .addOnSuccessListener(querySnapshot -> {
-                                            int currentSize = querySnapshot.size();
+                                // Check current waiting list size using entries array
+                                int currentSize = entries != null ? entries.size() : 0;
 
-                                            // Check if capacity is reached
-                                            if (currentSize >= drawCapacity) {
-                                                Toast.makeText(this, "Waiting list is full", Toast.LENGTH_SHORT).show();
-                                                return;
-                                            }
+                                // Check if capacity is reached
+                                if (currentSize >= drawCapacity) {
+                                    Toast.makeText(this, "Waiting list is full", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
 
-                                            // Add user to waiting list
-                                            addUserToWaitingList(userId);
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            Toast.makeText(this, "Error checking waiting list: " + e.getMessage(),
-                                                    Toast.LENGTH_SHORT).show();
-                                        });
+                                // Add user to waiting list
+                                addUserToWaitingList(userId);
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error checking your status: " + e.getMessage(),
-                                        Toast.LENGTH_SHORT).show();
+                                String errorMsg = e.getMessage();
+                                if (errorMsg != null && errorMsg.contains("offline")) {
+                                    Toast.makeText(this, "Please check your internet connection and try again", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(this, "Error checking waiting list: " + (errorMsg != null ? errorMsg : "Unknown error"),
+                                            Toast.LENGTH_SHORT).show();
+                                }
                             });
                 })
                 .addOnFailureListener(e -> {
@@ -572,11 +582,12 @@ public class EventDetails extends AppCompatActivity {
         final GeoPoint locationToPersist = pendingDeviceLocation;
         pendingDeviceLocation = null;
 
-        // First, ensure the waiting list document exists
+        // First, ensure the waiting list document exists and add user to entries array
         Map<String, Object> waitingListDoc = new HashMap<>();
         waitingListDoc.put("event_id", eventId);
         waitingListDoc.put("created_at", FieldValue.serverTimestamp());
         waitingListDoc.put("total_capacity", 0);
+        waitingListDoc.put("entries", FieldValue.arrayUnion(userId));
 
         db.collection("waiting_lists")
                 .document(eventId)
@@ -597,8 +608,19 @@ public class EventDetails extends AppCompatActivity {
                             .document(userId)
                             .set(entrantData)
                             .addOnSuccessListener(aVoid2 -> {
-                                Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
-                                loadEventDetails(eventId);
+                                // Update the event's wait_list count
+                                db.collection("events")
+                                        .document(eventId)
+                                        .update("wait_list", FieldValue.increment(1))
+                                        .addOnSuccessListener(aVoid3 -> {
+                                            Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+                                            loadEventDetails(eventId);
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            // Still show success even if count update fails
+                                            Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+                                            loadEventDetails(eventId);
+                                        });
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(this, "Error joining: " + e.getMessage(),
@@ -629,36 +651,67 @@ public class EventDetails extends AppCompatActivity {
             return;
         }
 
-        // Check if user is in the waiting list
+        // Check if user is in the waiting list by checking the entries array
         db.collection("waiting_lists")
                 .document(eventId)
-                .collection("entrants")
-                .document(userId)
                 .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
+                .addOnSuccessListener(waitingListDoc -> {
+                    List<String> entries = (List<String>) waitingListDoc.get("entries");
+                    if (entries == null || !entries.contains(userId)) {
                         Toast.makeText(this, "You're not on the waiting list", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Remove user from waiting list
+                    // Remove user from entrants subcollection
                     db.collection("waiting_lists")
                             .document(eventId)
                             .collection("entrants")
                             .document(userId)
                             .delete()
                             .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
-                                loadEventDetails(eventId);
+                                // Remove user from entries array
+                                db.collection("waiting_lists")
+                                        .document(eventId)
+                                        .update("entries", FieldValue.arrayRemove(userId))
+                                        .addOnSuccessListener(aVoid2 -> {
+                                            // Decrement the event's wait_list count
+                                            db.collection("events")
+                                                    .document(eventId)
+                                                    .update("wait_list", FieldValue.increment(-1))
+                                                    .addOnSuccessListener(aVoid3 -> {
+                                                        Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
+                                                        loadEventDetails(eventId);
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        // Still show success even if count update fails
+                                                        Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
+                                                        loadEventDetails(eventId);
+                                                    });
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            // Still show success even if entries update fails
+                                            Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
+                                            loadEventDetails(eventId);
+                                        });
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error leaving: " + e.getMessage(),
-                                        Toast.LENGTH_SHORT).show();
+                                String errorMsg = e.getMessage();
+                                if (errorMsg != null && errorMsg.contains("offline")) {
+                                    Toast.makeText(this, "Please check your internet connection and try again", Toast.LENGTH_LONG).show();
+                                } else {
+                                    Toast.makeText(this, "Error leaving: " + (errorMsg != null ? errorMsg : "Unknown error"),
+                                            Toast.LENGTH_SHORT).show();
+                                }
                             });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error checking status: " + e.getMessage(),
-                            Toast.LENGTH_SHORT).show();
+                    String errorMsg = e.getMessage();
+                    if (errorMsg != null && errorMsg.contains("offline")) {
+                        Toast.makeText(this, "Please check your internet connection and try again", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(this, "Error checking status: " + (errorMsg != null ? errorMsg : "Unknown error"),
+                                Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 
