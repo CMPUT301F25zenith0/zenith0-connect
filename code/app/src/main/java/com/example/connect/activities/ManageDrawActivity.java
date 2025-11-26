@@ -18,6 +18,8 @@ import com.example.connect.adapters.WaitingListAdapter;
 import com.example.connect.models.Event;
 import com.example.connect.models.User;
 import com.example.connect.models.WaitingListEntry;
+import com.example.connect.utils.NotificationHelper; // 🔹 NEW IMPORT
+import com.google.android.material.button.MaterialButton; // 🔹 NEW IMPORT
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -31,18 +33,15 @@ import java.util.Locale;
 
 /**
  * Activity for managing event lottery draw and viewing entrants
- * <p>
- * Features:
- * <ul>
- *   <li>View event details and statistics</li>
- *   <li>Filter entrants by status (Waiting, Selected, Enrolled, Canceled)</li>
- *   <li>View list of entrants with their details</li>
- *   <li>Navigate between different entrant categories</li>
- * </ul>
- * </p>
  *
- * @author Zenith Team
- * @version 2.0
+ * Features:
+ * - View event details and statistics
+ * - Filter entrants by status (Waiting, Selected, Enrolled, Canceled)
+ * - View list of entrants with their details
+ * - Navigate between different entrant categories
+ *
+ * + US 02.07.02 / 02.07.03:
+ *   Send notifications to all selected / canceled entrants
  */
 public class ManageDrawActivity extends AppCompatActivity {
 
@@ -66,6 +65,10 @@ public class ManageDrawActivity extends AppCompatActivity {
     private TextView btnTabEnrolled;
     private TextView btnTabCanceled;
 
+    // 🔹 UI Components - Notification Actions
+    private MaterialButton btnNotifySelected;
+    private MaterialButton btnNotifyCanceled;
+
     // UI Components - Content Container
     private RecyclerView recyclerViewEntrants;
 
@@ -87,6 +90,11 @@ public class ManageDrawActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private FirebaseAuth auth;
 
+    // 🔹 Notifications
+    private NotificationHelper notificationHelper;
+
+    private boolean isFirstLoad = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,6 +103,9 @@ public class ManageDrawActivity extends AppCompatActivity {
         // Initialize Firebase
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
+
+        // 🔹 Initialize helper
+        notificationHelper = new NotificationHelper();
 
         // Get event ID from intent
         eventId = getIntent().getStringExtra("EVENT_ID");
@@ -136,6 +147,10 @@ public class ManageDrawActivity extends AppCompatActivity {
         btnTabEnrolled = findViewById(R.id.btnTabEnrolled);
         btnTabCanceled = findViewById(R.id.btnTabCanceled);
 
+        // 🔹 Bulk notification buttons
+        btnNotifySelected = findViewById(R.id.btnNotifySelected);
+        btnNotifyCanceled = findViewById(R.id.btnNotifyCanceled);
+
         // Bottom Navigation
         btnNavDashboard = findViewById(R.id.btnNavDashboard);
         btnNavMessage = findViewById(R.id.btnNavMessage);
@@ -155,6 +170,12 @@ public class ManageDrawActivity extends AppCompatActivity {
         btnTabSelected.setOnClickListener(v -> selectTab(btnTabSelected, "selected"));
         btnTabEnrolled.setOnClickListener(v -> selectTab(btnTabEnrolled, "enrolled"));
         btnTabCanceled.setOnClickListener(v -> selectTab(btnTabCanceled, "canceled"));
+
+        // 🔹 US 02.07.02 - Notify all selected entrants
+        btnNotifySelected.setOnClickListener(v -> handleNotifySelected());
+
+        // 🔹 US 02.07.03 - Notify all canceled entrants
+        btnNotifyCanceled.setOnClickListener(v -> handleNotifyCanceled());
 
         btnNavDashboard.setOnClickListener(v -> {
             // Navigate back to OrganizerActivity (dashboard)
@@ -290,7 +311,6 @@ public class ManageDrawActivity extends AppCompatActivity {
      * Determine event status based on dates and other factors
      */
     private String determineEventStatus(Event event) {
-        // Simple status determination - can be enhanced
         String regStart = event.getRegStart();
         String regStop = event.getRegStop();
 
@@ -306,7 +326,6 @@ public class ManageDrawActivity extends AppCompatActivity {
      * Load waiting list entries from Firestore and fetch associated user data
      */
     private void loadWaitingListEntries() {
-        // Query the waiting_lists collection for this event
         db.collection("waiting_lists")
                 .document(eventId)
                 .collection("entrants")
@@ -399,7 +418,6 @@ public class ManageDrawActivity extends AppCompatActivity {
     private void onAllEntriesLoaded() {
         Log.d(TAG, "Loaded " + allEntries.size() + " entries with user data for event: " + eventId);
 
-        // Count all statuses
         int waitingCount = 0;
         int selectedCount = 0;
         int enrolledCount = 0;
@@ -425,22 +443,18 @@ public class ManageDrawActivity extends AppCompatActivity {
             }
         }
 
-        // Update waiting count display
         tvWaiting.setText("👥 Waiting: " + waitingCount);
 
-        // Update tab labels to show counts
         btnTabWaiting.setText("Waiting (" + waitingCount + ")");
         btnTabSelected.setText("Selected (" + selectedCount + ")");
         btnTabEnrolled.setText("Enrolled (" + enrolledCount + ")");
         btnTabCanceled.setText("Canceled (" + canceledCount + ")");
 
-        // Log all counts for debugging
         Log.d(TAG, "Status counts - Waiting: " + waitingCount +
                 ", Selected: " + selectedCount +
                 ", Enrolled: " + enrolledCount +
                 ", Canceled: " + canceledCount);
 
-        // Apply current filter
         filterEntries(currentFilter);
     }
 
@@ -448,17 +462,13 @@ public class ManageDrawActivity extends AppCompatActivity {
      * Select a tab and filter entries
      */
     private void selectTab(TextView selectedTab, String filter) {
-        // Reset all tabs
         resetTabs();
 
-        // Highlight selected tab
         selectedTab.setBackgroundColor(getResources().getColor(android.R.color.white, null));
         selectedTab.setTextColor(getResources().getColor(android.R.color.black, null));
 
-        // Update current filter
         currentFilter = filter;
 
-        // Filter entries
         filterEntries(filter);
     }
 
@@ -496,18 +506,141 @@ public class ManageDrawActivity extends AppCompatActivity {
 
         Log.d(TAG, "Filtered " + filteredEntries.size() + " entries with status: " + status);
 
-        // Update adapter
         adapter.submitList(new ArrayList<>(filteredEntries));
     }
-    private boolean isFirstLoad = true;
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Only refresh if not first load
         if (!isFirstLoad) {
             loadWaitingListEntries();
         }
         isFirstLoad = false;
+    }
+
+    // ------------------------------------------------------------------
+    // 🔹 Notification helpers (US 02.07.02 & 02.07.03)
+    // ------------------------------------------------------------------
+
+    /**
+     * US 02.07.02 - Notify all selected entrants
+     */
+    /**
+     * US 02.07.02 - Notify all selected entrants
+     */
+    private void handleNotifySelected() {
+        if (currentEvent == null) {
+            Toast.makeText(this, "Event not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> selectedUserIds = new ArrayList<>();
+        for (WaitingListEntry entry : allEntries) {
+            String status = entry.getStatus();
+            String uid = entry.getUserId();   // ✅ use userId from waiting list entry
+
+            if (status != null
+                    && "selected".equalsIgnoreCase(status.trim())
+                    && uid != null
+                    && !uid.isEmpty()) {
+                selectedUserIds.add(uid);
+            }
+        }
+
+        if (selectedUserIds.isEmpty()) {
+            Toast.makeText(this, "No selected entrants to notify", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnNotifySelected.setEnabled(false);
+
+        String eventName = currentEvent.getName() != null
+                ? currentEvent.getName()
+                : "your event";
+
+        notificationHelper.notifyChosenEntrants(
+                eventId,
+                selectedUserIds,
+                eventName,
+                new NotificationHelper.NotificationCallback() {
+                    @Override
+                    public void onSuccess(String message) {
+                        runOnUiThread(() -> {
+                            btnNotifySelected.setEnabled(true);
+                            Toast.makeText(ManageDrawActivity.this, message, Toast.LENGTH_LONG).show();
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(String error) {
+                        runOnUiThread(() -> {
+                            btnNotifySelected.setEnabled(true);
+                            Toast.makeText(ManageDrawActivity.this,
+                                    "Failed to send notifications: " + error,
+                                    Toast.LENGTH_LONG).show();
+                        });
+                    }
+                }
+        );
+    }
+
+    /**
+     * US 02.07.03 - Notify all canceled entrants
+     */
+    private void handleNotifyCanceled() {
+        if (currentEvent == null) {
+            Toast.makeText(this, "Event not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> canceledUserIds = new ArrayList<>();
+        for (WaitingListEntry entry : allEntries) {
+            String status = entry.getStatus();
+            String uid = entry.getUserId();   // ✅ use userId from waiting list entry
+
+            if (status != null
+                    && "canceled".equalsIgnoreCase(status.trim())
+                    && uid != null
+                    && !uid.isEmpty()) {
+                canceledUserIds.add(uid);
+            }
+        }
+
+        if (canceledUserIds.isEmpty()) {
+            Toast.makeText(this, "No canceled entrants to notify", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnNotifyCanceled.setEnabled(false);
+
+        String eventName = currentEvent.getName() != null
+                ? currentEvent.getName()
+                : "your event";
+
+        // Reuse "not chosen" path for now
+        notificationHelper.notifyNotChosenEntrants(
+                eventId,
+                canceledUserIds,
+                eventName,
+                new NotificationHelper.NotificationCallback() {
+                    @Override
+                    public void onSuccess(String message) {
+                        runOnUiThread(() -> {
+                            btnNotifyCanceled.setEnabled(true);
+                            Toast.makeText(ManageDrawActivity.this, message, Toast.LENGTH_LONG).show();
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(String error) {
+                        runOnUiThread(() -> {
+                            btnNotifyCanceled.setEnabled(true);
+                            Toast.makeText(ManageDrawActivity.this,
+                                    "Failed to send notifications: " + error,
+                                    Toast.LENGTH_LONG).show();
+                        });
+                    }
+                }
+        );
     }
 }

@@ -16,7 +16,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- FIX: guaranteed-visible back arrow (no custom drawable needed) -->
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="40dp"
@@ -194,12 +193,53 @@
             android:padding="8dp" />
     </LinearLayout>
 
+    <!-- NEW: bulk actions row -->
+    <LinearLayout
+        android:id="@+id/manageActions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        app:layout_constraintTop_toBottomOf="@id/filterTabs"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNotifySelected"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="Notify Selected"
+            android:textAllCaps="false"
+            android:textColor="#2C4E4E"
+            android:textSize="14sp"
+            app:cornerRadius="22dp"
+            app:backgroundTint="#DDEEEF"
+            android:layout_marginEnd="8dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNotifyCanceled"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:text="Notify Canceled"
+            android:textAllCaps="false"
+            android:textColor="#2C4E4E"
+            android:textSize="14sp"
+            app:cornerRadius="22dp"
+            app:backgroundTint="#DDEEEF"/>
+    </LinearLayout>
+
     <!-- Swappable content -->
     <FrameLayout
         android:id="@+id/contentContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/filterTabs"
+        app:layout_constraintTop_toBottomOf="@id/manageActions"
         app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -217,7 +257,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- FIX: no wrapping + autosize -->
         <Button
             android:id="@+id/btnNavDashboard"
             android:layout_width="0dp"
