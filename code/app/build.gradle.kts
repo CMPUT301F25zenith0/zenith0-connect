@@ -62,6 +62,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("androidx.work:work-runtime:2.9.0")
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.google.android.gms:play-services-location:21.2.0")
 
     // ---------- Unit testing ----------
     testImplementation("junit:junit:4.13.2")

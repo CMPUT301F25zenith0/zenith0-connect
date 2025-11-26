@@ -1,8 +1,9 @@
 package com.example.connect.models;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.DocumentId;
+import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.PropertyName;
 
 
 /**
@@ -23,6 +24,7 @@ public class WaitingListEntry {
     private Timestamp selectedDate;
     private Timestamp enrolledDate;
     private Timestamp canceledDate;
+    private GeoPoint deviceLocation;
 
 
     // User data (fetched separately)
@@ -109,6 +111,16 @@ public class WaitingListEntry {
     @PropertyName("canceled_date")
     public void setCanceledDate(Timestamp canceledDate) {
         this.canceledDate = canceledDate;
+    }
+
+    @PropertyName("device_location")
+    public GeoPoint getDeviceLocation() {
+        return deviceLocation;
+    }
+
+    @PropertyName("device_location")
+    public void setDeviceLocation(GeoPoint deviceLocation) {
+        this.deviceLocation = deviceLocation;
     }
 
     // User object (not stored in Firestore, fetched separately)

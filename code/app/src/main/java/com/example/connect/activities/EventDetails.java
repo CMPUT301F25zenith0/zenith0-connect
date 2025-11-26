@@ -1,6 +1,10 @@
 package com.example.connect.activities;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -10,12 +14,19 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -54,6 +65,18 @@ public class EventDetails extends AppCompatActivity {
     // Initialize Firebase
     private FirebaseFirestore db;
     private String eventId;
+    private FusedLocationProviderClient fusedLocationClient;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 2010;
+    private static final String[] LOCATION_PERMISSIONS = new String[] {
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+    };
+    private static final double GEO_ALLOWED_RADIUS_KM = 60.0;
+    private static final String FIELD_GEO_VERIFICATION_ENABLED = "geo_verification_enabled";
+    private static final String FIELD_GEO_LOCATION = "geo_location";
+    private GeoPoint pendingDeviceLocation;
+    private boolean geolocationVerificationEnabled;
+    private GeoPoint eventGeoPoint;
 
     /**
      * Called when the activity is first created.
@@ -71,6 +94,7 @@ public class EventDetails extends AppCompatActivity {
 
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         // Get the event ID from the Intent
         Intent intent = getIntent();
@@ -129,13 +153,107 @@ public class EventDetails extends AppCompatActivity {
             showEventInfo();
         });
 
-        // ------TO BE IMPLEMENTED-----
-        // Join waiting list button
-        btnJoinList.setOnClickListener(v -> joinWaitingList());
+        // Join waiting list button with geolocation verification
+        btnJoinList.setOnClickListener(v -> initiateJoinFlow());
 
         // Leave waiting list button
         btnLeaveList.setOnClickListener(v -> leaveWaitingList());
 
+    }
+
+    private void initiateJoinFlow() {
+        if (eventId == null) {
+            return;
+        }
+
+        if (!geolocationVerificationEnabled) {
+            pendingDeviceLocation = null;
+            joinWaitingList();
+            return;
+        }
+
+        if (eventGeoPoint == null) {
+            Toast.makeText(this, "Event location not configured for geolocation verification", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (hasLocationPermission()) {
+            captureLocationAndJoin();
+        } else {
+            ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    private boolean hasLocationPermission() {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @SuppressLint("MissingPermission")
+    private void captureLocationAndJoin() {
+        if (!hasLocationPermission()) {
+            ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
+            return;
+        }
+
+        if (fusedLocationClient == null) {
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        }
+
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        verifyDistanceAndJoin(new GeoPoint(location.getLatitude(), location.getLongitude()));
+                    } else {
+                        fetchLastKnownLocationFallback();
+                    }
+                })
+                .addOnFailureListener(e -> fetchLastKnownLocationFallback());
+    }
+
+    @SuppressLint("MissingPermission")
+    private void fetchLastKnownLocationFallback() {
+        if (!hasLocationPermission()) {
+            Toast.makeText(this, "Location permission required to join the waiting list", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        verifyDistanceAndJoin(new GeoPoint(location.getLatitude(), location.getLongitude()));
+                    } else {
+                        Toast.makeText(this, "Unable to capture device location. Please try again.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "Unable to capture device location. Please try again.", Toast.LENGTH_SHORT).show());
+    }
+
+    private void verifyDistanceAndJoin(GeoPoint deviceLocationPoint) {
+        if (eventGeoPoint == null) {
+            Toast.makeText(this, "Event location is missing. Unable to verify geolocation.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        float[] results = new float[1];
+        Location.distanceBetween(
+                deviceLocationPoint.getLatitude(), deviceLocationPoint.getLongitude(),
+                eventGeoPoint.getLatitude(), eventGeoPoint.getLongitude(),
+                results
+        );
+
+        double distanceKm = results[0] / 1000.0;
+        if (Double.isNaN(distanceKm)) {
+            Toast.makeText(this, "Unable to calculate distance for geolocation verification", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (distanceKm <= GEO_ALLOWED_RADIUS_KM) {
+            pendingDeviceLocation = deviceLocationPoint;
+            joinWaitingList();
+        } else {
+            Toast.makeText(this, "You must be within 60 km of the event location to join", Toast.LENGTH_LONG).show();
+        }
     }
 
     /**
@@ -158,6 +276,10 @@ public class EventDetails extends AppCompatActivity {
                         String organizationName = documentSnapshot.getString("org_name");
                         String location = documentSnapshot.getString("location");
                         description = documentSnapshot.getString("description"); // gets used for the pop later
+                        Boolean geoEnabled = documentSnapshot.getBoolean(FIELD_GEO_VERIFICATION_ENABLED);
+                        geolocationVerificationEnabled = geoEnabled != null && geoEnabled;
+                        eventGeoPoint = documentSnapshot.getGeoPoint(FIELD_GEO_LOCATION);
+                        pendingDeviceLocation = null;
 
                         // Get and save date/time
                         Object dateTimeObj = documentSnapshot.get("date_time");
@@ -262,6 +384,30 @@ public class EventDetails extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            boolean granted = false;
+            for (int result : grantResults) {
+                if (result == PackageManager.PERMISSION_GRANTED) {
+                    granted = true;
+                    break;
+                }
+            }
+
+            if (granted) {
+                if (geolocationVerificationEnabled) {
+                    captureLocationAndJoin();
+                } else {
+                    joinWaitingList();
+                }
+            } else {
+                Toast.makeText(this, "Location permission is required to join the waiting list", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
     /**
      * Formats a date/time object into a readable string format.
      * Handles Date objects, Firestore Timestamp objects, and pre-formatted strings.
@@ -328,6 +474,11 @@ public class EventDetails extends AppCompatActivity {
     private void joinWaitingList() {
         if (eventId == null)
             return;
+
+        if (geolocationVerificationEnabled && pendingDeviceLocation == null) {
+            Toast.makeText(this, "Location verification required before joining", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Get current user ID from Firebase Auth
         String userId = FirebaseAuth.getInstance().getCurrentUser() != null
@@ -418,6 +569,9 @@ public class EventDetails extends AppCompatActivity {
      * Helper method to add user to waiting list subcollection
      */
     private void addUserToWaitingList(String userId) {
+        final GeoPoint locationToPersist = pendingDeviceLocation;
+        pendingDeviceLocation = null;
+
         // First, ensure the waiting list document exists
         Map<String, Object> waitingListDoc = new HashMap<>();
         waitingListDoc.put("event_id", eventId);
@@ -433,6 +587,9 @@ public class EventDetails extends AppCompatActivity {
                     entrantData.put("user_id", userId);
                     entrantData.put("status", "waiting");
                     entrantData.put("joined_date", FieldValue.serverTimestamp());
+                    if (locationToPersist != null) {
+                        entrantData.put("device_location", locationToPersist);
+                    }
 
                     db.collection("waiting_lists")
                             .document(eventId)
