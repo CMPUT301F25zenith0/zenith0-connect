@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
+import com.example.connect.testing.TestHooks;
 import com.example.connect.utils.UserActivityTracker;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -59,7 +60,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
         initViews();
         setupClickListeners();
 
-        loadDashboardStats();
+        if (TestHooks.isUiTestMode()) {
+            displayPlaceholderStats();
+        } else {
+            loadDashboardStats();
+        }
     }
 
     /**
@@ -82,6 +87,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
     // This Method updates data on the starting dashboard screen | E.g, Total User
     // and Total Active Users
     private void loadDashboardStats() {
+        if (TestHooks.isUiTestMode()) {
+            displayPlaceholderStats();
+            return;
+        }
         // TODO - Implement System stat update
 
         // Query Firestore to get the total count of users in the accounts collection
@@ -175,7 +184,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
         // Mark admin user as active
         UserActivityTracker.markUserActive();
         // Refresh dashboard data
-        loadDashboardStats();
+        if (TestHooks.isUiTestMode()) {
+            displayPlaceholderStats();
+        } else {
+            loadDashboardStats();
+        }
     }
 
     /**
@@ -197,6 +210,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
      * @param callback Callback to receive the list of active user IDs
      */
     public void getActiveUsers(ActiveUsersCallback callback) {
+        if (TestHooks.isUiTestMode()) {
+            callback.onSuccess(new ArrayList<>());
+            return;
+        }
         db.collection("accounts")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
@@ -246,4 +263,15 @@ public class AdminDashboardActivity extends AppCompatActivity {
         return String.format("%,d", number);
     }
 
+    private void displayPlaceholderStats() {
+        if (tvStatUsers != null) {
+            tvStatUsers.setText("0");
+        }
+        if (tvStatEvents != null) {
+            tvStatEvents.setText("0");
+        }
+        if (tvStatSystem != null) {
+            tvStatSystem.setText("OK");
+        }
+    }
 }

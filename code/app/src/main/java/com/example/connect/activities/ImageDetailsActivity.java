@@ -24,6 +24,10 @@ public class ImageDetailsActivity extends AppCompatActivity {
         ImageView ivFullImage = findViewById(R.id.iv_full_image);
 
         if (toolbar != null) {
+            String title = getIntent().getStringExtra("image_title");
+            if (title != null && !title.isEmpty()) {
+                toolbar.setTitle(title);
+            }
             toolbar.setNavigationOnClickListener(v -> finish());
         }
 

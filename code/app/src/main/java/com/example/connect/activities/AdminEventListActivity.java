@@ -10,6 +10,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.connect.R;
 import com.example.connect.adapters.AdminEventAdapter;
 import com.example.connect.models.Event;
+import com.example.connect.testing.TestHooks;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -44,9 +46,15 @@ public class AdminEventListActivity extends AppCompatActivity {
 
             db = FirebaseFirestore.getInstance();
 
-            initViews();
-            setupRecyclerView();
+        initViews();
+        setupRecyclerView();
+
+        if (TestHooks.isUiTestMode()) {
+            progressBar.setVisibility(View.GONE);
+            tvEmptyState.setVisibility(View.VISIBLE);
+        } else {
             loadEvents();
+        }
         } catch (Exception e) {
             Log.e("AdminEventList", "Error in onCreate", e);
             Toast.makeText(this, "Error starting activity: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -101,6 +109,10 @@ public class AdminEventListActivity extends AppCompatActivity {
     }
 
     private void loadEvents() {
+        if (TestHooks.isUiTestMode()) {
+            return;
+        }
+
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
 
@@ -138,7 +150,8 @@ public class AdminEventListActivity extends AppCompatActivity {
     }
 
     private void filterEvents(String query) {
-        if (adapter == null) return;
+        if (adapter == null)
+            return;
 
         if (query == null) {
             query = "";
@@ -168,17 +181,32 @@ public class AdminEventListActivity extends AppCompatActivity {
         if (event.getEventId() == null)
             return;
 
-        // Confirm deletion (Optional: Add a dialog here)
-        // For now, direct delete
+        Toast.makeText(this, "Event deleted", Toast.LENGTH_SHORT).show();
+
+        if (TestHooks.isUiTestMode()) {
+            allEvents.removeIf(e -> event.getEventId().equals(e.getEventId()));
+            applyCurrentFilter();
+            return;
+        }
 
         db.collection("events").document(event.getEventId())
                 .delete()
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Event deleted", Toast.LENGTH_SHORT).show();
                     loadEvents(); // Refresh list
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Error deleting event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    @VisibleForTesting
+    public void populateEventsForTests(List<Event> events) {
+        allEvents.clear();
+        if (events != null) {
+            allEvents.addAll(events);
+        }
+        progressBar.setVisibility(View.GONE);
+        tvEmptyState.setVisibility(allEvents.isEmpty() ? View.VISIBLE : View.GONE);
+        applyCurrentFilter();
     }
 }
