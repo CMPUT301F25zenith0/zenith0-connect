@@ -35,7 +35,7 @@
             android:textSize="16sp"
             android:textStyle="bold"
             android:fontFamily="serif"
-            tools:text="Item ID: 897gh4..." />
+            tools:text="Event ID: 897gh4..." />
 
         <TextView
             android:id="@+id/tv_report_reason"

@@ -18,8 +18,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.connect.R;
 import com.example.connect.adapters.AdminReportAdapter;
+import com.example.connect.fragments.ReportDetailsDialogFragment;
 import com.example.connect.models.Report;
-import com.example.connect.models.User;
+
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -29,7 +30,7 @@ import java.util.List;
 import java.util.Locale;
 
 // This activity will display the list of user reports
-public class AdminReportActivity extends AppCompatActivity {
+public class AdminReportActivity extends AppCompatActivity implements ReportDetailsDialogFragment.ReportResolveListener {
 
     private static final String TAG = "AdminReportActivity";
 
@@ -148,15 +149,22 @@ public class AdminReportActivity extends AppCompatActivity {
     }
 
 
+
     private void openReportDetails(Report report) {
-        // TODO: Implement navigation to a detailed view of the specific report
-        Toast.makeText(this, "Opening details for Report ID: " + report.getReportId(), Toast.LENGTH_SHORT).show();
-        android.content.Intent intent = new android.content.Intent(this, ProfileActivity.class);
-        intent.putExtra("IS_ADMIN_VIEW", true);
-        startActivity(intent);
+        // Create and show the DialogFragment
+        ReportDetailsDialogFragment dialog = ReportDetailsDialogFragment.newInstance(report);
+        // Set THIS activity as the resolution listener
+        dialog.setReportResolveListener(this);
+        dialog.show(getSupportFragmentManager(), "ReportDetailsDialog");
     }
 
-    private void resolveReport(Report report) {
+    @Override
+    public void onReportResolved(Report report) {
+        // When the button inside the dialog is pressed, this method is called.
+        resolveReport(report);
+    }
+
+    public void resolveReport(Report report) {
         if (report.getReportId() == null) return;
 
         progressBar.setVisibility(View.VISIBLE);

@@ -75,7 +75,6 @@ public class AdminReportAdapter extends RecyclerView.Adapter<AdminReportAdapter.
 
         public ReportViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Ensure these IDs exist in your item_admin_report.xml layout
             tvItemType = itemView.findViewById(R.id.tv_report_item_type);
             tvReportId = itemView.findViewById(R.id.tv_report_item_id);
             tvReason = itemView.findViewById(R.id.tv_report_reason);
@@ -88,7 +87,7 @@ public class AdminReportAdapter extends RecyclerView.Adapter<AdminReportAdapter.
             tvItemType.setText(String.format("TYPE: %s", report.getItemType() != null ? report.getItemType().toUpperCase() : "N/A"));
 
             // Display the unique ID of the reported item
-            tvReportId.setText(String.format("Item ID: %s...", report.getReportedItemId() != null ? report.getReportedItemId().substring(0, 8) : "N/A"));
+            tvReportId.setText(String.format("Event ID: %s...", report.getReportedItemId() != null ? report.getReportedItemId().substring(0, 8) : "N/A"));
 
             // Display the primary reason
             tvReason.setText(String.format("Reason: %s", report.getReason() != null ? report.getReason() : "No Reason Provided"));
