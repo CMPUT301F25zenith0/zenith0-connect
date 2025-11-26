@@ -302,13 +302,8 @@ public class EventDetails extends AppCompatActivity {
                         String registrationWindow = "Registration Window: " + formattedRegStart + " - "
                                 + formattedRegEnd;
 
-                        Long waitListCount = documentSnapshot.getLong(FIELD_WAITLIST_COUNT);
-                        if (waitListCount == null) {
-                            waitListCount = documentSnapshot.getLong(FIELD_WAITLIST_COUNT_LEGACY);
-                        }
-
-                        // Display the details
-                        displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow, waitListCount);
+                        // Display the details (waitlist count will be loaded separately)
+                        displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow, null);
                         listenForWaitlist(eventId);
 
                         // TODO: Load event image --> need to figure out where to store images Firestore
@@ -368,22 +363,19 @@ public class EventDetails extends AppCompatActivity {
             waitlistRegistration.remove();
         }
 
-        waitlistRegistration = db.collection("events")
+        waitlistRegistration = db.collection("waiting_lists")
                 .document(eventId)
                 .addSnapshotListener((snapshot, error) -> {
                     if (error != null) {
                         return;
                     }
 
+                    int count = 0;
                     if (snapshot != null && snapshot.exists()) {
-                        Long waitListCount = snapshot.getLong(FIELD_WAITLIST_COUNT);
-                        if (waitListCount == null) {
-                            waitListCount = snapshot.getLong(FIELD_WAITLIST_COUNT_LEGACY);
-                        }
-                        if (waitListCount != null) {
-                            tvWaitingList.setText(formatWaitlistCount(waitListCount.intValue()));
-                        }
+                        List<String> entries = (List<String>) snapshot.get("entries");
+                        count = entries != null ? entries.size() : 0;
                     }
+                    tvWaitingList.setText(formatWaitlistCount(count));
                 });
     }
 
@@ -608,19 +600,8 @@ public class EventDetails extends AppCompatActivity {
                             .document(userId)
                             .set(entrantData)
                             .addOnSuccessListener(aVoid2 -> {
-                                // Update the event's wait_list count
-                                db.collection("events")
-                                        .document(eventId)
-                                        .update("wait_list", FieldValue.increment(1))
-                                        .addOnSuccessListener(aVoid3 -> {
-                                            Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
-                                            loadEventDetails(eventId);
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            // Still show success even if count update fails
-                                            Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
-                                            loadEventDetails(eventId);
-                                        });
+                                Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+                                loadEventDetails(eventId);
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(this, "Error joining: " + e.getMessage(),
@@ -674,19 +655,8 @@ public class EventDetails extends AppCompatActivity {
                                         .document(eventId)
                                         .update("entries", FieldValue.arrayRemove(userId))
                                         .addOnSuccessListener(aVoid2 -> {
-                                            // Decrement the event's wait_list count
-                                            db.collection("events")
-                                                    .document(eventId)
-                                                    .update("wait_list", FieldValue.increment(-1))
-                                                    .addOnSuccessListener(aVoid3 -> {
-                                                        Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
-                                                        loadEventDetails(eventId);
-                                                    })
-                                                    .addOnFailureListener(e -> {
-                                                        // Still show success even if count update fails
-                                                        Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
-                                                        loadEventDetails(eventId);
-                                                    });
+                                            Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
+                                            loadEventDetails(eventId);
                                         })
                                         .addOnFailureListener(e -> {
                                             // Still show success even if entries update fails
