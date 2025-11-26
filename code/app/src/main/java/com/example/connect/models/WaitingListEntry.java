@@ -2,6 +2,8 @@ package com.example.connect.models;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.DocumentId;
+
 
 /**
  * Represents an entry in an event's waiting list
@@ -11,6 +13,10 @@ import com.google.firebase.firestore.PropertyName;
  * @version 1.0
  */
 public class WaitingListEntry {
+
+    @DocumentId
+    private String documentId;
+
     private String userId;
     private String status; // "waiting", "selected", "enrolled", "canceled"
     private Timestamp joinedDate;
@@ -18,8 +24,18 @@ public class WaitingListEntry {
     private Timestamp enrolledDate;
     private Timestamp canceledDate;
 
+
     // User data (fetched separately)
     private User user;
+
+    public String getDocumentId() {
+        return documentId;
+    }
+
+    public void setDocumentId(String documentId) {
+        this.documentId = documentId;
+    }
+
 
     /**
      * Empty constructor required for Firestore

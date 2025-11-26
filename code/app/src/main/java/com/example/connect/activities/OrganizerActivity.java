@@ -19,6 +19,22 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+import android.os.Environment;
+
+import com.example.connect.models.User;
+import com.example.connect.models.WaitingListEntry;
+import com.example.connect.utils.CsvUtils;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 
 /**
  * Activity serving as the main dashboard for event organizers
@@ -188,11 +204,7 @@ public class OrganizerActivity extends AppCompatActivity {
             @Override
             public void onExportCSV(Event event) {
                 // Export event data to CSV
-                Toast.makeText(OrganizerActivity.this,
-                        "Export CSV: " + event.getName(),
-                        Toast.LENGTH_SHORT).show();
-
-                // TODO: Implement CSV export functionality
+                exportEnrolledEntrantsToCsv(event);
             }
 
             @Override
@@ -332,6 +344,179 @@ public class OrganizerActivity extends AppCompatActivity {
     private boolean isEventDrawn(Event event) {
         // TODO: Implement proper logic based on draw status field
         return false;
+    }
+    /**
+     * US 02.06.05
+     * Export final list of ENROLLED entrants for this event as a CSV file.
+     */
+    private void exportEnrolledEntrantsToCsv(Event event) {
+        if (event == null || event.getEventId() == null || event.getEventId().isEmpty()) {
+            Toast.makeText(this, "Cannot export: event not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String eventId = event.getEventId();
+        String eventName = event.getName();
+
+        Toast.makeText(this, "Preparing CSV for enrolled entrants…", Toast.LENGTH_SHORT).show();
+
+        db.collection("waiting_lists")
+                .document(eventId)
+                .collection("entrants")
+                .whereEqualTo("status", "enrolled")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        Toast.makeText(this,
+                                "No enrolled entrants for this event yet",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    int total = querySnapshot.size();
+                    int[] loadedCount = {0};
+                    java.util.List<CsvUtils.CsvRow> rows = new java.util.ArrayList<>();
+
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                        if (entry == null) {
+                            loadedCount[0]++;
+                            if (loadedCount[0] == total) {
+                                finishCsvExport(event, rows);
+                            }
+                            continue;
+                        }
+
+                        String userId = entry.getUserId();
+                        if (userId == null || userId.isEmpty()) {
+                            loadedCount[0]++;
+                            if (loadedCount[0] == total) {
+                                finishCsvExport(event, rows);
+                            }
+                            continue;
+                        }
+
+                        db.collection("accounts")
+                                .document(userId)
+                                .get()
+                                .addOnSuccessListener(userDoc -> {
+                                    User user = userDoc.toObject(User.class);
+
+                                    String name = (user != null && user.getName() != null)
+                                            ? user.getName()
+                                            : "Unknown User";
+                                    String email = (user != null && user.getEmail() != null)
+                                            ? user.getEmail()
+                                            : "";
+                                    String phone = (user != null && user.getPhone() != null)
+                                            ? user.getPhone()
+                                            : "";
+
+                                    // Prefer enrolled_date; fall back to joined_date
+                                    Timestamp ts = entry.getEnrolledDate() != null
+                                            ? entry.getEnrolledDate()
+                                            : entry.getJoinedDate();
+                                    String joinedDate = formatTimestamp(ts);
+
+                                    rows.add(new CsvUtils.CsvRow(name, email, phone, joinedDate));
+
+                                    loadedCount[0]++;
+                                    if (loadedCount[0] == total) {
+                                        finishCsvExport(event, rows);
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error loading user for CSV", e);
+                                    loadedCount[0]++;
+                                    if (loadedCount[0] == total) {
+                                        finishCsvExport(event, rows);
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading enrolled entrants", e);
+                    Toast.makeText(this,
+                            "Error loading enrolled entrants: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    /**
+     * Called when we have collected all CSV rows.
+     */
+    private void finishCsvExport(Event event, java.util.List<CsvUtils.CsvRow> rows) {
+        if (rows == null || rows.isEmpty()) {
+            Toast.makeText(this,
+                    "No enrolled entrants to export",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String csvContent = CsvUtils.buildEnrolledEntrantsCsv(
+                event.getName(),
+                event.getEventId(),
+                rows
+        );
+
+        writeCsvToFile(event, csvContent);
+    }
+
+    /**
+     * Writes CSV text to a file in the app's Downloads directory.
+     * No extra storage permission needed (app-specific external storage).
+     */
+    private void writeCsvToFile(Event event, String csvContent) {
+        // Public Download directory
+        File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+        if (dir == null) {
+            Toast.makeText(this,
+                    "Unable to access public Downloads folder",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Ensure folder exists
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+
+        // Safe filename
+        String rawName = (event.getName() != null && !event.getName().isEmpty())
+                ? event.getName()
+                : "event";
+        String safeName = rawName.replaceAll("[^a-zA-Z0-9_-]", "_");
+
+        String fileName = "enrolled_" + safeName + ".csv";
+        File outFile = new File(dir, fileName);
+
+        try (FileOutputStream fos = new FileOutputStream(outFile)) {
+            fos.write(csvContent.getBytes(StandardCharsets.UTF_8));
+            fos.flush();
+
+            String message = "CSV saved to Downloads: " + outFile.getAbsolutePath();
+            Log.d(TAG, message);
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            Log.e(TAG, "Error writing CSV file", e);
+            Toast.makeText(this,
+                    "Error saving CSV: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    /**
+     * Format a Firestore Timestamp into a readable string for CSV.
+     */
+    private String formatTimestamp(Timestamp ts) {
+        if (ts == null) {
+            return "";
+        }
+        Date date = ts.toDate();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
+        return sdf.format(date);
     }
 
     @Override
