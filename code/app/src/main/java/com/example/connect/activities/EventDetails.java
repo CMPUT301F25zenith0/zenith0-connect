@@ -168,13 +168,25 @@ public class EventDetails extends AppCompatActivity {
             return;
         }
 
-        // Always try to capture location if permission is available (optional)
-        if (hasLocationPermission()) {
-            captureLocationAndJoin();
+        // Check if geolocation verification is required for this event
+        if (geolocationVerificationEnabled && eventGeoPoint != null) {
+            // Geolocation verification is required - must get user's location
+            if (!hasLocationPermission()) {
+                // Request location permission
+                ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
+                return;
+            }
+            // Permission granted, capture location and verify
+            captureLocationAndVerify();
         } else {
-            // If no permission, proceed without location (optional feature)
-            pendingDeviceLocation = null;
-            joinWaitingList();
+            // Geolocation verification not required - optional location capture
+            if (hasLocationPermission()) {
+                captureLocationAndJoin();
+            } else {
+                // No permission, proceed without location
+                pendingDeviceLocation = null;
+                joinWaitingList();
+            }
         }
     }
 
@@ -183,6 +195,45 @@ public class EventDetails extends AppCompatActivity {
                 || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
+    /**
+     * Captures user location and verifies they are within the allowed radius.
+     * This is called when geolocation verification is required.
+     */
+    @SuppressLint("MissingPermission")
+    private void captureLocationAndVerify() {
+        if (!hasLocationPermission()) {
+            Toast.makeText(this, "Location permission is required to join this event", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        if (fusedLocationClient == null) {
+            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        }
+
+        // Show loading message
+        Toast.makeText(this, "Verifying your location...", Toast.LENGTH_SHORT).show();
+
+        // Try to get current location
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        // Successfully captured location, verify distance
+                        GeoPoint userLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
+                        verifyLocationAndJoin(userLocation);
+                    } else {
+                        // Try last known location as fallback
+                        fetchLastKnownLocationForVerification();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Location capture failed, try fallback
+                    fetchLastKnownLocationForVerification();
+                });
+    }
+
+    /**
+     * Captures user location for optional storage (when geolocation verification is not required).
+     */
     @SuppressLint("MissingPermission")
     private void captureLocationAndJoin() {
         if (!hasLocationPermission()) {
@@ -214,6 +265,35 @@ public class EventDetails extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Fetches last known location for verification (when geolocation verification is required).
+     */
+    @SuppressLint("MissingPermission")
+    private void fetchLastKnownLocationForVerification() {
+        if (!hasLocationPermission() || fusedLocationClient == null) {
+            Toast.makeText(this, "Unable to get your location. Please enable location services and try again.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(location -> {
+                    if (location != null) {
+                        // Successfully got last known location, verify distance
+                        GeoPoint userLocation = new GeoPoint(location.getLatitude(), location.getLongitude());
+                        verifyLocationAndJoin(userLocation);
+                    } else {
+                        // No location available
+                        Toast.makeText(this, "Unable to get your location. Please enable location services and try again.", Toast.LENGTH_LONG).show();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Unable to get your location. Please enable location services and try again.", Toast.LENGTH_LONG).show();
+                });
+    }
+
+    /**
+     * Fetches last known location for optional storage (when geolocation verification is not required).
+     */
     @SuppressLint("MissingPermission")
     private void fetchLastKnownLocationFallback() {
         if (!hasLocationPermission() || fusedLocationClient == null) {
@@ -239,6 +319,57 @@ public class EventDetails extends AppCompatActivity {
                     pendingDeviceLocation = null;
                     joinWaitingList();
                 });
+    }
+
+    /**
+     * Verifies that the user's location is within the allowed radius of the event location.
+     * If verified, proceeds to join the waiting list.
+     *
+     * @param userLocation The user's current location as a GeoPoint
+     */
+    private void verifyLocationAndJoin(GeoPoint userLocation) {
+        if (eventGeoPoint == null) {
+            Toast.makeText(this, "Event location not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Calculate distance between user and event location
+        double distanceKm = calculateDistance(userLocation, eventGeoPoint);
+
+        if (distanceKm <= GEO_ALLOWED_RADIUS_KM) {
+            // User is within allowed radius - proceed to join
+            pendingDeviceLocation = userLocation;
+            joinWaitingList();
+        } else {
+            // User is outside allowed radius - deny access
+            String message = String.format(Locale.getDefault(),
+                    "You are %.1f km away from the event location. You must be within %.0f km to join this event.",
+                    distanceKm, GEO_ALLOWED_RADIUS_KM);
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /**
+     * Calculates the distance between two GeoPoints using the Haversine formula.
+     *
+     * @param point1 First GeoPoint (user location)
+     * @param point2 Second GeoPoint (event location)
+     * @return Distance in kilometers
+     */
+    private double calculateDistance(GeoPoint point1, GeoPoint point2) {
+        final int EARTH_RADIUS_KM = 6371;
+
+        double lat1 = Math.toRadians(point1.getLatitude());
+        double lat2 = Math.toRadians(point2.getLatitude());
+        double deltaLat = Math.toRadians(point2.getLatitude() - point1.getLatitude());
+        double deltaLon = Math.toRadians(point2.getLongitude() - point1.getLongitude());
+
+        double a = Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+                Math.cos(lat1) * Math.cos(lat2) *
+                Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return EARTH_RADIUS_KM * c;
     }
 
     /**
@@ -388,11 +519,24 @@ public class EventDetails extends AppCompatActivity {
             }
 
             if (granted) {
-                captureLocationAndJoin();
+                // Check if geolocation verification is required
+                if (geolocationVerificationEnabled && eventGeoPoint != null) {
+                    // Geolocation verification required - must verify location
+                    captureLocationAndVerify();
+                } else {
+                    // Optional location capture
+                    captureLocationAndJoin();
+                }
             } else {
-                // Permission denied, proceed without location (optional feature)
-                pendingDeviceLocation = null;
-                joinWaitingList();
+                // Permission denied
+                if (geolocationVerificationEnabled && eventGeoPoint != null) {
+                    // Geolocation verification is required but permission denied
+                    Toast.makeText(this, "Location permission is required to join this event", Toast.LENGTH_LONG).show();
+                } else {
+                    // Optional location - proceed without it
+                    pendingDeviceLocation = null;
+                    joinWaitingList();
+                }
             }
         }
     }
