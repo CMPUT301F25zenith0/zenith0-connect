@@ -24,12 +24,16 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Activity for managing event lottery draw and viewing entrants
@@ -68,6 +72,7 @@ public class ManageDrawActivity extends AppCompatActivity {
     // 🔹 UI Components - Notification Actions
     private MaterialButton btnNotifySelected;
     private MaterialButton btnNotifyCanceled;
+    private MaterialButton btnCancelUnconfirmed;
 
     // UI Components - Content Container
     private RecyclerView recyclerViewEntrants;
@@ -150,6 +155,7 @@ public class ManageDrawActivity extends AppCompatActivity {
         // 🔹 Bulk notification buttons
         btnNotifySelected = findViewById(R.id.btnNotifySelected);
         btnNotifyCanceled = findViewById(R.id.btnNotifyCanceled);
+        btnCancelUnconfirmed = findViewById(R.id.btnCancelUnconfirmed);
 
         // Bottom Navigation
         btnNavDashboard = findViewById(R.id.btnNavDashboard);
@@ -176,6 +182,11 @@ public class ManageDrawActivity extends AppCompatActivity {
 
         // 🔹 US 02.07.03 - Notify all canceled entrants
         btnNotifyCanceled.setOnClickListener(v -> handleNotifyCanceled());
+
+        // 🔹 US 02.06.04 - Cancel entrants that did not sign up (still "selected")
+        btnCancelUnconfirmed.setOnClickListener(v -> handleCancelUnconfirmed());
+
+
 
         btnNavDashboard.setOnClickListener(v -> {
             // Navigate back to OrganizerActivity (dashboard)
@@ -643,4 +654,86 @@ public class ManageDrawActivity extends AppCompatActivity {
                 }
         );
     }
+    /**
+     * US 02.06.04 - Cancel entrants that did not sign up for the event
+     *
+     * Interpretation:
+     *  - Entrants who were SELECTED but never ENROLLED.
+     *  - We treat status == "selected" as "unconfirmed / did not sign up".
+     *  - This method updates their status to "canceled" in Firestore.
+     *
+     * Organizer can then use "Notify Canceled" to message them.
+     */
+    private void handleCancelUnconfirmed() {
+        if (currentEvent == null) {
+            Toast.makeText(this, "Event not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Collect all entries that are still "selected"
+        List<WaitingListEntry> toCancel = new ArrayList<>();
+        for (WaitingListEntry entry : allEntries) {
+            String status = entry.getStatus();
+            if (status != null && "selected".equalsIgnoreCase(status.trim())) {
+                toCancel.add(entry);
+            }
+        }
+
+        if (toCancel.isEmpty()) {
+            Toast.makeText(this, "No unconfirmed (selected) entrants to cancel", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Disable button to avoid double-taps
+        btnCancelUnconfirmed.setEnabled(false);
+
+        // Batch update in Firestore
+        com.google.firebase.firestore.WriteBatch batch = db.batch();
+        com.google.firebase.Timestamp now = com.google.firebase.Timestamp.now();
+
+        for (WaitingListEntry entry : toCancel) {
+            String docId = entry.getDocumentId();
+            if (docId == null || docId.isEmpty()) {
+                Log.w(TAG, "Skipping cancel for entry with no documentId, userId=" + entry.getUserId());
+                continue;
+            }
+
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("status", "canceled");
+            updates.put("canceled_date", now);
+
+            batch.update(
+                    db.collection("waiting_lists")
+                            .document(eventId)
+                            .collection("entrants")
+                            .document(docId),
+                    updates
+            );
+        }
+
+        batch.commit()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "✅ Canceled " + toCancel.size() + " unconfirmed entrants");
+                    runOnUiThread(() -> {
+                        Toast.makeText(ManageDrawActivity.this,
+                                "Canceled " + toCancel.size() + " unconfirmed entrants",
+                                Toast.LENGTH_LONG).show();
+                        btnCancelUnconfirmed.setEnabled(true);
+                        // Reload list so tabs + counts update
+                        loadWaitingListEntries();
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error canceling unconfirmed entrants", e);
+                    runOnUiThread(() -> {
+                        Toast.makeText(ManageDrawActivity.this,
+                                "Failed to cancel entrants: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                        btnCancelUnconfirmed.setEnabled(true);
+                    });
+                });
+    }
+
+
+
 }
