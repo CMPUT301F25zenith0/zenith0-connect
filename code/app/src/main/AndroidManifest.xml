@@ -92,7 +92,7 @@
 
         <!-- Notifications for Entrant -->
         <activity
-            android:name=".activities.NotificationsActivity"
+            android:name=".activities.UserNotificationsActivity"
             android:exported="false"
             android:label="My Notifications"/>
 

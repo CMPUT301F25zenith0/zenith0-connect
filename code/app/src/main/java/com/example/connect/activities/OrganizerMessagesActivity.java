@@ -253,8 +253,8 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
         // Bottom Navigation
         if (btnNavDashboard != null) {
             btnNavDashboard.setOnClickListener(v -> {
-                // TODO: Navigate to dashboard
-                Toast.makeText(this, "Dashboard - Coming Soon", Toast.LENGTH_SHORT).show();
+                Intent organizerNotifsIntent = new Intent(OrganizerMessagesActivity.this, OrganizerActivity.class);
+                startActivity(organizerNotifsIntent);
             });
         }
 

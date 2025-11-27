@@ -5,9 +5,11 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -18,10 +20,14 @@ import com.example.connect.adapters.WaitingListAdapter;
 import com.example.connect.models.Event;
 import com.example.connect.models.User;
 import com.example.connect.models.WaitingListEntry;
+import com.example.connect.utils.LotteryManager;
 import com.example.connect.utils.NotificationHelper; // 🔹 NEW IMPORT
 import com.google.android.material.button.MaterialButton; // 🔹 NEW IMPORT
+import com.example.connect.utils.LotteryScheduler;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.Timestamp;
@@ -29,6 +35,7 @@ import com.google.firebase.firestore.WriteBatch;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -74,6 +81,14 @@ public class ManageDrawActivity extends AppCompatActivity {
     private MaterialButton btnNotifyCanceled;
     private MaterialButton btnCancelUnconfirmed;
 
+    private MaterialButton btnNotifyWaiting;
+
+    // manual lottery button
+    private Button btnManualLottery;
+    private Button btnDrawReplacement;
+
+    private Button btnCancelUnresponsive;
+
     // UI Components - Content Container
     private RecyclerView recyclerViewEntrants;
 
@@ -97,6 +112,7 @@ public class ManageDrawActivity extends AppCompatActivity {
 
     // 🔹 Notifications
     private NotificationHelper notificationHelper;
+    private LotteryManager lotteryManager;
 
     private boolean isFirstLoad = true;
 
@@ -121,8 +137,8 @@ public class ManageDrawActivity extends AppCompatActivity {
         }
 
         initializeViews();
-        setupClickListeners();
         setupRecyclerView();
+        setupClickListeners();
         loadEventData();
         loadWaitingListEntries();
 
@@ -155,7 +171,14 @@ public class ManageDrawActivity extends AppCompatActivity {
         // 🔹 Bulk notification buttons
         btnNotifySelected = findViewById(R.id.btnNotifySelected);
         btnNotifyCanceled = findViewById(R.id.btnNotifyCanceled);
-        btnCancelUnconfirmed = findViewById(R.id.btnCancelUnconfirmed);
+        btnNotifyWaiting = findViewById(R.id.btnNotifyWaiting);
+        btnDrawReplacement = findViewById(R.id.btnDrawReplacement);
+
+        // manually run lottery
+        btnManualLottery = findViewById(R.id.btnManualLottery);
+
+        btnCancelUnresponsive = findViewById(R.id.btnCancelUnresponsive);
+//        btnCancelUnconfirmed = findViewById(R.id.btnCancelUnconfirmed);
 
         // Bottom Navigation
         btnNavDashboard = findViewById(R.id.btnNavDashboard);
@@ -172,8 +195,16 @@ public class ManageDrawActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
 
         // Filter tabs
-        btnTabWaiting.setOnClickListener(v -> selectTab(btnTabWaiting, "waiting"));
-        btnTabSelected.setOnClickListener(v -> selectTab(btnTabSelected, "selected"));
+        btnTabWaiting.setOnClickListener(v -> {
+            // US 02.02.01 – Organizer views waiting list
+            selectTab(btnTabWaiting, "waiting");
+        });
+
+        btnTabSelected.setOnClickListener(v -> {
+            // US 02.06.01 – View list of chosen entrants
+            selectTab(btnTabSelected, "selected");
+        });
+
         btnTabEnrolled.setOnClickListener(v -> selectTab(btnTabEnrolled, "enrolled"));
         btnTabCanceled.setOnClickListener(v -> selectTab(btnTabCanceled, "canceled"));
 
@@ -184,9 +215,103 @@ public class ManageDrawActivity extends AppCompatActivity {
         btnNotifyCanceled.setOnClickListener(v -> handleNotifyCanceled());
 
         // 🔹 US 02.06.04 - Cancel entrants that did not sign up (still "selected")
-        btnCancelUnconfirmed.setOnClickListener(v -> handleCancelUnconfirmed());
+//        btnCancelUnconfirmed.setOnClickListener(v -> handleCancelUnconfirmed());
 
 
+
+        btnNotifyWaiting.setOnClickListener(v -> handleNotifyWaitlist());
+
+        btnDrawReplacement.setOnClickListener(v ->
+                getDeclinedCount(eventId, declinedCount -> {
+                    lotteryManager.performReplacementLottery(eventId, currentEvent.getName(), declinedCount, new LotteryManager.LotteryCallback() {
+                        @Override
+                        public void onSuccess(int selectedCount, int waitingListCount) {
+                            Toast.makeText(ManageDrawActivity.this, "Replacement draw completed", Toast.LENGTH_SHORT).show();
+                            loadWaitingListEntries(); // Activity updates UI
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            Toast.makeText(ManageDrawActivity.this, "Failed replacement draw: " + error, Toast.LENGTH_SHORT).show();
+                        }
+                    });
+
+                })
+        );
+
+        btnManualLottery.setOnClickListener(v -> {
+            LotteryScheduler scheduler = new LotteryScheduler();
+            scheduler.runLotteryManually(eventId);
+            Toast.makeText(this, "Manual lottery triggered for event: " + currentEvent.getName(), Toast.LENGTH_SHORT).show();
+        });
+
+
+        btnCancelUnresponsive.setOnClickListener(v -> {
+
+            // 1 day = 24h * 60m * 60s * 1000ms
+            long oneDayMillis = 24L * 60L * 60L * 1000L;
+            long cutoffMillis = System.currentTimeMillis() - oneDayMillis;
+            Timestamp cutoffTimestamp = new Timestamp(new Date(cutoffMillis));
+
+            db.collection("waiting_lists")
+                    .document(eventId)
+                    .collection("entrants")
+                    .whereEqualTo("status", "selected")
+                    .whereLessThan("selected_date", cutoffTimestamp)
+                    .get()
+                    .addOnSuccessListener(query -> {
+
+                        if (query.isEmpty()) {
+                            Toast.makeText(this, "No unresponsive entrants (entrants selected >1 day ago)", Toast.LENGTH_SHORT).show();
+
+                            Log.d(TAG, "No unresponsive selected entrants.");
+                            return;
+                        }
+
+                        WriteBatch batch = db.batch();
+
+                        for (DocumentSnapshot doc : query.getDocuments()) {
+                            batch.update(doc.getReference(), "status", "canceled");
+                            batch.update(doc.getReference(), "canceled_date", FieldValue.serverTimestamp());
+                        }
+
+                        batch.commit().addOnSuccessListener(aVoid -> {
+
+                            Log.d(TAG, "Canceled " + query.size() + " unresponsive entrants.");
+
+                            // Run replacement lottery
+                            String eventName = currentEvent.getName() != null
+                                    ? currentEvent.getName()
+                                    : "your event";
+                            int numCancelled = query.size();
+
+                            lotteryManager.performReplacementLottery(
+                                    eventId,
+                                    eventName,
+                                    numCancelled, // number of people we just cancelled and should replace
+                                    new LotteryManager.LotteryCallback() {
+                                        @Override
+                                        public void onSuccess(int selectedCount, int waitingListCount) {
+                                            Log.d(TAG, "Replacement lottery completed.");
+                                        }
+
+                                        @Override
+                                        public void onFailure(String error) {
+                                            Log.e(TAG, "Replacement lottery failed: " + error);
+                                        }
+                                    }
+                            );
+
+                        });
+                    })
+                    .addOnFailureListener(e -> Log.e(TAG, "Failed to fetch entrants", e));
+        });
+
+
+        adapter.setOnSendNotificationClickListener(entry -> {
+            // Your custom logic here, Aalpesh
+            handleNotifyCustom(entry);
+        });
 
         btnNavDashboard.setOnClickListener(v -> {
             // Navigate back to OrganizerActivity (dashboard)
@@ -211,6 +336,29 @@ public class ManageDrawActivity extends AppCompatActivity {
             startActivity(intent);
         });
     }
+
+
+
+    /**
+     * Count how many entrants have declined for the event.
+     */
+    public interface OnDeclinedCountReady {
+        void onReady(int declinedCount);
+    }
+
+    public void getDeclinedCount(String eventId, OnDeclinedCountReady callback) {
+        db.collection("events")
+                .document(eventId)
+                .collection("declined")
+                .get()
+                .addOnSuccessListener(snapshot -> {
+                    int declinedCount = snapshot.size();
+                    callback.onReady(declinedCount); // RETURNS int
+                });
+    }
+
+
+
 
     /**
      * Setup RecyclerView with adapter
@@ -480,6 +628,16 @@ public class ManageDrawActivity extends AppCompatActivity {
 
         currentFilter = filter;
 
+        // US-specific logs
+        switch (filter) {
+            case "waiting":
+                Log.d(TAG, "US 02.02.01 - Organizer is viewing the waiting list");
+                break;
+            case "selected":
+                Log.d(TAG, "US 02.06.01 - Organizer is viewing chosen entrants");
+                break;
+        }
+
         filterEntries(filter);
     }
 
@@ -532,6 +690,60 @@ public class ManageDrawActivity extends AppCompatActivity {
     // ------------------------------------------------------------------
     // 🔹 Notification helpers (US 02.07.02 & 02.07.03)
     // ------------------------------------------------------------------
+
+    private void handleNotifyCustom(WaitingListEntry entry) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_custom_notification, null);
+
+        EditText etTitle = view.findViewById(R.id.etCustomTitle);
+        EditText etBody = view.findViewById(R.id.etCustomBody);
+        Button btnSend = view.findViewById(R.id.btnSendCustom);
+
+        builder.setView(view);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        btnSend.setOnClickListener(v -> {
+            String title = etTitle.getText().toString().trim();
+            String body = etBody.getText().toString().trim();
+
+            if (title.isEmpty() || body.isEmpty()) {
+                Toast.makeText(this, "Please enter title and message", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String eventName = currentEvent.getName() != null
+                    ? currentEvent.getName()
+                    : "your event";
+
+            // SINGLE recipient list
+            List<String> oneRecipient = Collections.singletonList(entry.getUserId());
+
+            notificationHelper.notifyCustom(
+                    eventId,
+                    oneRecipient,
+                    eventName,
+                    new NotificationHelper.NotificationCallback() {
+                        @Override
+                        public void onSuccess(String message) {
+                            Toast.makeText(getApplicationContext(), "Notification sent!", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            Toast.makeText(getApplicationContext(), "Failed to send notification", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                        }
+
+                    },
+                    title,
+                    body
+            );
+        });
+    }
+
 
     /**
      * US 02.07.02 - Notify all selected entrants
@@ -628,8 +840,7 @@ public class ManageDrawActivity extends AppCompatActivity {
                 ? currentEvent.getName()
                 : "your event";
 
-        // Reuse "not chosen" path for now
-        notificationHelper.notifyNotChosenEntrants(
+        notificationHelper.notifyCanceledEntrants(
                 eventId,
                 canceledUserIds,
                 eventName,
@@ -654,6 +865,63 @@ public class ManageDrawActivity extends AppCompatActivity {
                 }
         );
     }
+
+    private void handleNotifyWaitlist(){
+        if (currentEvent == null) {
+            Toast.makeText(this, "Event not loaded yet", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> waitingUserIds = new ArrayList<>();
+        for (WaitingListEntry entry : allEntries) {
+            String status = entry.getStatus();
+            String uid = entry.getUserId();   // ✅ use userId from waiting list entry
+
+            if (status != null
+                    && "waiting".equalsIgnoreCase(status.trim())
+                    && uid != null
+                    && !uid.isEmpty()) {
+                waitingUserIds.add(uid);
+            }
+        }
+
+        if (waitingUserIds.isEmpty()) {
+            Toast.makeText(this, "No waiting entrants to notify", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnNotifyWaiting.setEnabled(false);
+
+        String eventName = currentEvent.getName() != null
+                ? currentEvent.getName()
+                : "your event";
+
+        notificationHelper.notifyAllWaitingListEntrants(
+                eventId,
+                waitingUserIds,
+                eventName,
+                new NotificationHelper.NotificationCallback() {
+                    @Override
+                    public void onSuccess(String message) {
+                        runOnUiThread(() -> {
+                            btnNotifyWaiting.setEnabled(true);
+                            Toast.makeText(ManageDrawActivity.this, message, Toast.LENGTH_LONG).show();
+                        });
+                    }
+
+                    @Override
+                    public void onFailure(String error) {
+                        runOnUiThread(() -> {
+                            btnNotifyWaiting.setEnabled(true);
+                            Toast.makeText(ManageDrawActivity.this,
+                                    "Failed to send notifications: " + error,
+                                    Toast.LENGTH_LONG).show();
+                        });
+                    }
+                }
+        );
+    }
+
     /**
      * US 02.06.04 - Cancel entrants that did not sign up for the event
      *
@@ -685,7 +953,7 @@ public class ManageDrawActivity extends AppCompatActivity {
         }
 
         // Disable button to avoid double-taps
-        btnCancelUnconfirmed.setEnabled(false);
+//        btnCancelUnconfirmed.setEnabled(false);
 
         // Batch update in Firestore
         com.google.firebase.firestore.WriteBatch batch = db.batch();
@@ -718,7 +986,7 @@ public class ManageDrawActivity extends AppCompatActivity {
                         Toast.makeText(ManageDrawActivity.this,
                                 "Canceled " + toCancel.size() + " unconfirmed entrants",
                                 Toast.LENGTH_LONG).show();
-                        btnCancelUnconfirmed.setEnabled(true);
+//                        btnCancelUnconfirmed.setEnabled(true);
                         // Reload list so tabs + counts update
                         loadWaitingListEntries();
                     });
@@ -729,7 +997,7 @@ public class ManageDrawActivity extends AppCompatActivity {
                         Toast.makeText(ManageDrawActivity.this,
                                 "Failed to cancel entrants: " + e.getMessage(),
                                 Toast.LENGTH_LONG).show();
-                        btnCancelUnconfirmed.setEnabled(true);
+//                        btnCancelUnconfirmed.setEnabled(true);
                     });
                 });
     }
