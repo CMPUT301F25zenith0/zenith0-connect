@@ -10,6 +10,7 @@
         android:layout_height="match_parent"
         android:background="#5F9EA0"
         android:fillViewport="true"
+        android:paddingTop="10dp"
         android:visibility="gone">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -38,6 +39,17 @@
                 android:textStyle="bold"
                 android:layout_marginStart="16dp"
                 app:layout_constraintStart_toEndOf="@id/back_btn"
+                app:layout_constraintTop_toTopOf="@id/back_btn"
+                app:layout_constraintBottom_toBottomOf="@id/back_btn" />
+
+            <!-- Report Button -->
+            <ImageView
+                android:id="@+id/btn_report"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_report_ring"
+                android:contentDescription="Report"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="@id/back_btn"
                 app:layout_constraintBottom_toBottomOf="@id/back_btn" />
 

@@ -44,7 +44,7 @@ public class EventDetails extends AppCompatActivity {
     // UI Components
     private ProgressBar loadingSpinner;
     private ScrollView scrollContent;
-    private ImageView btnBack, eventImage;
+    private ImageView btnBack, eventImage, btnReport;
     private TextView eventTitle, tvOrgName, tvDateTime, tvLocation, tvPrice, tvRegWindow, tvWaitingList;
     private com.google.firebase.firestore.ListenerRegistration waitlistRegistration;
     private String description;
@@ -101,6 +101,7 @@ public class EventDetails extends AppCompatActivity {
         loadingSpinner = findViewById(R.id.spinner);
         btnBack = findViewById(R.id.back_btn);
         eventImage = findViewById(R.id.event_image);
+        btnReport = findViewById(R.id.btn_report);
         eventTitle = findViewById(R.id.event_title);
         tvOrgName = findViewById(R.id.tv_org_name);
         tvDateTime = findViewById(R.id.tv_date_time);
@@ -136,6 +137,20 @@ public class EventDetails extends AppCompatActivity {
         // Leave waiting list button
         btnLeaveList.setOnClickListener(v -> leaveWaitingList());
 
+        // Report Dialog pop up
+        btnReport.setOnClickListener(v -> showReportDialog());
+
+    }
+
+    // Pop up dialog for report
+    private void showReportDialog() {
+        // Ensure eventId is available before opening the dialog
+        if (eventId != null) {
+            com.example.connect.fragments.ReportDialogFragment dialog = com.example.connect.fragments.ReportDialogFragment.newInstance(eventId);
+            dialog.show(getSupportFragmentManager(), "ReportEventDialogTag");
+        } else {
+            Toast.makeText(this, "Cannot report, event ID not found.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     /**
