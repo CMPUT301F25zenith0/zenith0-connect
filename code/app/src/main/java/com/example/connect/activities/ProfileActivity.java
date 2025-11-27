@@ -3,17 +3,24 @@ package com.example.connect.activities;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.text.TextUtils;
-
+import android.util.Base64;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -30,8 +37,11 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
 
 /**
  * Activity for viewing and updating user profile information.
@@ -64,6 +74,10 @@ public class ProfileActivity extends AppCompatActivity {
 
     // Model
     private User currentUserModel;
+
+    // Image Upload Variables
+    private Uri selectedImageUri;
+    private ActivityResultLauncher<Intent> imagePickerLauncher;
 
     // Data for Tags
     private List<String> selectedInterests = new ArrayList<>();
@@ -101,7 +115,8 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         initViews();
-        setupInterestChips(); // Initialize chips
+        setupInterestChips();
+        setupImagePicker();
 
         if (isAdminView) {
             setupAdminView();
@@ -134,63 +149,66 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     /**
+     * Sets up the launcher to handle the result from the gallery.
+     */
+    private void setupImagePicker() {
+        imagePickerLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        selectedImageUri = result.getData().getData();
+                        // Show the selected image immediately in the UI
+                        profileImage.setImageURI(selectedImageUri);
+                    }
+                }
+        );
+    }
+
+    /**
+     * Opens the gallery to pick an image.
+     */
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        intent.setType("image/*");
+        imagePickerLauncher.launch(intent);
+    }
+
+    /**
      * Generates chips with visual state logic (Selected vs Unselected).
+     * Sets up the launcher to handle the result from the gallery.
      */
     private void setupInterestChips() {
         chipGroupInterests.removeAllViews();
-
-        // Define Color States for Background
-        int[][] states = new int[][] {
-                new int[] { android.R.attr.state_checked }, // Selected state
-                new int[] { -android.R.attr.state_checked } // Unselected state
-        };
-
-        int[] backgroundColors = new int[] {
-                Color.parseColor("#0C3B5E"),
-                Color.parseColor("#E0E0E0")
-        };
-
-        int[] textColors = new int[] {
-                Color.WHITE,
-                Color.BLACK
-        };
-
+        int[][] states = new int[][] { new int[] { android.R.attr.state_checked }, new int[] { -android.R.attr.state_checked } };
+        int[] backgroundColors = new int[] { Color.parseColor("#0C3B5E"), Color.parseColor("#E0E0E0") };
+        int[] textColors = new int[] { Color.WHITE, Color.BLACK };
         ColorStateList backgroundColorList = new ColorStateList(states, backgroundColors);
         ColorStateList textColorList = new ColorStateList(states, textColors);
 
         for (String tag : AVAILABLE_TAGS) {
             Chip chip = new Chip(this);
             chip.setText(tag);
-
-            // Enable checkable
-            chip.setCheckable(true);
+            chip.setCheckable(true);    // Enable checkable
             chip.setClickable(true);
-            chip.setCheckedIconVisible(true); // Show checkmark icon
-            chip.setCheckedIconTint(ColorStateList.valueOf(Color.WHITE)); // White checkmark
 
-            // Apply Colors
+            chip.setCheckedIconVisible(true);     // Apply Colors
+            chip.setCheckedIconTint(ColorStateList.valueOf(Color.WHITE));
             chip.setChipBackgroundColor(backgroundColorList);
             chip.setTextColor(textColorList);
 
             // Handle Logic Select / Deselect
             chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 if (isChecked) {
-                    // Check limit (5)
                     if (selectedInterests.size() >= 5) {
-                        chip.setChecked(false); // Visually uncheck immediately
+                        chip.setChecked(false);
                         Toast.makeText(this, "Maximum 5 interests allowed", Toast.LENGTH_SHORT).show();
                     } else {
-                        // Avoid duplicates if logic misfires
-                        if (!selectedInterests.contains(tag)) {
-                            selectedInterests.add(tag);
-                        }
+                        if (!selectedInterests.contains(tag)) selectedInterests.add(tag);
                     }
                 } else {
-                    // User tapped a selected chip -> Deselect it
                     selectedInterests.remove(tag);
                 }
             });
-
             chipGroupInterests.addView(chip);
         }
     }
@@ -210,7 +228,6 @@ public class ProfileActivity extends AppCompatActivity {
                                 populateUI(currentUserModel);
                             }
                         } else {
-                            // Handle new user
                             if (firebaseUser != null) {
                                 etEmail.setText(firebaseUser.getEmail());
                                 currentUserModel = new User();
@@ -225,6 +242,7 @@ public class ProfileActivity extends AppCompatActivity {
      * Populates the UI fields using data from the User model.
      * Updated to correctly handle ChipGroup population.
      * @param user The user object containing profile data.
+     * Populates UI and decodes the Base64 image if it exists.
      */
     private void populateUI(User user) {
         if (user.getName() != null) etDisplayName.setText(user.getName());
@@ -232,22 +250,25 @@ public class ProfileActivity extends AppCompatActivity {
         if (user.getEmail() != null) etEmail.setText(user.getEmail());
         if (user.getPhone() != null) etPhone.setText(user.getPhone());
 
-        // Pre-select chips based on database data
+        // Decode and Display Image
+        String base64Image = user.getProfileImageUrl();
+        if (base64Image != null && !base64Image.isEmpty()) {
+            try {
+                byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
+                Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                profileImage.setImageBitmap(decodedByte);
+            } catch (Exception e) {
+                Log.e(TAG, "Error decoding profile image", e);
+            }
+        }
+
+        // Handle Chips
         if (user.getInterests() != null) {
-            // Clear the tracking list first.
-            // trigger the OnCheckedChangeListener, which will add them to the list for us.
             selectedInterests.clear();
-
             List<String> dbInterests = user.getInterests();
-
-            // Iterate through UI chips
             for (int i = 0; i < chipGroupInterests.getChildCount(); i++) {
                 Chip chip = (Chip) chipGroupInterests.getChildAt(i);
-                String chipText = chip.getText().toString();
-
-                // If the chip's text exists in the DB list, visually check it.
-                if (dbInterests.contains(chipText)) {
-                    // This call triggers the OnCheckedChangeListener defined in setupInterestChips
+                if (dbInterests.contains(chip.getText().toString())) {
                     chip.setChecked(true);
                 }
             }
@@ -266,7 +287,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         if (!validateInputs(name, email, phone)) return;
 
-        // CHECK MIN LIMIT (3)
         if (selectedInterests.size() < 3) {
             Toast.makeText(this, "Please select at least 3 interests", Toast.LENGTH_SHORT).show();
             return;
@@ -284,9 +304,15 @@ public class ProfileActivity extends AppCompatActivity {
         currentUserModel.setFullName(name);
         currentUserModel.setEmail(email);
         currentUserModel.setPhone(TextUtils.isEmpty(phone) ? null : phone);
-
-        // Save interests list to model
         currentUserModel.setInterests(selectedInterests);
+
+        // Convert and Save Image if a new one was selected
+        if (selectedImageUri != null) {
+            String base64Image = convertImageToBase64(selectedImageUri);
+            if (base64Image != null) {
+                currentUserModel.setProfileImageUrl(base64Image);
+            }
+        }
 
         db.collection("accounts").document(userId)
                 .set(currentUserModel, SetOptions.merge())
@@ -303,7 +329,38 @@ public class ProfileActivity extends AppCompatActivity {
 
     /**
      * Set up UI for Admin read-only mode.
+     * Logic extracted from CreateEvent to resize and convert image to Base64.
+     * credit to Digaant Chhokra
      */
+    private String convertImageToBase64(Uri imageUri) {
+        try {
+            InputStream inputStream = getContentResolver().openInputStream(imageUri);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+
+            // Resize image to reduce size (max 800x800) to respect Firestore document limits
+            int maxSize = 800;
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+
+            float ratio = Math.min((float) maxSize / width, (float) maxSize / height);
+            int newWidth = Math.round(width * ratio);
+            int newHeight = Math.round(height * ratio);
+
+            Bitmap resized = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+
+            // Convert to Base64
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            resized.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream);
+            byte[] byteArray = byteArrayOutputStream.toByteArray();
+
+            return Base64.encodeToString(byteArray, Base64.DEFAULT);
+        } catch (Exception e) {
+            Log.e(TAG, "Error converting image to Base64", e);
+            Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+    }
+
     private void setupAdminView() {
         etDisplayName.setEnabled(false);
         etName.setEnabled(false);
@@ -318,6 +375,7 @@ public class ProfileActivity extends AppCompatActivity {
         btnOrgView.setVisibility(View.GONE);
         edit_image.setVisibility(View.GONE);
     }
+
 
     /**
      * Adjust the UI based on where this activity was opened from.
@@ -336,6 +394,12 @@ public class ProfileActivity extends AppCompatActivity {
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
         if (btnLogout != null) btnLogout.setOnClickListener(v -> confirmLogout());
         if (btnSave != null) btnSave.setOnClickListener(v -> saveProfile());
+
+        // Add listener for the edit image button
+        if (edit_image != null) edit_image.setOnClickListener(v -> openImagePicker());
+        // Optional: Allow clicking the profile image itself to edit
+        if (profileImage != null) profileImage.setOnClickListener(v -> openImagePicker());
+
         if (btnDelete != null) btnDelete.setOnClickListener(v -> confirmDeleteProfile());
         if (btnOrgView != null) {
             btnOrgView.setOnClickListener(v -> {
@@ -352,6 +416,7 @@ public class ProfileActivity extends AppCompatActivity {
             });
         }
     }
+
 
     /**
      * Show a confirmation dialog before logging out.
@@ -384,6 +449,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     /**
      * Show a confirmation dialog before deleting the account.
+     * Delete the user's profile from both Firestore and Firebase Auth.
      */
     private void confirmDeleteProfile() {
         new AlertDialog.Builder(this)
@@ -406,19 +472,18 @@ public class ProfileActivity extends AppCompatActivity {
         });
     }
 
+
     /**
      * Set up the device ID field with a masked Android ID.
      */
     private void setupDeviceId() {
         String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
         if (androidId != null && !androidId.isEmpty()) {
-            // Mask the ID only showing the last 4 characters
             String maskedId = "*******" + androidId.substring(Math.max(0, androidId.length() - 4));
             etDeviceId.setText(maskedId);
         } else {
             etDeviceId.setText("*******");
         }
-        // Ensure the field is not editable
         etDeviceId.setEnabled(false);
     }
 

@@ -339,7 +339,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/ic_profile_example" />
+                    android:src="@drawable/ic_profile_placeholder" />
             </androidx.cardview.widget.CardView>
 
             <ImageButton
@@ -348,11 +348,10 @@
                 android:layout_height="36dp"
                 android:layout_alignParentEnd="true"
                 android:layout_alignParentBottom="true"
-                android:background="@drawable/rounded_image_button"
-                android:backgroundTint="#0C3B5E"
+                android:background="@drawable/ic_add_photo_circle"
                 android:padding="8dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_edit"
+
                 app:tint="#FFFFFF" />
 
         </RelativeLayout>
