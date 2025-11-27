@@ -2,11 +2,12 @@ package com.example.connect.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
-import android.util.Log;
-import android.util.Patterns;
+
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -19,16 +20,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.connect.R;
 import com.example.connect.models.User;
 import com.example.connect.utils.UserActivityTracker;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
+
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.AuthCredential;
-import com.google.firebase.auth.EmailAuthProvider;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Activity for viewing and updating user profile information.
@@ -46,9 +49,12 @@ public class ProfileActivity extends AppCompatActivity {
 
     // UI Components
     private EditText etName, etEmail, etPhone, etDeviceId, etDisplayName;
-    private MaterialButton btnSave, btnDelete, btnLogout, btnOrgView; // btnBack removed from here
-    private ImageButton btnBack, edit_image; // btnBack added here as ImageButton
+    private MaterialButton btnSave, btnDelete, btnLogout, btnOrgView;
+    private ImageButton btnBack, edit_image;
     private ImageView profileImage;
+
+    // ChipGroup
+    private ChipGroup chipGroupInterests;
 
     // Firebase
     private FirebaseAuth mAuth;
@@ -58,6 +64,15 @@ public class ProfileActivity extends AppCompatActivity {
 
     // Model
     private User currentUserModel;
+
+    // Data for Tags
+    private List<String> selectedInterests = new ArrayList<>();
+
+    private final String[] AVAILABLE_TAGS = {
+            "Technology", "Music", "Art", "Sports", "Travel",
+            "Food", "Gaming", "Photography", "Science", "Business",
+            "Health", "Education", "Fashion", "Movies", "Literature"
+    };
 
     /**
      * Initialize the activity when it starts.
@@ -70,24 +85,15 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.user_profile);
 
-        // Initialize Firebase
         mAuth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
         firebaseUser = mAuth.getCurrentUser();
 
-        // Check if opened from Admin Dashboard
         boolean isAdminView = getIntent().getBooleanExtra("IS_ADMIN_VIEW", false);
-
         if (isAdminView) {
             userId = getIntent().getStringExtra("user_id_admin_view");
-            if (userId == null) {
-                Toast.makeText(this, "Error: User ID not provided", Toast.LENGTH_SHORT).show();
-                finish();
-                return;
-            }
         } else {
             if (firebaseUser == null) {
-                Toast.makeText(this, "Please log in to view profile", Toast.LENGTH_SHORT).show();
                 finish();
                 return;
             }
@@ -95,11 +101,12 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         initViews();
+        setupInterestChips(); // Initialize chips
 
         if (isAdminView) {
             setupAdminView();
         } else {
-            setupViewMode(); // Check if opened from organizer view
+            setupViewMode();
         }
 
         setupClickListeners();
@@ -111,31 +118,200 @@ public class ProfileActivity extends AppCompatActivity {
      * Initialize all UI components by finding their views from the layout.
      */
     private void initViews() {
-        etDisplayName = findViewById(R.id.et_display_name); // Added Display Name
+        etDisplayName = findViewById(R.id.et_display_name);
         etName = findViewById(R.id.et_name);
         etEmail = findViewById(R.id.et_email_profile);
         etPhone = findViewById(R.id.et_phone);
         etDeviceId = findViewById(R.id.et_device);
         btnSave = findViewById(R.id.btn_save);
         btnDelete = findViewById(R.id.btn_delete);
-        btnBack = findViewById(R.id.back_btn); // Correctly cast to ImageButton
+        btnBack = findViewById(R.id.back_btn);
         btnLogout = findViewById(R.id.btn_logout);
         btnOrgView = findViewById(R.id.btn_org_view);
         profileImage = findViewById(R.id.profile_img);
         edit_image = findViewById(R.id.edit_profile);
+        chipGroupInterests = findViewById(R.id.chip_group_interests);
+    }
+
+    /**
+     * Generates chips with visual state logic (Selected vs Unselected).
+     */
+    private void setupInterestChips() {
+        chipGroupInterests.removeAllViews();
+
+        // Define Color States for Background
+        int[][] states = new int[][] {
+                new int[] { android.R.attr.state_checked }, // Selected state
+                new int[] { -android.R.attr.state_checked } // Unselected state
+        };
+
+        int[] backgroundColors = new int[] {
+                Color.parseColor("#0C3B5E"),
+                Color.parseColor("#E0E0E0")
+        };
+
+        int[] textColors = new int[] {
+                Color.WHITE,
+                Color.BLACK
+        };
+
+        ColorStateList backgroundColorList = new ColorStateList(states, backgroundColors);
+        ColorStateList textColorList = new ColorStateList(states, textColors);
+
+        for (String tag : AVAILABLE_TAGS) {
+            Chip chip = new Chip(this);
+            chip.setText(tag);
+
+            // Enable checkable
+            chip.setCheckable(true);
+            chip.setClickable(true);
+            chip.setCheckedIconVisible(true); // Show checkmark icon
+            chip.setCheckedIconTint(ColorStateList.valueOf(Color.WHITE)); // White checkmark
+
+            // Apply Colors
+            chip.setChipBackgroundColor(backgroundColorList);
+            chip.setTextColor(textColorList);
+
+            // Handle Logic Select / Deselect
+            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    // Check limit (5)
+                    if (selectedInterests.size() >= 5) {
+                        chip.setChecked(false); // Visually uncheck immediately
+                        Toast.makeText(this, "Maximum 5 interests allowed", Toast.LENGTH_SHORT).show();
+                    } else {
+                        // Avoid duplicates if logic misfires
+                        if (!selectedInterests.contains(tag)) {
+                            selectedInterests.add(tag);
+                        }
+                    }
+                } else {
+                    // User tapped a selected chip -> Deselect it
+                    selectedInterests.remove(tag);
+                }
+            });
+
+            chipGroupInterests.addView(chip);
+        }
+    }
+
+    /**
+     * Load the user's profile information from Firestore using the User model.
+     */
+    private void loadUserProfile() {
+        db.collection("accounts").document(userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        DocumentSnapshot document = task.getResult();
+                        if (document != null && document.exists()) {
+                            currentUserModel = document.toObject(User.class);
+                            if (currentUserModel != null) {
+                                populateUI(currentUserModel);
+                            }
+                        } else {
+                            // Handle new user
+                            if (firebaseUser != null) {
+                                etEmail.setText(firebaseUser.getEmail());
+                                currentUserModel = new User();
+                                currentUserModel.setUserId(userId);
+                            }
+                        }
+                    }
+                });
+    }
+
+    /**
+     * Populates the UI fields using data from the User model.
+     * Updated to correctly handle ChipGroup population.
+     * @param user The user object containing profile data.
+     */
+    private void populateUI(User user) {
+        if (user.getName() != null) etDisplayName.setText(user.getName());
+        if (user.getFullName() != null) etName.setText(user.getFullName());
+        if (user.getEmail() != null) etEmail.setText(user.getEmail());
+        if (user.getPhone() != null) etPhone.setText(user.getPhone());
+
+        // Pre-select chips based on database data
+        if (user.getInterests() != null) {
+            // Clear the tracking list first.
+            // trigger the OnCheckedChangeListener, which will add them to the list for us.
+            selectedInterests.clear();
+
+            List<String> dbInterests = user.getInterests();
+
+            // Iterate through UI chips
+            for (int i = 0; i < chipGroupInterests.getChildCount(); i++) {
+                Chip chip = (Chip) chipGroupInterests.getChildAt(i);
+                String chipText = chip.getText().toString();
+
+                // If the chip's text exists in the DB list, visually check it.
+                if (dbInterests.contains(chipText)) {
+                    // This call triggers the OnCheckedChangeListener defined in setupInterestChips
+                    chip.setChecked(true);
+                }
+            }
+        }
+    }
+
+    /**
+     * Save the updated profile information to Firestore.
+     * Updates the User object and saves it to the database.
+     */
+    private void saveProfile() {
+        String displayName = etDisplayName.getText().toString().trim();
+        String name = etName.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String phone = etPhone.getText().toString().trim();
+
+        if (!validateInputs(name, email, phone)) return;
+
+        // CHECK MIN LIMIT (3)
+        if (selectedInterests.size() < 3) {
+            Toast.makeText(this, "Please select at least 3 interests", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        btnSave.setEnabled(false);
+        btnSave.setText("Saving...");
+
+        if (currentUserModel == null) {
+            currentUserModel = new User();
+            currentUserModel.setUserId(userId);
+        }
+
+        currentUserModel.setName(displayName);
+        currentUserModel.setFullName(name);
+        currentUserModel.setEmail(email);
+        currentUserModel.setPhone(TextUtils.isEmpty(phone) ? null : phone);
+
+        // Save interests list to model
+        currentUserModel.setInterests(selectedInterests);
+
+        db.collection("accounts").document(userId)
+                .set(currentUserModel, SetOptions.merge())
+                .addOnCompleteListener(task -> {
+                    btnSave.setEnabled(true);
+                    btnSave.setText("Save Changes");
+                    if (task.isSuccessful()) {
+                        Toast.makeText(ProfileActivity.this, "Profile updated successfully!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(ProfileActivity.this, "Failed to update profile", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     /**
      * Set up UI for Admin read-only mode.
      */
     private void setupAdminView() {
-        // Disable editing
         etDisplayName.setEnabled(false);
         etName.setEnabled(false);
         etEmail.setEnabled(false);
         etPhone.setEnabled(false);
-
-        // Hide buttons
+        for (int i = 0; i < chipGroupInterests.getChildCount(); i++) {
+            chipGroupInterests.getChildAt(i).setEnabled(false);
+        }
         btnSave.setVisibility(View.GONE);
         btnDelete.setVisibility(View.GONE);
         btnLogout.setVisibility(View.GONE);
@@ -147,9 +323,7 @@ public class ProfileActivity extends AppCompatActivity {
      * Adjust the UI based on where this activity was opened from.
      */
     private void setupViewMode() {
-        // Check if opened from OrganizerActivity
         boolean fromOrganizer = getIntent().getBooleanExtra("from_organizer", false);
-
         if (fromOrganizer && btnOrgView != null) {
             btnOrgView.setText("Switch to User View");
         }
@@ -163,13 +337,6 @@ public class ProfileActivity extends AppCompatActivity {
         if (btnLogout != null) btnLogout.setOnClickListener(v -> confirmLogout());
         if (btnSave != null) btnSave.setOnClickListener(v -> saveProfile());
         if (btnDelete != null) btnDelete.setOnClickListener(v -> confirmDeleteProfile());
-
-        if (edit_image != null) {
-            edit_image.setOnClickListener(v -> {
-                Toast.makeText(this, "Profile image upload coming soon", Toast.LENGTH_SHORT).show();
-            });
-        }
-
         if (btnOrgView != null) {
             btnOrgView.setOnClickListener(v -> {
                 boolean fromOrganizer = getIntent().getBooleanExtra("from_organizer", false);
@@ -184,143 +351,6 @@ public class ProfileActivity extends AppCompatActivity {
                 }
             });
         }
-    }
-
-    /**
-     * Load the user's profile information from Firestore using the User model.
-     */
-    private void loadUserProfile() {
-        db.collection("accounts").document(userId)
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(Task<DocumentSnapshot> task) {
-                        if (task.isSuccessful()) {
-                            DocumentSnapshot document = task.getResult();
-                            if (document != null && document.exists()) {
-                                // Convert Firestore document directly to User object
-                                currentUserModel = document.toObject(User.class);
-
-                                if (currentUserModel != null) {
-                                    populateUI(currentUserModel);
-                                }
-                            } else {
-                                // No profile exists, use Firebase Auth email
-                                if (firebaseUser != null && firebaseUser.getEmail() != null) {
-                                    etEmail.setText(firebaseUser.getEmail());
-                                    // Initialize a fresh model
-                                    currentUserModel = new User();
-                                    currentUserModel.setUserId(userId);
-                                    currentUserModel.setEmail(firebaseUser.getEmail());
-                                }
-                                Log.d(TAG, "No profile document found, creating new one");
-                            }
-                        } else {
-                            Log.e(TAG, "Error loading profile", task.getException());
-                            Toast.makeText(ProfileActivity.this, "Error loading profile", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Populates the UI fields using data from the User model.
-     * @param user The user object containing profile data.
-     */
-    private void populateUI(User user) {
-        if (user.getName() != null) etDisplayName.setText(user.getName()); // Bind Display Name
-        if (user.getFullName() != null) etName.setText(user.getFullName());
-        if (user.getEmail() != null) etEmail.setText(user.getEmail());
-        if (user.getPhone() != null) etPhone.setText(user.getPhone());
-
-        // Note: Profile image loading logic would go here using user.getProfileImageUrl()
-    }
-
-    /**
-     * Set up the device ID field with a masked Android ID.
-     */
-    private void setupDeviceId() {
-        String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-        if (androidId != null && !androidId.isEmpty()) {
-            String maskedId = "*******" + androidId.substring(Math.max(0, androidId.length() - 4));
-            etDeviceId.setText(maskedId);
-        } else {
-            etDeviceId.setText("*******");
-        }
-        etDeviceId.setEnabled(false);
-    }
-
-    /**
-     * Save the updated profile information to Firestore.
-     * Updates the User object and saves it to the database.
-     */
-    private void saveProfile() {
-        String displayName = etDisplayName.getText().toString().trim();
-        String name = etName.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
-        String phone = etPhone.getText().toString().trim();
-
-        if (!validateInputs(name, email, phone)) {
-            return;
-        }
-
-        btnSave.setEnabled(false);
-        btnSave.setText("Saving...");
-
-        // Ensure we have a model instance
-        if (currentUserModel == null) {
-            currentUserModel = new User();
-            currentUserModel.setUserId(userId);
-        }
-
-        // Update the model
-        currentUserModel.setName(displayName); // Save Display Name
-        currentUserModel.setFullName(name);
-        currentUserModel.setEmail(email);
-        currentUserModel.setPhone(TextUtils.isEmpty(phone) ? null : phone);
-
-        // Save User object to Firestore
-        db.collection("accounts").document(userId)
-                .set(currentUserModel, SetOptions.merge())
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(Task<Void> task) {
-                        btnSave.setEnabled(true);
-                        btnSave.setText("Save");
-
-                        if (task.isSuccessful()) {
-                            // Update Firebase Auth if email changed
-                            if (firebaseUser != null && !email.equals(firebaseUser.getEmail())) {
-                                updateFirebaseAuthEmail(email);
-                            } else {
-                                Toast.makeText(ProfileActivity.this, "Profile updated successfully!", Toast.LENGTH_SHORT).show();
-                            }
-                        } else {
-                            Log.e(TAG, "Error updating profile", task.getException());
-                            Toast.makeText(ProfileActivity.this, "Failed to update profile", Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Update the email address in Firebase Authentication.
-     */
-    private void updateFirebaseAuthEmail(String newEmail) {
-        if (firebaseUser == null) return;
-
-        firebaseUser.updateEmail(newEmail)
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(Task<Void> task) {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(ProfileActivity.this, "Profile and email updated successfully!", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Log.e(TAG, "Error updating email", task.getException());
-                            Toast.makeText(ProfileActivity.this, "Profile updated but email update failed. Please re-authenticate.", Toast.LENGTH_LONG).show();
-                        }
-                    }
-                });
     }
 
     /**
@@ -343,16 +373,9 @@ public class ProfileActivity extends AppCompatActivity {
     private void performLogout() {
         UserActivityTracker.markUserInactive();
         mAuth.signOut();
-
         SharedPreferences sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean("rememberMe", false);
-        editor.remove("email");
-        editor.remove("password");
-        editor.apply();
-
-        Toast.makeText(this, "Logged out successfully", Toast.LENGTH_SHORT).show();
-
+        editor.clear().apply();
         Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
@@ -365,7 +388,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void confirmDeleteProfile() {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete your profile? This action cannot be undone.")
+                .setMessage("Are you sure you want to delete your profile?")
                 .setPositiveButton("Delete", (dialog, which) -> deleteProfile())
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -375,152 +398,39 @@ public class ProfileActivity extends AppCompatActivity {
      * Delete the user's profile from both Firestore and Firebase Auth.
      */
     private void deleteProfile() {
-        if (firebaseUser == null) {
-            Toast.makeText(this, "No user logged in", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        final String userIdToDelete = userId;
-        btnDelete.setEnabled(false);
-        btnDelete.setText("Deleting...");
-
-        deleteFirestoreDocument(userIdToDelete, () -> deleteAuthAccount());
-    }
-
-    /**
-     * Delete the Firebase Auth account.
-     */
-    private void deleteAuthAccount() {
         if (firebaseUser == null) return;
-
-        firebaseUser.delete()
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(Task<Void> task) {
-                        if (task.isSuccessful()) {
-                            cleanupAndNavigate();
-                        } else {
-                            Exception exception = task.getException();
-                            String errorMsg = exception != null ? exception.getMessage() : "Unknown error";
-                            Log.e(TAG, "Error deleting Auth account: " + errorMsg);
-
-                            if (errorMsg != null && errorMsg.contains("requires recent authentication")) {
-                                promptReAuthentication();
-                            } else {
-                                Toast.makeText(ProfileActivity.this, "Auth deletion failed: " + errorMsg, Toast.LENGTH_LONG).show();
-                                cleanupAndNavigate(); // Firestore is already deleted
-                            }
-                        }
-                    }
-                });
-    }
-
-    /**
-     * Prompt user for re-authentication before sensitive operations.
-     */
-    private void promptReAuthentication() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Re-authentication Required");
-        builder.setMessage("Please enter your password to confirm account deletion:");
-
-        final EditText passwordInput = new EditText(this);
-        passwordInput.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
-        builder.setView(passwordInput);
-
-        builder.setPositiveButton("Confirm", (dialog, which) -> {
-            String password = passwordInput.getText().toString().trim();
-            if (!password.isEmpty()) {
-                reAuthenticateAndDelete(password);
-            }
-        });
-        builder.setNegativeButton("Cancel", (dialog, which) -> {
-            btnDelete.setEnabled(true);
-            btnDelete.setText("Delete Profile");
-        });
-        builder.show();
-    }
-
-    private void reAuthenticateAndDelete(String password) {
-        if (firebaseUser == null || firebaseUser.getEmail() == null) return;
-
-        AuthCredential credential = EmailAuthProvider.getCredential(firebaseUser.getEmail(), password);
-        firebaseUser.reauthenticate(credential).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                deleteAuthAccountAfterReAuth();
-            } else {
-                btnDelete.setEnabled(true);
-                btnDelete.setText("Delete Profile");
-                Toast.makeText(ProfileActivity.this, "Re-authentication failed", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void deleteAuthAccountAfterReAuth() {
-        if (firebaseUser != null) {
-            firebaseUser.delete().addOnCompleteListener(task -> {
-                if (task.isSuccessful()) cleanupAndNavigate();
+        db.collection("accounts").document(userId).delete().addOnCompleteListener(task -> {
+            firebaseUser.delete().addOnCompleteListener(t -> {
+                performLogout();
             });
-        }
+        });
     }
 
     /**
-     * Delete the user's document from the Firestore "accounts" collection.
+     * Set up the device ID field with a masked Android ID.
      */
-    private void deleteFirestoreDocument(String userIdToDelete, Runnable onComplete) {
-        db.collection("accounts").document(userIdToDelete)
-                .delete()
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Firestore document deleted");
-                    if (onComplete != null) onComplete.run();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error deleting Firestore document", e);
-                    // Even if Firestore fails (permissions/etc), try to delete Auth or finish
-                    if (onComplete != null) onComplete.run();
-                });
-    }
-
-    private void cleanupAndNavigate() {
-        SharedPreferences sharedPreferences = getSharedPreferences("LoginPrefs", MODE_PRIVATE);
-        sharedPreferences.edit().clear().apply();
-        mAuth.signOut();
-
-        Toast.makeText(ProfileActivity.this, "Account deleted successfully", Toast.LENGTH_SHORT).show();
-        Intent intent = new Intent(ProfileActivity.this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+    private void setupDeviceId() {
+        String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+        if (androidId != null && !androidId.isEmpty()) {
+            // Mask the ID only showing the last 4 characters
+            String maskedId = "*******" + androidId.substring(Math.max(0, androidId.length() - 4));
+            etDeviceId.setText(maskedId);
+        } else {
+            etDeviceId.setText("*******");
+        }
+        // Ensure the field is not editable
+        etDeviceId.setEnabled(false);
     }
 
     private boolean validateInputs(String name, String email, String phone) {
-        if (TextUtils.isEmpty(name)) {
-            etName.setError("Name is required");
-            etName.requestFocus();
-            return false;
-        }
-        if (TextUtils.isEmpty(email)) {
-            etEmail.setError("Email is required");
-            etEmail.requestFocus();
-            return false;
-        }
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etEmail.setError("Please enter a valid email");
-            etEmail.requestFocus();
-            return false;
-        }
-        if (!TextUtils.isEmpty(phone) && phone.length() < 10) {
-            etPhone.setError("Please enter a valid phone number (at least 10 digits)");
-            etPhone.requestFocus();
-            return false;
-        }
+        if (TextUtils.isEmpty(name)) return false;
+        if (TextUtils.isEmpty(email)) return false;
         return true;
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (firebaseUser != null) {
-            UserActivityTracker.markUserActive();
-        }
+        if (firebaseUser != null) UserActivityTracker.markUserActive();
     }
 }
