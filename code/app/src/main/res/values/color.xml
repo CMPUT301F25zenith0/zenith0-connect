@@ -7,6 +7,9 @@
     <color name="f3">#507D82</color>
     <color name="f4">#0B2E32</color>
 
+    <color name="mist_pink">#D8C2C2</color>
+    <color name="interests">#0C3B5E</color>
+
     <color name="f5">#93B185</color> <!-- Button Colour for user pages-->
 
     <!-- QR code scanner colours -->
