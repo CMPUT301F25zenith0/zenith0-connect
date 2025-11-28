@@ -24,6 +24,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
@@ -226,10 +227,13 @@ public class CreateEvent extends AppCompatActivity {
                             try {
                                 byte[] decoded = android.util.Base64.decode(base64Image, android.util.Base64.DEFAULT);
                                 Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
-                                ivEventImage.setImageBitmap(bmp);
+                                applyBitmapPreview(bmp);
                             } catch (Exception e) {
                                 Log.e(TAG, "Error decoding image", e);
+                                showPlaceholderImage();
                             }
+                        } else {
+                            showPlaceholderImage();
                         }
 
                         // Change button text for edit mode
@@ -309,6 +313,8 @@ public class CreateEvent extends AppCompatActivity {
         // ImageViews
         ivEventImage = findViewById(R.id.ivEventImage);
         ivAddImage = findViewById(R.id.ivAddImage);
+
+        showPlaceholderImage();
     }
 
     /**
@@ -349,11 +355,51 @@ public class CreateEvent extends AppCompatActivity {
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
-                        ivEventImage.setImageURI(selectedImageUri);
-                        existingBase64Image = null; // Clear existing image when new one is selected
+                        if (selectedImageUri != null) {
+                            applyUriPreview(selectedImageUri);
+                            existingBase64Image = null; // Clear existing image when new one is selected
+                        }
                     }
                 }
         );
+    }
+
+    private void applyBitmapPreview(Bitmap bitmap) {
+        if (bitmap == null) {
+            showPlaceholderImage();
+            return;
+        }
+        ivEventImage.setImageBitmap(bitmap);
+        ivAddImage.setImageBitmap(bitmap);
+        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        ivAddImage.setPadding(0, 0, 0, 0);
+        ivAddImage.clearColorFilter();
+    }
+
+    private void applyUriPreview(Uri uri) {
+        if (uri == null) {
+            showPlaceholderImage();
+            return;
+        }
+        ivEventImage.setImageURI(uri);
+        ivAddImage.setImageURI(uri);
+        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        ivAddImage.setPadding(0, 0, 0, 0);
+        ivAddImage.clearColorFilter();
+    }
+
+    private void showPlaceholderImage() {
+        if (ivEventImage == null || ivAddImage == null)
+            return;
+        ivEventImage.setImageResource(R.drawable.placeholder_img);
+        ivAddImage.setImageResource(android.R.drawable.ic_input_add);
+        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        ivAddImage.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+        ivAddImage.setColorFilter(ContextCompat.getColor(this, R.color.dark_blue));
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     /**
