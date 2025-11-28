@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -18,8 +20,21 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
+import com.google.android.material.switchmaterial.SwitchMaterial;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
@@ -32,12 +47,14 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Activity for creating and publishing events created in the app.
@@ -64,6 +81,9 @@ import java.util.Map;
 public class CreateEvent extends AppCompatActivity {
 
     private static final String TAG = "CreateEvent";
+    private static final int FALLBACK_GEOCODE_TIMEOUT_SECONDS = 5;
+    private static final String FALLBACK_GEOCODER_ENDPOINT = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=";
+    private static final String FALLBACK_USER_AGENT = "ZenithConnect/1.0 (support@zenithconnect.app)";
 
     // Edit mode
     private boolean isEditMode = false;
@@ -74,6 +94,7 @@ public class CreateEvent extends AppCompatActivity {
     private Button btnBack, btnStartDate, btnStartTime, btnEndDate, btnEndTime;
     private Button btnRegistrationOpens, btnRegistrationCloses, btnSaveDraft, btnPublishQR;
     private ImageView ivEventImage, ivAddImage;
+    private SwitchMaterial switchGeolocation;
 
     // Date and Time
     private Calendar startDateTime, endDateTime, registrationOpens, registrationCloses;
@@ -236,6 +257,11 @@ public class CreateEvent extends AppCompatActivity {
                             showPlaceholderImage();
                         }
 
+                        if (switchGeolocation != null) {
+                            Boolean geoEnabled = documentSnapshot.getBoolean("geo_verification_enabled");
+                            switchGeolocation.setChecked(geoEnabled != null && geoEnabled);
+                        }
+
                         // Change button text for edit mode
                         btnPublishQR.setText("Update Event");
                         btnSaveDraft.setText("Save Changes");
@@ -313,6 +339,9 @@ public class CreateEvent extends AppCompatActivity {
         // ImageViews
         ivEventImage = findViewById(R.id.ivEventImage);
         ivAddImage = findViewById(R.id.ivAddImage);
+
+        // Switches
+        switchGeolocation = findViewById(R.id.switchGeolocation);
 
         showPlaceholderImage();
     }
@@ -909,6 +938,117 @@ public class CreateEvent extends AppCompatActivity {
     }
 
     /**
+     * Converts a free-form address string into coordinates using available geocoders.
+     */
+    private GeoPoint geocodeLocation(String locationAddress) {
+        if (locationAddress == null || locationAddress.trim().isEmpty()) {
+            Log.w(TAG, "Location address is empty, cannot geocode");
+            return null;
+        }
+
+        GeoPoint systemGeocode = geocodeWithAndroidGeocoder(locationAddress);
+        if (systemGeocode != null) {
+            return systemGeocode;
+        }
+
+        Log.w(TAG, "System geocoder failed for location: " + locationAddress + ". Trying fallback service.");
+        GeoPoint fallbackGeocode = geocodeWithFallbackService(locationAddress);
+        if (fallbackGeocode != null) {
+            Log.d(TAG, "Fallback geocoder resolved location: " + locationAddress);
+        }
+        return fallbackGeocode;
+    }
+
+    private GeoPoint geocodeWithAndroidGeocoder(String locationAddress) {
+        try {
+            if (!Geocoder.isPresent()) {
+                Log.w(TAG, "Built-in Geocoder not present on this device/emulator");
+                return null;
+            }
+
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocationName(locationAddress, 1);
+            if (addresses == null || addresses.isEmpty()) {
+                return null;
+            }
+
+            Address address = addresses.get(0);
+            return new GeoPoint(address.getLatitude(), address.getLongitude());
+        } catch (IOException e) {
+            Log.e(TAG, "Android Geocoder IO error for location: " + locationAddress, e);
+            return null;
+        } catch (Exception e) {
+            Log.e(TAG, "Android Geocoder unexpected error for: " + locationAddress, e);
+            return null;
+        }
+    }
+
+    private GeoPoint geocodeWithFallbackService(String locationAddress) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<GeoPoint> future = executor.submit(() -> performFallbackGeocode(locationAddress));
+            return future.get(FALLBACK_GEOCODE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            Log.e(TAG, "Fallback geocoder failed for location: " + locationAddress, e);
+            return null;
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private GeoPoint performFallbackGeocode(String locationAddress) {
+        HttpURLConnection connection = null;
+        BufferedReader reader = null;
+        try {
+            String encodedAddress = URLEncoder.encode(locationAddress, "UTF-8");
+            URL url = new URL(FALLBACK_GEOCODER_ENDPOINT + encodedAddress);
+
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", FALLBACK_USER_AGENT);
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                Log.w(TAG, "Fallback geocoder HTTP response: " + responseCode);
+                return null;
+            }
+
+            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+
+            JSONArray results = new JSONArray(builder.toString());
+            if (results.length() == 0) {
+                Log.w(TAG, "Fallback geocoder returned no results for: " + locationAddress);
+                return null;
+            }
+
+            JSONObject firstResult = results.getJSONObject(0);
+            double latitude = firstResult.getDouble("lat");
+            double longitude = firstResult.getDouble("lon");
+            return new GeoPoint(latitude, longitude);
+        } catch (Exception e) {
+            Log.e(TAG, "Fallback geocoder error for location: " + locationAddress, e);
+            return null;
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ignored) {
+                }
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    /**
      * Creates a comprehensive map of event data for Firestore storage.
      */
     private Map<String, Object> createEventData(boolean isDraft) {
@@ -917,7 +1057,8 @@ public class CreateEvent extends AppCompatActivity {
         // Basic info
         eventData.put("event_title", etEventName.getText().toString().trim());
         eventData.put("description", etDescription.getText().toString().trim());
-        eventData.put("location", etLocation.getText().toString().trim());
+        String locationText = etLocation.getText().toString().trim();
+        eventData.put("location", locationText);
 
         // Date and time
         eventData.put("date_time", dateTimeFormat.format(startDateTime.getTime()));
@@ -983,6 +1124,25 @@ public class CreateEvent extends AppCompatActivity {
         // ⭐ ADD: Initialize lottery fields
         eventData.put("draw_completed", false);
         eventData.put("selected_count", 0);
+
+        // Geolocation requirements
+        boolean geoVerificationEnabled = switchGeolocation != null && switchGeolocation.isChecked();
+        eventData.put("geo_verification_enabled", geoVerificationEnabled);
+
+        if (geoVerificationEnabled && !locationText.isEmpty()) {
+            GeoPoint geoLocation = geocodeLocation(locationText);
+            if (geoLocation != null) {
+                eventData.put("geo_location", geoLocation);
+                Log.d(TAG, "Stored geotag for location: " + locationText);
+            } else {
+                Log.w(TAG, "Failed to geocode location for geo verification: " + locationText);
+                Toast.makeText(this,
+                        "Warning: Could not geocode location. Geolocation verification may not work properly.",
+                        Toast.LENGTH_LONG).show();
+            }
+        } else if (!geoVerificationEnabled) {
+            eventData.put("geo_location", null);
+        }
 
         return eventData;
     }
