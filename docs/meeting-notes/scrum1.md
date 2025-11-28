@@ -4,8 +4,8 @@
 **Date:** 2025-11-04  
 **Time:** 7:00 - 7:30 PM  
 **Attendees:** Jagjot Brar, Aakansh Chatterjee, Sai Vashnavi Jattu, Aalpesh Dayal, Digaant Chokkra  
-**Meeting Lead:** Jagjot Brar  
-**Recorder:** Aakansh Chatterjee  
+**Meeting Lead:** Aakansh Chatterjee  
+**Recorder:** jagjot Brar 
 **Location/Platform:** Discord Call
 
 ---
@@ -62,5 +62,5 @@
 
 ---
 
-> _Last updated: 2025-11-07_  
+> _Last updated: 2025-11-28_  
 > _Prepared by: Aakansh Chatterjee_
