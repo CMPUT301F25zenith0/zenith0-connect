@@ -169,6 +169,29 @@
             android:textSize="15sp"
             android:inputType="phone" />
 
+        
+        <!-- Home Location -->
+        <TextView
+            android:id="@+id/tv_home_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Home Location"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/et_location"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/edittext_bg"
+            android:hint="City, state or full address"
+            android:textColorHint="#E0E0E0"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textSize="15sp"
+            android:inputType="textCapWords|textPostalAddress" />
 
 
         <!-- Create Account Button -->

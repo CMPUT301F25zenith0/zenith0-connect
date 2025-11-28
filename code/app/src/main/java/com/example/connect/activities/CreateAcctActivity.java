@@ -1,4 +1,7 @@
 package com.example.connect.activities;
+
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -13,13 +16,24 @@ import com.example.connect.R;
 import com.example.connect.network.CreateAccountRepo;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Activity responsible for user account creation and registration.
@@ -40,8 +54,13 @@ import java.util.Map;
  */
 
 public class CreateAcctActivity extends AppCompatActivity {
+    private static final String TAG = "CreateAcctActivity";
+    private static final int FALLBACK_GEOCODE_TIMEOUT_SECONDS = 5;
+    private static final String FALLBACK_GEOCODER_ENDPOINT = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=";
+    private static final String FALLBACK_USER_AGENT = "ZenithConnect/1.0 (support@zenithconnect.app)";
+
     // UI Elements
-    private EditText etFullName, etDisplayName, etEmail, etPassword, etConfirmPassword, etMobileNumber;
+    private EditText etFullName, etDisplayName, etEmail, etPassword, etConfirmPassword, etMobileNumber, etLocation;
     private MaterialButton btnCreateAccount;
     private ImageButton btnBack;
 
@@ -87,6 +106,7 @@ public class CreateAcctActivity extends AppCompatActivity {
         etPassword = findViewById(R.id.et_password);
         etConfirmPassword = findViewById(R.id.et_confirm_pass);
         etMobileNumber = findViewById(R.id.et_mobile_num);
+        etLocation = findViewById(R.id.et_location);
         btnCreateAccount = findViewById(R.id.btn_create_acct);
         btnBack = findViewById(R.id.back_btn);
     }
@@ -128,9 +148,10 @@ public class CreateAcctActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
         String confirmPassword = etConfirmPassword.getText().toString().trim();
         String mobileNumber = etMobileNumber.getText().toString().trim();
+        String locationText = etLocation.getText().toString().trim();
 
         // Validate inputs
-        if (!validateInputs(fullName, displayName, email, password, confirmPassword, mobileNumber)) {
+        if (!validateInputs(fullName, displayName, email, password, confirmPassword, mobileNumber, locationText)) {
             return;
         }
 
@@ -142,9 +163,16 @@ public class CreateAcctActivity extends AppCompatActivity {
         // Logs the action
         Log.d("CreateActivity", "Starting Firebase Auth account creation");
 
+        GeoPoint homeLocation = geocodeLocation(locationText);
+        if (homeLocation == null) {
+            Toast.makeText(this, "Unable to locate the address provided. Please refine it and try again.", Toast.LENGTH_LONG).show();
+            resetButton();
+            return;
+        }
+
         // Create Firebase Auth user
         // Use repository to create account
-        accountRepo.registerUser(email, password, fullName, displayName, mobileNumber,
+        accountRepo.registerUser(email, password, fullName, displayName, mobileNumber, locationText, homeLocation,
                 new CreateAccountRepo.RegistrationCallback() {
                     @Override
                     public void onSuccess() {
@@ -197,7 +225,8 @@ public class CreateAcctActivity extends AppCompatActivity {
      * @return true if all validations pass, false otherwise
      */
     private boolean validateInputs(String fullName, String displayName, String email,
-                                   String password, String confirmPassword, String mobileNumber) {
+                                   String password, String confirmPassword, String mobileNumber,
+                                   String locationText) {
 
         // Check if full name is empty
         if (TextUtils.isEmpty(fullName)) {
@@ -256,7 +285,115 @@ public class CreateAcctActivity extends AppCompatActivity {
             return false;
         }
 
+        if (TextUtils.isEmpty(locationText)) {
+            etLocation.setError("Home location is required");
+            etLocation.requestFocus();
+            return false;
+        }
+
         return true;
     }
 
+    private GeoPoint geocodeLocation(String locationAddress) {
+        if (TextUtils.isEmpty(locationAddress)) {
+            return null;
+        }
+
+        GeoPoint geoPoint = geocodeWithAndroidGeocoder(locationAddress);
+        if (geoPoint != null) {
+            return geoPoint;
+        }
+
+        Log.w(TAG, "Android geocoder failed for address: " + locationAddress + ". Trying fallback service.");
+        return geocodeWithFallbackService(locationAddress);
+    }
+
+    private GeoPoint geocodeWithAndroidGeocoder(String locationAddress) {
+        try {
+            if (!Geocoder.isPresent()) {
+                Log.w(TAG, "Geocoder service not present on this device/emulator.");
+                return null;
+            }
+
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocationName(locationAddress, 1);
+            if (addresses == null || addresses.isEmpty()) {
+                return null;
+            }
+
+            Address address = addresses.get(0);
+            return new GeoPoint(address.getLatitude(), address.getLongitude());
+        } catch (IOException e) {
+            Log.e(TAG, "Geocoder IO error for address: " + locationAddress, e);
+            return null;
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected geocoder error for address: " + locationAddress, e);
+            return null;
+        }
+    }
+
+    private GeoPoint geocodeWithFallbackService(String locationAddress) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<GeoPoint> future = executor.submit(() -> performFallbackGeocode(locationAddress));
+            return future.get(FALLBACK_GEOCODE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            Log.e(TAG, "Fallback geocoder failed for address: " + locationAddress, e);
+            return null;
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private GeoPoint performFallbackGeocode(String locationAddress) {
+        HttpURLConnection connection = null;
+        BufferedReader reader = null;
+        try {
+            String encodedAddress = URLEncoder.encode(locationAddress, "UTF-8");
+            URL url = new URL(FALLBACK_GEOCODER_ENDPOINT + encodedAddress);
+
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("User-Agent", FALLBACK_USER_AGENT);
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode != HttpURLConnection.HTTP_OK) {
+                Log.w(TAG, "Fallback geocoder HTTP response: " + responseCode);
+                return null;
+            }
+
+            reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder builder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+
+            JSONArray results = new JSONArray(builder.toString());
+            if (results.length() == 0) {
+                Log.w(TAG, "Fallback geocoder returned no results for: " + locationAddress);
+                return null;
+            }
+
+            JSONObject firstResult = results.getJSONObject(0);
+            double latitude = firstResult.getDouble("lat");
+            double longitude = firstResult.getDouble("lon");
+            return new GeoPoint(latitude, longitude);
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing fallback geocoder response for: " + locationAddress, e);
+            return null;
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException ignored) {
+                }
+            }
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
 }

@@ -3,6 +3,7 @@ package com.example.connect.network;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,13 +41,14 @@ public class CreateAccountRepo {
      */
     public void registerUser(String email, String password, String fullName,
                              String displayName, String mobileNumber,
+                             String locationText, GeoPoint homeLocation,
                              RegistrationCallback callback) {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnSuccessListener(authResult -> {
                     FirebaseUser user = mAuth.getCurrentUser();
                     if (user != null) {
                         saveUserToDatabase(user.getUid(), fullName, displayName,
-                                email, mobileNumber, callback);
+                                email, mobileNumber, locationText, homeLocation, callback);
                     } else {
                         callback.onFailure("Error creating account");
                     }
@@ -62,6 +64,7 @@ public class CreateAccountRepo {
      */
     private void saveUserToDatabase(String userId, String fullName, String displayName,
                                     String email, String mobileNumber,
+                                    String locationText, GeoPoint homeLocation,
                                     RegistrationCallback callback) {
         Map<String, Object> user = new HashMap<>();
         user.put("full_name", fullName);
@@ -69,6 +72,12 @@ public class CreateAccountRepo {
         user.put("email", email);
         if (mobileNumber != null && !mobileNumber.isEmpty()) {
             user.put("mobile_num", mobileNumber);
+        }
+        if (locationText != null && !locationText.isEmpty()) {
+            user.put("home_location_text", locationText);
+        }
+        if (homeLocation != null) {
+            user.put("home_location", homeLocation);
         }
         user.put("created_at", System.currentTimeMillis());
         
