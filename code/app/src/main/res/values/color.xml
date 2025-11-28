@@ -34,6 +34,15 @@
     <color name="text_secondary_light">#757575</color>
     <color name="accent_orange">#FF5722</color>
     <color name="accent_orange_light">#FFCCBC</color>
+    <color name="accent_green">#00C853</color>
+    <color name="accent_red">#D32F2F</color>
+    <color name="text_secondary">#64748B</color>
+    
+    <!-- Event Lottery Palette (Light Mode) -->
+    <color name="primary_gold">#B45309</color>
+    <color name="background_dark">#F8FAFC</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="text_primary">#0F172A</color>
 
     <!-- Vision UI Theme (Dark/Neon) -->
     <color name="vision_bg">#0F1535</color>
