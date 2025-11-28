@@ -435,14 +435,15 @@ public class EventDetails extends AppCompatActivity {
                                     return;
                                 }
 
-                                // Check current waiting list size
+                                // Check current waiting list size from entries array
                                 db.collection("waiting_lists")
                                         .document(eventId)
-                                        .collection("entrants")
-                                        .whereEqualTo("status", "waiting")
                                         .get()
-                                        .addOnSuccessListener(querySnapshot -> {
-                                            int currentSize = querySnapshot.size();
+                                        .addOnSuccessListener(waitingListDoc -> {
+                                            List<String> entries = waitingListDoc.exists()
+                                                    ? (List<String>) waitingListDoc.get("entries")
+                                                    : null;
+                                            int currentSize = entries != null ? entries.size() : 0;
 
                                             // Check if capacity is reached
                                             if (currentSize >= drawCapacity) {
@@ -478,6 +479,7 @@ public class EventDetails extends AppCompatActivity {
         waitingListDoc.put("event_id", eventId);
         waitingListDoc.put("created_at", FieldValue.serverTimestamp());
         waitingListDoc.put("total_capacity", 0);
+        waitingListDoc.put("entries", FieldValue.arrayUnion(userId));
 
         db.collection("waiting_lists")
                 .document(eventId)
@@ -546,8 +548,13 @@ public class EventDetails extends AppCompatActivity {
                             .document(userId)
                             .delete()
                             .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
-                                loadEventDetails(eventId);
+                                db.collection("waiting_lists")
+                                        .document(eventId)
+                                        .update("entries", FieldValue.arrayRemove(userId))
+                                        .addOnCompleteListener(task -> {
+                                            Toast.makeText(this, "Left waiting list", Toast.LENGTH_SHORT).show();
+                                            loadEventDetails(eventId);
+                                        });
                             })
                             .addOnFailureListener(e -> {
                                 Toast.makeText(this, "Error leaving: " + e.getMessage(),
