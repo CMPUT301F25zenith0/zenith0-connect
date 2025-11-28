@@ -1,6 +1,9 @@
 package com.example.connect.adapters;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,6 +13,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.connect.R;
 import com.example.connect.models.Event;
 
@@ -70,8 +74,7 @@ public class PopularEventsAdapter extends RecyclerView.Adapter<PopularEventsAdap
             }
         }
 
-        // Load Image (Placeholder for now, would use Glide/Picasso in real app)
-        // holder.ivEventImage.setImageResource(R.drawable.placeholder_img);
+        bindEventImage(holder.ivEventImage, event);
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
@@ -97,6 +100,38 @@ public class PopularEventsAdapter extends RecyclerView.Adapter<PopularEventsAdap
             tvDateDay = itemView.findViewById(R.id.tvDateDay);
             tvDateMonth = itemView.findViewById(R.id.tvDateMonth);
         }
+    }
+
+    private void bindEventImage(ImageView target, Event event) {
+        String imageUrl = event.getImageUrl();
+        String imageBase64 = event.getImageBase64();
+
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            Glide.with(context)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.placeholder_img)
+                    .error(R.drawable.placeholder_img)
+                    .centerCrop()
+                    .into(target);
+            return;
+        }
+
+        if (imageBase64 != null && !imageBase64.trim().isEmpty()) {
+            try {
+                byte[] decoded = Base64.decode(imageBase64, Base64.DEFAULT);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                if (bitmap != null) {
+                    target.setImageBitmap(bitmap);
+                    target.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    return;
+                }
+            } catch (IllegalArgumentException ignored) {
+                // fall through to placeholder
+            }
+        }
+
+        target.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        target.setImageResource(R.drawable.placeholder_img);
     }
 }
 

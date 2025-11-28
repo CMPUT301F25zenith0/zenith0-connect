@@ -1,6 +1,8 @@
 package com.example.connect.activities;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -14,9 +16,11 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import android.util.Base64;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -199,11 +203,9 @@ public class EventDetails extends AppCompatActivity {
                         displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow);
                         listenForWaitlist(eventId);
 
-                        // TODO: Load event image --> need to figure out where to store images Firestore
-                        // cannot for us
-                        // You can use Glide or Picasso to load images:
-                        // String imageUrl = documentSnapshot.getString("imageUrl");
-                        // Glide.with(this).load(imageUrl).into(eventImage);
+                        String imageUrl = documentSnapshot.getString("imageUrl");
+                        String imageBase64 = documentSnapshot.getString("image_base64");
+                        loadEventImage(imageUrl, imageBase64);
                     } else {
                         Toast.makeText(EventDetails.this, "Event not found", Toast.LENGTH_SHORT).show();
                         finish();
@@ -245,6 +247,42 @@ public class EventDetails extends AppCompatActivity {
         loadingSpinner.setVisibility(View.GONE);
         scrollContent.setVisibility(View.VISIBLE);
         showContent();
+    }
+
+    /**
+     * Loads the event poster into the header ImageView using either the hosted URL
+     * or a base64 encoded fallback.
+     */
+    private void loadEventImage(String imageUrl, String imageBase64) {
+        if (eventImage == null) {
+            return;
+        }
+
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_report_image)
+                    .into(eventImage);
+            eventImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            return;
+        }
+
+        if (imageBase64 != null && !imageBase64.trim().isEmpty()) {
+            try {
+                byte[] decoded = Base64.decode(imageBase64, Base64.DEFAULT);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                if (bitmap != null) {
+                    eventImage.setImageBitmap(bitmap);
+                    eventImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    return;
+                }
+            } catch (IllegalArgumentException ignored) {
+                // malformed base64, fall through to placeholder
+            }
+        }
+
+        eventImage.setImageResource(android.R.drawable.ic_menu_gallery);
     }
 
     private void listenForWaitlist(String eventId) {
