@@ -55,7 +55,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- IMPORTANT: bottom padding so content never hides behind button bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -108,6 +107,33 @@
                 android:paddingStart="10dp"
                 android:paddingEnd="10dp"
                 android:paddingTop="8dp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Event Labels/Tags -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Event Labels (Optional)"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Select labels that describe your event"
+                android:textColor="#666666"
+                android:textSize="11sp"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Labels Selection (Multi-select chips) -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupLabels"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:singleSelection="false"
+                app:selectionRequired="false"
                 android:layout_marginBottom="12dp" />
 
             <!-- Event Image and Schedule Section -->
@@ -178,7 +204,7 @@
                             android:layout_width="0dp"
                             android:layout_height="32dp"
                             android:layout_weight="1"
-                            android:text="Apr 1, 2025"
+                            android:text="Select Date"
                             android:textColor="#000000"
                             android:textSize="11sp"
                             android:minHeight="32dp"
@@ -190,7 +216,7 @@
                             style="@style/Widget.Material3.Button.TextButton"
                             android:layout_width="wrap_content"
                             android:layout_height="32dp"
-                            android:text="10:00AM"
+                            android:text="Select Time"
                             android:textColor="#000000"
                             android:textSize="11sp"
                             android:minHeight="32dp"
@@ -217,7 +243,7 @@
                             android:layout_width="0dp"
                             android:layout_height="32dp"
                             android:layout_weight="1"
-                            android:text="Apr 1, 2025"
+                            android:text="Select Date"
                             android:textColor="#000000"
                             android:textSize="11sp"
                             android:minHeight="32dp"
@@ -229,7 +255,7 @@
                             style="@style/Widget.Material3.Button.TextButton"
                             android:layout_width="wrap_content"
                             android:layout_height="32dp"
-                            android:text="12:00PM"
+                            android:text="Select Time"
                             android:textColor="#000000"
                             android:textSize="11sp"
                             android:minHeight="32dp"

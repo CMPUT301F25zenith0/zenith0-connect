@@ -24,6 +24,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
 import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
@@ -32,6 +36,8 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -63,7 +69,14 @@ import java.util.Map;
 public class CreateEvent extends AppCompatActivity {
 
     private static final String TAG = "CreateEvent";
+    private ChipGroup chipGroupLabels;
+    private List<String> selectedLabels = new ArrayList<>();
 
+    private final String[] AVAILABLE_LABELS = {
+            "Technology", "Music", "Art", "Sports", "Travel",
+            "Food", "Gaming", "Photography", "Science", "Business",
+            "Health", "Education", "Fashion", "Movies", "Literature"
+    };
     // Edit mode
     private boolean isEditMode = false;
     private String editEventId = null;
@@ -133,6 +146,7 @@ public class CreateEvent extends AppCompatActivity {
         initializeViews();
         initializeDateTimeFormats();
         setupImagePicker();
+        setupLabelChips();  // ⭐ ADD THIS LINE
         setupClickListeners();
 
         // Load event data if in edit mode
@@ -222,7 +236,7 @@ public class CreateEvent extends AppCompatActivity {
                         // Load image if available
                         String base64Image = documentSnapshot.getString("image_base64");
                         if (base64Image != null && !base64Image.isEmpty()) {
-                            existingBase64Image = base64Image; // Store for later use
+                            existingBase64Image = base64Image;
                             try {
                                 byte[] decoded = android.util.Base64.decode(base64Image, android.util.Base64.DEFAULT);
                                 Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
@@ -232,7 +246,20 @@ public class CreateEvent extends AppCompatActivity {
                             }
                         }
 
-                        // Change button text for edit mode
+                        List<String> labels = (List<String>) documentSnapshot.get("labels");
+                        if (labels != null && !labels.isEmpty()) {
+                            selectedLabels.clear();
+                            selectedLabels.addAll(labels);
+
+                            // Check the corresponding chips
+                            for (int i = 0; i < chipGroupLabels.getChildCount(); i++) {
+                                Chip chip = (Chip) chipGroupLabels.getChildAt(i);
+                                if (labels.contains(chip.getText().toString())) {
+                                    chip.setChecked(true);
+                                }
+                            }
+                        }
+
                         btnPublishQR.setText("Update Event");
                         btnSaveDraft.setText("Save Changes");
 
@@ -309,6 +336,60 @@ public class CreateEvent extends AppCompatActivity {
         // ImageViews
         ivEventImage = findViewById(R.id.ivEventImage);
         ivAddImage = findViewById(R.id.ivAddImage);
+
+        // ChipGroup for labels
+        chipGroupLabels = findViewById(R.id.chipGroupLabels);
+    }
+
+    /**
+     * Generates chips for event labels with visual state logic (Selected vs Unselected).
+     * No limit on number of selections for organizers.
+     */
+    private void setupLabelChips() {
+        chipGroupLabels.removeAllViews();
+
+        // Define color states
+        int[][] states = new int[][] {
+                new int[] { android.R.attr.state_checked },
+                new int[] { -android.R.attr.state_checked }
+        };
+        int[] backgroundColors = new int[] {
+                Color.parseColor("#0C3B5E"),  // Selected: Dark blue
+                Color.parseColor("#E0E0E0")   // Unselected: Light gray
+        };
+        int[] textColors = new int[] {
+                Color.WHITE,  // Selected text
+                Color.BLACK   // Unselected text
+        };
+
+        ColorStateList backgroundColorList = new ColorStateList(states, backgroundColors);
+        ColorStateList textColorList = new ColorStateList(states, textColors);
+
+        for (String label : AVAILABLE_LABELS) {
+            Chip chip = new Chip(this);
+            chip.setText(label);
+            chip.setCheckable(true);
+            chip.setClickable(true);
+
+            // Apply visual states
+            chip.setCheckedIconVisible(true);
+            chip.setCheckedIconTint(ColorStateList.valueOf(Color.WHITE));
+            chip.setChipBackgroundColor(backgroundColorList);
+            chip.setTextColor(textColorList);
+
+            // Handle selection/deselection (no limit for organizers)
+            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    if (!selectedLabels.contains(label)) {
+                        selectedLabels.add(label);
+                    }
+                } else {
+                    selectedLabels.remove(label);
+                }
+            });
+
+            chipGroupLabels.addView(chip);
+        }
     }
 
     /**
@@ -325,15 +406,27 @@ public class CreateEvent extends AppCompatActivity {
         timeFormat = new SimpleDateFormat("hh:mma", Locale.getDefault());
         dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
 
-        // Initialize calendars with default values
+        // Initialize calendars with current date/time + 1 day (not past dates)
         startDateTime = Calendar.getInstance();
-        startDateTime.set(2025, Calendar.APRIL, 1, 10, 0);
+        startDateTime.add(Calendar.DAY_OF_YEAR, 1);
+        startDateTime.set(Calendar.HOUR_OF_DAY, 10);
+        startDateTime.set(Calendar.MINUTE, 0);
+        startDateTime.set(Calendar.SECOND, 0);
 
         endDateTime = Calendar.getInstance();
-        endDateTime.set(2025, Calendar.APRIL, 1, 12, 0);
+        endDateTime.add(Calendar.DAY_OF_YEAR, 1);
+        endDateTime.set(Calendar.HOUR_OF_DAY, 12);
+        endDateTime.set(Calendar.MINUTE, 0);
+        endDateTime.set(Calendar.SECOND, 0);
 
         registrationOpens = Calendar.getInstance();
         registrationCloses = Calendar.getInstance();
+
+        // Update button text to show default dates
+        btnStartDate.setText(dateFormat.format(startDateTime.getTime()));
+        btnStartTime.setText(timeFormat.format(startDateTime.getTime()));
+        btnEndDate.setText(dateFormat.format(endDateTime.getTime()));
+        btnEndTime.setText(timeFormat.format(endDateTime.getTime()));
     }
 
     /**
@@ -432,18 +525,56 @@ public class CreateEvent extends AppCompatActivity {
      * @param isStart True if this is for the event start date, false for end date
      */
     private void showDatePicker(Calendar calendar, Button button, boolean isStart) {
+        // Get minimum date (today)
+        Calendar minDate = Calendar.getInstance();
+        minDate.set(Calendar.HOUR_OF_DAY, 0);
+        minDate.set(Calendar.MINUTE, 0);
+        minDate.set(Calendar.SECOND, 0);
+
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
                 (view, year, month, dayOfMonth) -> {
+                    // Create selected date
+                    Calendar selectedDate = Calendar.getInstance();
+                    selectedDate.set(year, month, dayOfMonth);
+                    selectedDate.set(Calendar.HOUR_OF_DAY, 0);
+                    selectedDate.set(Calendar.MINUTE, 0);
+                    selectedDate.set(Calendar.SECOND, 0);
+
+                    // Validate: cannot select past dates
+                    if (selectedDate.before(minDate)) {
+                        Toast.makeText(this, "Cannot select past dates", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // If editing end date, validate it's not before start date
+                    if (!isStart) {
+                        Calendar startDateOnly = Calendar.getInstance();
+                        startDateOnly.setTime(startDateTime.getTime());
+                        startDateOnly.set(Calendar.HOUR_OF_DAY, 0);
+                        startDateOnly.set(Calendar.MINUTE, 0);
+                        startDateOnly.set(Calendar.SECOND, 0);
+
+                        if (selectedDate.before(startDateOnly)) {
+                            Toast.makeText(this, "End date cannot be before start date", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                    }
+
+                    // Valid date - update calendar
                     calendar.set(Calendar.YEAR, year);
                     calendar.set(Calendar.MONTH, month);
                     calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
                     button.setText(dateFormat.format(calendar.getTime()));
+                    button.setTextColor(getResources().getColor(android.R.color.black));
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
+
+        // Set minimum date to today
+        datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
         datePickerDialog.show();
     }
 
@@ -455,17 +586,41 @@ public class CreateEvent extends AppCompatActivity {
      * @param isStart True if this is for the event start time, false for end time
      */
     private void showTimePicker(Calendar calendar, Button button, boolean isStart) {
+        // Create time picker dialog with SPINNER mode (iOS-style)
         TimePickerDialog timePickerDialog = new TimePickerDialog(
                 this,
+                android.R.style.Theme_Holo_Light_Dialog_NoActionBar,  // Style for spinner mode
                 (view, hourOfDay, minute) -> {
+                    // Create temp calendar for validation
+                    Calendar selectedDateTime = (Calendar) calendar.clone();
+                    selectedDateTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    selectedDateTime.set(Calendar.MINUTE, minute);
+                    selectedDateTime.set(Calendar.SECOND, 0);
+
+                    // Validate: cannot select past time
+                    Calendar now = Calendar.getInstance();
+                    if (selectedDateTime.before(now)) {
+                        Toast.makeText(this, "Cannot select past time", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // If editing end time, validate it's after start time
+                    if (!isStart && selectedDateTime.before(startDateTime)) {
+                        Toast.makeText(this, "End time must be after start time", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Valid time - update calendar
                     calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                     calendar.set(Calendar.MINUTE, minute);
                     button.setText(timeFormat.format(calendar.getTime()));
+                    button.setTextColor(getResources().getColor(android.R.color.black));
                 },
                 calendar.get(Calendar.HOUR_OF_DAY),
                 calendar.get(Calendar.MINUTE),
-                false
+                false  // 12-hour format
         );
+
         timePickerDialog.show();
     }
 
@@ -481,19 +636,43 @@ public class CreateEvent extends AppCompatActivity {
      * @param label Label indicating the purpose (e.g., "Opens", "Closes")
      */
     private void showDateTimePicker(Calendar calendar, Button button, String label) {
+        Calendar minDate = Calendar.getInstance();
+        minDate.set(Calendar.HOUR_OF_DAY, 0);
+        minDate.set(Calendar.MINUTE, 0);
+        minDate.set(Calendar.SECOND, 0);
+
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
                 (view, year, month, dayOfMonth) -> {
+                    // Validate date
+                    Calendar selectedDate = Calendar.getInstance();
+                    selectedDate.set(year, month, dayOfMonth, 0, 0, 0);
+
+                    if (selectedDate.before(minDate)) {
+                        Toast.makeText(this, "Cannot select past dates", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     calendar.set(Calendar.YEAR, year);
                     calendar.set(Calendar.MONTH, month);
                     calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
 
-                    // After date is selected, show time picker
+                    // Show time picker after date selection - Using TimePickerDialog with spinner mode
                     TimePickerDialog timePickerDialog = new TimePickerDialog(
                             this,
+                            android.R.style.Theme_Holo_Light_Dialog_NoActionBar,  // Spinner mode style
                             (timeView, hourOfDay, minute) -> {
                                 calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                                 calendar.set(Calendar.MINUTE, minute);
+                                calendar.set(Calendar.SECOND, 0);
+
+                                // Validate complete datetime
+                                Calendar now = Calendar.getInstance();
+                                if (calendar.before(now)) {
+                                    Toast.makeText(this, "Cannot select past date/time", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+
                                 String dateTimeText = dateFormat.format(calendar.getTime()) + " " +
                                         timeFormat.format(calendar.getTime());
                                 button.setText(dateTimeText);
@@ -501,14 +680,17 @@ public class CreateEvent extends AppCompatActivity {
                             },
                             calendar.get(Calendar.HOUR_OF_DAY),
                             calendar.get(Calendar.MINUTE),
-                            false
+                            false  // 12-hour format
                     );
+
                     timePickerDialog.show();
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
+
+        datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
         datePickerDialog.show();
     }
 
@@ -539,9 +721,32 @@ public class CreateEvent extends AppCompatActivity {
             return false;
         }
 
+        // Validate date/time relationships
+        Calendar now = Calendar.getInstance();
+
+        if (startDateTime.before(now)) {
+            Toast.makeText(this, "Event start time cannot be in the past", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
         if (endDateTime.before(startDateTime)) {
             Toast.makeText(this, "End time must be after start time", Toast.LENGTH_SHORT).show();
             return false;
+        }
+
+        // Validate registration period if set
+        if (!btnRegistrationOpens.getText().toString().contains("Select") &&
+                !btnRegistrationCloses.getText().toString().contains("Select")) {
+
+            if (registrationOpens.before(now)) {
+                Toast.makeText(this, "Registration opening time cannot be in the past", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+
+            if (registrationCloses.before(registrationOpens)) {
+                Toast.makeText(this, "Registration closing must be after opening", Toast.LENGTH_SHORT).show();
+                return false;
+            }
         }
 
         return true;
@@ -890,7 +1095,6 @@ public class CreateEvent extends AppCompatActivity {
             eventData.put("reg_stop", dateTimeFormat.format(registrationCloses.getTime()));
         }
 
-        // ⭐ FIX: Capacity - Parse draw_capacity properly
         String drawCapacityStr = etDrawCapacity.getText().toString().trim();
         int drawCapacity = 0;
         if (!drawCapacityStr.isEmpty()) {
@@ -934,9 +1138,12 @@ public class CreateEvent extends AppCompatActivity {
         eventData.put("organizer_id", currentUserId);
         eventData.put("org_name", organizerName != null ? organizerName : "Organizer");
 
-        // ⭐ ADD: Initialize lottery fields
+        // ADD: Initialize lottery fields
         eventData.put("draw_completed", false);
         eventData.put("selected_count", 0);
+
+        // ADD: Event labels
+        eventData.put("labels", selectedLabels);
 
         return eventData;
     }
