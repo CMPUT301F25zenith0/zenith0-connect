@@ -706,7 +706,6 @@ public class EventDetails extends AppCompatActivity {
         // Get views from layout
         TextView tvDescription = dialogView.findViewById(R.id.tv_event_description);
         ImageView btnClose = dialogView.findViewById(R.id.btn_close_dialog);
-        com.google.android.material.button.MaterialButton btnViewMap = dialogView.findViewById(R.id.btn_view_map);
 
         // Set description
         tvDescription.setText(description != null && !description.isEmpty() ? description : "No description available");
@@ -714,49 +713,7 @@ public class EventDetails extends AppCompatActivity {
         // Close button click listener
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
-        if (btnViewMap != null) {
-            if (eventGeoPoint != null) {
-                btnViewMap.setVisibility(View.VISIBLE);
-                btnViewMap.setOnClickListener(v -> openMapForEvent());
-            } else {
-                btnViewMap.setVisibility(View.GONE);
-            }
-        }
-
         dialog.show();
-    }
-
-    private void openMapForEvent() {
-        if (eventGeoPoint == null) {
-            Toast.makeText(this, "Event location not available", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String label = eventTitle != null ? eventTitle.getText().toString() : "Event Location";
-        String encodedLabel = Uri.encode(label);
-        String geoUriString = String.format(Locale.US, "geo:%f,%f?q=%f,%f(%s)",
-                eventGeoPoint.getLatitude(), eventGeoPoint.getLongitude(),
-                eventGeoPoint.getLatitude(), eventGeoPoint.getLongitude(), encodedLabel);
-        Intent nativeMapIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(geoUriString));
-        nativeMapIntent.setPackage("com.google.android.apps.maps");
-
-        if (nativeMapIntent.resolveActivity(getPackageManager()) != null) {
-            startActivity(nativeMapIntent);
-            return;
-        }
-
-        String webUriString = String.format(Locale.US,
-                "https://www.google.com/maps/search/?api=1&query=%f,%f&query_place_id=%s",
-                eventGeoPoint.getLatitude(),
-                eventGeoPoint.getLongitude(),
-                encodedLabel);
-        Intent webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(webUriString));
-
-        if (webIntent.resolveActivity(getPackageManager()) != null) {
-            startActivity(webIntent);
-        } else {
-            Toast.makeText(this, "Unable to find an app to display the map.", Toast.LENGTH_SHORT).show();
-        }
     }
 
     /**
