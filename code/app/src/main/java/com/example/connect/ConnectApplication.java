@@ -12,6 +12,7 @@ import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
 import com.example.connect.utils.UserActivityTracker;
+import com.example.connect.workers.DailyNotificationWorker;
 import com.example.connect.workers.LotteryWorker;
 import com.google.firebase.auth.FirebaseAuth;
 
@@ -28,6 +29,7 @@ public class ConnectApplication extends Application implements Application.Activ
 
     private static final String TAG = "ConnectApplication";
     private static final String LOTTERY_WORK_NAME = "automatic_lottery_check";
+    private static final String DAILY_NOTIFICATION_WORK = "daily_notification_work";
 
     private int activityCount = 0; // Track number of activities in foreground
 
@@ -42,6 +44,9 @@ public class ConnectApplication extends Application implements Application.Activ
 
         // Schedule automatic lottery checks
         scheduleAutomaticLotteryChecks();
+
+        // schedule automatic notifications every day
+        scheduleAutomaticNotifications();
     }
 
     /**
@@ -79,8 +84,37 @@ public class ConnectApplication extends Application implements Application.Activ
         }
     }
 
-    // Activity Lifecycle Callbacks for User Activity Tracking
+    private void scheduleAutomaticNotifications() {
+        try {
+            Constraints constraints = new Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build();
 
+            PeriodicWorkRequest notificationWork =
+                    new PeriodicWorkRequest.Builder(
+                            DailyNotificationWorker.class,
+                            24,
+                            TimeUnit.HOURS
+                    )
+                            .setConstraints(constraints)
+                            .addTag("daily_notifications")
+                            .build();
+
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                    DAILY_NOTIFICATION_WORK,
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    notificationWork
+            );
+
+            Log.d(TAG, "✓ Daily notifications scheduled (every 24 hours)");
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error scheduling daily notifications", e);
+        }
+    }
+
+
+    // Activity Lifecycle Callbacks for User Activity Tracking
     @Override
     public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
         // Activity created

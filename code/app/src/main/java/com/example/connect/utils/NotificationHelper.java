@@ -116,9 +116,6 @@ public class NotificationHelper {
     }
 
 
-
-
-
     /**
      * Send notifications to a list of users, respecting their notification
      * preferences

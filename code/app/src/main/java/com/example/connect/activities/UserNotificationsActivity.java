@@ -378,6 +378,27 @@ public class UserNotificationsActivity extends AppCompatActivity {
     }
 
     /**
+     * Perform the close notification operation in Firestore (deletes the notification / user should not be able to view it, they close it off)
+     */
+    void performClose(NotificationItem notification) {
+
+        if (notification.id == null) return;
+
+        db.collection("accounts")
+                .document(currentUserId)
+                .collection("notifications")
+                .document(notification.id)
+                .delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Notification deleted: " + notification.id);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Failed to delete notification", e);
+                });
+    }
+
+
+    /**
      * Get current user ID
      */
     private String getCurrentUserId() {
@@ -387,7 +408,6 @@ public class UserNotificationsActivity extends AppCompatActivity {
         }
         return null;
     }
-
 
 
     /**
@@ -457,7 +477,7 @@ public class UserNotificationsActivity extends AppCompatActivity {
          */
         class NotificationViewHolder extends RecyclerView.ViewHolder {
             TextView tvTitle, tvBody, tvTime, tvEventName;
-            Button btnDecline, btnAccept; // added the accept button
+            Button btnDecline, btnAccept, btnClose;
 
             View indicator;
             ImageView icClose; // 🔹 Added this
@@ -476,12 +496,16 @@ public class UserNotificationsActivity extends AppCompatActivity {
 
                 // 🔹 Handle close button click (local only)
                 icClose.setOnClickListener(v -> {
-                    int position = getAdapterPosition();
+                    int position = getBindingAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
+                        NotificationItem clicked = notifications.get(position);
+                        performClose(clicked); // update Firestore FIRST
+
                         notifications.remove(position);
                         notifyItemRemoved(position);
                     }
                 });
+
             }
 
             void bind(NotificationItem item) {
