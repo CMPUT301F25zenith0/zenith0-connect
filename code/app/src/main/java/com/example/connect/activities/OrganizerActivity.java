@@ -256,8 +256,8 @@ public class OrganizerActivity extends AppCompatActivity {
         // Reset all buttons to default state
         resetFilterButtons();
 
-        // Highlight selected button
-        selectedButton.setBackgroundColor(getResources().getColor(R.color.filter_selected, null));
+        // Highlight selected button with dark blue palette
+        selectedButton.setBackgroundColor(getResources().getColor(R.color.dark_blue, null));
         selectedButton.setTextColor(getResources().getColor(android.R.color.white, null));
 
         // Update current filter
@@ -268,19 +268,20 @@ public class OrganizerActivity extends AppCompatActivity {
     }
 
     private void resetFilterButtons() {
-        // Reset all filter buttons to default outlined style
-        int defaultTextColor = getResources().getColor(R.color.filter_text_default, null);
+        // Reset all filter buttons to default pink style
+        int defaultTextColor = getResources().getColor(R.color.interests, null);
+        int defaultBackground = getResources().getColor(R.color.mist_pink, null);
 
-        btnTotalEvents.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnTotalEvents.setBackgroundColor(defaultBackground);
         btnTotalEvents.setTextColor(defaultTextColor);
 
-        btnOpen.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnOpen.setBackgroundColor(defaultBackground);
         btnOpen.setTextColor(defaultTextColor);
 
-        btnClosed.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnClosed.setBackgroundColor(defaultBackground);
         btnClosed.setTextColor(defaultTextColor);
 
-        btnDrawn.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnDrawn.setBackgroundColor(defaultBackground);
         btnDrawn.setTextColor(defaultTextColor);
     }
 
