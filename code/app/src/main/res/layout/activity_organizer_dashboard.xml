@@ -1,57 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#5F8A8A">
+    android:background="@color/background_light">
 
-    <!-- Title -->
-
-    <!-- New Event button (aligned to title baseline) -->
-
-    <TextView
-        android:id="@+id/tvDashboardTitle"
-        android:layout_width="wrap_content"
+    <!-- Header Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/headerCard"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Organizer Dashboard"
-        android:textColor="#2C3E3E"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.217"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnNewEvent"
-        android:layout_width="wrap_content"
-        android:layout_height="48dp"
-        android:text="New Event"
-        android:textColor="#FFFFFF"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
+        android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:backgroundTint="#3D5454"
-        app:cornerRadius="8dp"
-        app:layout_constraintBaseline_toBaselineOf="@id/tvDashboardTitle"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        android:layout_marginTop="24dp"
+        app:cardBackgroundColor="@color/card_bg_light"
+        app:cardCornerRadius="20dp"
+        app:cardElevation="6dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="20dp"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvDashboardTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Organizer Dashboard"
+                    android:textColor="@color/text_primary_light"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="Manage upcoming events and draws"
+                    android:textColor="@color/text_secondary_light"
+                    android:textSize="14sp" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNewEvent"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Create Event"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                app:backgroundTint="@color/dark_blue"
+                app:cornerRadius="20dp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <!-- Filter Tabs -->
     <LinearLayout
         android:id="@+id/layoutFilterTabs"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="24dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
         android:gravity="center"
-        app:layout_constraintTop_toBottomOf="@id/tvDashboardTitle"
+        android:orientation="horizontal"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerCard">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTotalEvents"
@@ -60,15 +88,17 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Total Events"
-            android:textColor="#E8F4F4"
-            android:textSize="11sp"
+            android:textColor="@color/interests"
+            android:textSize="12sp"
+            android:textStyle="bold"
             android:minHeight="48dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_marginEnd="8dp"
-            app:strokeColor="#E8F4F4"
+            app:backgroundTint="@color/mist_pink"
+            app:strokeColor="@color/interests"
             app:strokeWidth="1dp"
-            app:cornerRadius="8dp"/>
+            app:cornerRadius="16dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnOpen"
@@ -77,15 +107,17 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Open"
-            android:textColor="#E8F4F4"
-            android:textSize="11sp"
+            android:textColor="@color/interests"
+            android:textSize="12sp"
+            android:textStyle="bold"
             android:minHeight="48dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_marginEnd="8dp"
-            app:strokeColor="#E8F4F4"
+            app:backgroundTint="@color/mist_pink"
+            app:strokeColor="@color/interests"
             app:strokeWidth="1dp"
-            app:cornerRadius="8dp"/>
+            app:cornerRadius="16dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnClosed"
@@ -94,15 +126,17 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Closed"
-            android:textColor="#E8F4F4"
-            android:textSize="11sp"
+            android:textColor="@color/interests"
+            android:textSize="12sp"
+            android:textStyle="bold"
             android:minHeight="48dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
             android:layout_marginEnd="8dp"
-            app:strokeColor="#E8F4F4"
+            app:backgroundTint="@color/mist_pink"
+            app:strokeColor="@color/interests"
             app:strokeWidth="1dp"
-            app:cornerRadius="8dp"/>
+            app:cornerRadius="16dp"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDrawn"
@@ -111,14 +145,16 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Drawn"
-            android:textColor="#E8F4F4"
-            android:textSize="11sp"
+            android:textColor="@color/interests"
+            android:textSize="12sp"
+            android:textStyle="bold"
             android:minHeight="48dp"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            app:strokeColor="#E8F4F4"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            app:backgroundTint="@color/mist_pink"
+            app:strokeColor="@color/interests"
             app:strokeWidth="1dp"
-            app:cornerRadius="8dp"/>
+            app:cornerRadius="16dp"/>
     </LinearLayout>
 
     <!-- List of Events Title -->
@@ -127,7 +163,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="List of Events"
-        android:textColor="#2C3E3E"
+        android:textColor="@color/text_primary_light"
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_marginTop="24dp"
@@ -157,8 +193,10 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="#2C3E3E"
-        android:padding="8dp"
+        android:background="@color/card_bg_light"
+        android:elevation="12dp"
+        android:paddingVertical="10dp"
+        android:paddingHorizontal="12dp"
         android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -166,78 +204,70 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavDashboard"
-            style="@style/Widget.Material3.Button"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Dashboard"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textAllCaps="false"
-            android:minHeight="44dp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:backgroundTint="#1A2828"
             android:layout_marginEnd="6dp"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            app:cornerRadius="24dp"/>
+            android:layout_weight="1"
+            android:text="DASHBOARD"
+            android:textColor="@color/accent_orange"
+            android:textSize="10sp"
+            android:textAllCaps="true"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_view"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/accent_orange" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavMessage"
-            style="@style/Widget.Material3.Button"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Message"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textAllCaps="false"
-            android:minHeight="44dp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:backgroundTint="#1A2828"
             android:layout_marginEnd="6dp"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            app:cornerRadius="24dp"/>
+            android:layout_weight="1"
+            android:text="MESSAGES"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:textAllCaps="true"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_dialog_email"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavMap"
-            style="@style/Widget.Material3.Button"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Map"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textAllCaps="false"
-            android:minHeight="44dp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:backgroundTint="#1A2828"
             android:layout_marginEnd="6dp"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            app:cornerRadius="24dp"/>
+            android:layout_weight="1"
+            android:text="MAP"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:textAllCaps="true"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_mapmode"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavProfile"
-            style="@style/Widget.Material3.Button"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Profile"
-            android:textColor="#FFFFFF"
+            android:text="PROFILE"
+            android:textColor="@color/text_secondary"
             android:textSize="10sp"
-            android:textAllCaps="false"
-            android:minHeight="44dp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:backgroundTint="#1A2828"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            app:cornerRadius="24dp"/>
+            android:textAllCaps="true"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_myplaces"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -75,6 +75,10 @@ public class AdminProfileListActivity extends AppCompatActivity {
         if (searchLayout != null) {
             searchLayout.setVisibility(View.VISIBLE);
         }
+        // Update the hint for context
+        if (etSearch != null) {
+            etSearch.setHint("Search by name, email or ID");
+        }
     }
 
     private void setupRecyclerView() {

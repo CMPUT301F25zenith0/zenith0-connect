@@ -82,6 +82,7 @@
         <activity android:name=".activities.AdminOrganizerListActivity" />
         <activity android:name=".activities.AdminNotificationLogActivity" />
         <activity android:name=".activities.ImageDetailsActivity" />
+        <activity android:name=".activities.AdminReportActivity" />
 
         <!-- User Profile -->
         <activity
@@ -95,7 +96,7 @@
 
         <!-- Notifications for Entrant -->
         <activity
-            android:name=".activities.NotificationsActivity"
+            android:name=".activities.UserNotificationsActivity"
             android:exported="false"
             android:label="My Notifications"/>
 

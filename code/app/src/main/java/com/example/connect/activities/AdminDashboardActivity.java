@@ -35,6 +35,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private MaterialCardView cardManageImages;
     private MaterialCardView cardManageOrganizers;
     private MaterialCardView cardNotificationLogs;
+    private MaterialCardView cardReportLogs;
     private MaterialButton btnLogout;
 
     private TextView tvStatUsers;
@@ -71,6 +72,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         cardManageProfiles = findViewById(R.id.card_manage_profiles);
         cardManageImages = findViewById(R.id.card_manage_images);
         cardManageOrganizers = findViewById(R.id.card_manage_organizers);
+        cardReportLogs = findViewById(R.id.card_user_reports);
         cardNotificationLogs = findViewById(R.id.card_notification_logs);
         btnLogout = findViewById(R.id.btn_logout);
 
@@ -148,6 +150,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         cardManageOrganizers.setOnClickListener(v -> {
             startActivity(new Intent(this, AdminOrganizerListActivity.class));
+        });
+
+        cardReportLogs.setOnClickListener(v -> {
+            startActivity(new Intent(this, AdminReportActivity.class));
         });
 
         cardNotificationLogs.setOnClickListener(v -> {

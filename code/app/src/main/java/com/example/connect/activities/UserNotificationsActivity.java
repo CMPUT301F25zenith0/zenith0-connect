@@ -1,6 +1,7 @@
 package com.example.connect.activities;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,8 +17,10 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
+import com.example.connect.utils.LotteryManager;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -33,21 +36,22 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class NotificationsActivity extends AppCompatActivity {
+public class UserNotificationsActivity extends AppCompatActivity {
 
     private static final String TAG = "NotificationsActivity";
 
     private RecyclerView recyclerViewNotifications;
     private View tvNoNotifications;
     private NotificationAdapter adapter;
-    private MaterialButton btnBack;
-    private ImageButton notiBackBtn;  // Changed to ImageButton
+    private ImageButton btnBack;
+    private ImageButton notiBackBtn;  // Legacy compatibility
     private MaterialButton btnToggle;
     private MaterialButton homeBtn, myEventsBtn, scanBtn, profileBtn, notificationBtn;
 
     FirebaseFirestore db;
     String currentUserId;
     private boolean notificationsEnabled = true; // Default to enabled
+    private LotteryManager lotteryManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +60,7 @@ public class NotificationsActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         currentUserId = getCurrentUserId();
+        lotteryManager = new LotteryManager();
 
         if (currentUserId == null) {
             Toast.makeText(this, "Please log in first", Toast.LENGTH_SHORT).show();
@@ -123,14 +128,14 @@ public class NotificationsActivity extends AppCompatActivity {
         // Navigation buttons
         if (homeBtn != null) {
             homeBtn.setOnClickListener(v -> {
-                Intent intent = new Intent(NotificationsActivity.this, EventListActivity.class);
+                Intent intent = new Intent(UserNotificationsActivity.this, EventListActivity.class);
                 startActivity(intent);
             });
         }
 
         if (scanBtn != null) {
             scanBtn.setOnClickListener(v -> {
-                Intent intent = new Intent(NotificationsActivity.this, QRCodeScanner.class);
+                Intent intent = new Intent(UserNotificationsActivity.this, QRCodeScanner.class);
                 startActivity(intent);
             });
         }
@@ -144,7 +149,7 @@ public class NotificationsActivity extends AppCompatActivity {
 
         if (profileBtn != null) {
             profileBtn.setOnClickListener(v -> {
-                Intent profileIntent = new Intent(NotificationsActivity.this, ProfileActivity.class);
+                Intent profileIntent = new Intent(UserNotificationsActivity.this, ProfileActivity.class);
                 startActivity(profileIntent);
             });
         }
@@ -211,10 +216,14 @@ public class NotificationsActivity extends AppCompatActivity {
             // Optional: Change button appearance based on state
             if (notificationsEnabled) {
                 btnToggle.setBackgroundTintList(
-                        getResources().getColorStateList(android.R.color.holo_green_dark, null));
+                        ColorStateList.valueOf(ContextCompat.getColor(this, R.color.dark_blue)));
+                btnToggle.setTextColor(ContextCompat.getColor(this, R.color.white));
+                btnToggle.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.mist_pink)));
             } else {
                 btnToggle.setBackgroundTintList(
-                        getResources().getColorStateList(android.R.color.holo_red_dark, null));
+                        ColorStateList.valueOf(ContextCompat.getColor(this, R.color.mist_pink)));
+                btnToggle.setTextColor(ContextCompat.getColor(this, R.color.dark_blue));
+                btnToggle.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.calm_blue_light)));
             }
         }
     }
@@ -296,56 +305,43 @@ public class NotificationsActivity extends AppCompatActivity {
      */
     void performDecline(NotificationItem notification) {
         String eventId = notification.eventId;
-
-        if (eventId == null || eventId.isEmpty()) {
-            Toast.makeText(this, "Error: Event ID not found", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (eventId == null || eventId.isEmpty()) return;
 
         Log.d(TAG, "Declining invitation for eventId=" + eventId + " user=" + currentUserId);
 
-        // Remove user from chosen list
-        db.collection("events").document(eventId)
-                .collection("chosen").document(currentUserId)
-                .delete()
+        // Update entrant status directly
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", "canceled"); // reflects declined
+        updates.put("canceled_date", FieldValue.serverTimestamp());
+
+        db.collection("waiting_lists")
+                .document(eventId)
+                .collection("entrants")
+                .document(currentUserId)
+                .update(updates)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, " Removed from chosen list");
+                    Log.d(TAG, "Entrant status updated to 'canceled'");
 
-                    // Add to declined list
-                    Map<String, Object> declinedData = new HashMap<>();
-                    declinedData.put("declinedAt", FieldValue.serverTimestamp());
-                    declinedData.put("reason", "User declined invitation");
+                    // Optionally update the notification
+                    db.collection("accounts").document(currentUserId)
+                            .collection("notifications").document(notification.id)
+                            .update("declined", true, "declinedAt", FieldValue.serverTimestamp());
 
-                    db.collection("events").document(eventId)
-                            .collection("declined").document(currentUserId)
-                            .set(declinedData)
-                            .addOnSuccessListener(aVoid2 -> {
-                                Log.d(TAG, " Added to declined list");
+                    // Trigger replacement lottery
+                    lotteryManager.performReplacementLottery(eventId, notification.eventName, 1, new LotteryManager.LotteryCallback() {
+                        @Override
+                        public void onSuccess(int selectedCount, int waitingListCount) {}
+                        @Override
+                        public void onFailure(String error) {}
+                    });
 
-                                // Update notification
-                                db.collection("accounts").document(currentUserId)
-                                        .collection("notifications").document(notification.id)
-                                        .update("declined", true, "declinedAt", FieldValue.serverTimestamp())
-                                        .addOnSuccessListener(aVoid3 -> {
-                                            Log.d(TAG, "Notification marked declined");
-                                            notification.declined = true;
-                                            adapter.notifyDataSetChanged(); // instantly refresh UI
-                                            Toast.makeText(this, "Invitation declined successfully", Toast.LENGTH_SHORT).show();
-                                        })
-                                        .addOnFailureListener(e -> Log.e(TAG, "Failed to update notification", e));
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, " Failed to add to declined list", e);
-                                Toast.makeText(this,
-                                        "Error declining invitation (declined list)",
-                                        Toast.LENGTH_SHORT).show();
-                            });
+                    Toast.makeText(this, "Invitation declined successfully", Toast.LENGTH_SHORT).show();
+                    notification.declined = true;
+                    adapter.notifyDataSetChanged();
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, " Failed to remove from chosen list", e);
-                    Toast.makeText(this, "Error declining invitation (chosen list)", Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to update entrant status", e));
     }
+
 
 
     /**
@@ -353,54 +349,32 @@ public class NotificationsActivity extends AppCompatActivity {
      */
     void performAccept(NotificationItem notification) {
         String eventId = notification.eventId;
-
-        if (eventId == null || eventId.isEmpty()) {
-            Toast.makeText(this, "Error: Event ID not found", Toast.LENGTH_SHORT).show();
-            return;
-        }
+        if (eventId == null || eventId.isEmpty()) return;
 
         Log.d(TAG, "Accepting invitation for eventId=" + eventId + " user=" + currentUserId);
 
-        // Remove from chosen (since user accepted)
-        db.collection("events").document(eventId)
-                .collection("chosen").document(currentUserId)
-                .delete()
+        // Update entrant status directly
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", "enrolled"); // reflects accepted
+        updates.put("enrolled_date", FieldValue.serverTimestamp());
+
+        db.collection("waiting_lists")
+                .document(eventId)
+                .collection("entrants")
+                .document(currentUserId)
+                .update(updates)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Removed from chosen list");
+                    Log.d(TAG, "Entrant status updated to 'enrolled'");
 
-                    // Add user to accepted list
-                    Map<String, Object> acceptedData = new HashMap<>();
-                    acceptedData.put("acceptedAt", FieldValue.serverTimestamp());
-                    acceptedData.put("status", "accepted");
+                    // Optionally update the notification
+                    db.collection("accounts").document(currentUserId)
+                            .collection("notifications").document(notification.id)
+                            .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp());
 
-                    db.collection("events").document(eventId)
-                            .collection("accepted").document(currentUserId)
-                            .set(acceptedData)
-                            .addOnSuccessListener(aVoid2 -> {
-                                Log.d(TAG, "Added to accepted list");
-
-                                // Update notification
-                                db.collection("accounts").document(currentUserId)
-                                        .collection("notifications").document(notification.id)
-                                        .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp())
-                                        .addOnSuccessListener(aVoid3 -> {
-                                            Log.d(TAG, " Notification marked accepted");
-                                            Toast.makeText(this, "Invitation accepted successfully", Toast.LENGTH_SHORT).show();
-
-                                            // Refresh UI (optional)
-                                            adapter.notifyDataSetChanged();
-                                        })
-                                        .addOnFailureListener(e -> Log.e(TAG, "Failed to update notification", e));
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, " Failed to add to accepted list", e);
-                                Toast.makeText(this, "Error accepting invitation (accepted list)", Toast.LENGTH_SHORT).show();
-                            });
+                    Toast.makeText(this, "Invitation accepted successfully", Toast.LENGTH_SHORT).show();
+                    adapter.notifyDataSetChanged();
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to remove from chosen list", e);
-                    Toast.makeText(this, "Error accepting invitation (chosen list)", Toast.LENGTH_SHORT).show();
-                });
+                .addOnFailureListener(e -> Log.e(TAG, "Failed to update entrant status", e));
     }
 
     /**
@@ -515,7 +489,7 @@ public class NotificationsActivity extends AppCompatActivity {
                 tvBody.setText(item.body);
 
                 // US 01.05.03 - Show decline button only for "chosen" notifications not yet declined
-                // MOdified the follwoing to add the accept invitation one.
+                // MOdified the following to add the accept invitation one.
                 if ("chosen".equals(item.type) && !item.declined) {
                     btnDecline.setVisibility(View.VISIBLE);
                     btnAccept.setVisibility(View.VISIBLE);

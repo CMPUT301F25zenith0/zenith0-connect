@@ -3,6 +3,7 @@ package com.example.connect.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -27,6 +28,16 @@ import java.util.Locale;
 public class WaitingListAdapter extends ListAdapter<WaitingListEntry, WaitingListAdapter.WaitingListViewHolder> {
 
     private static final String TAG = "WaitingListAdapter";
+
+    public interface OnSendNotificationClickListener {
+        void onSendNotificationClicked(WaitingListEntry entry);
+    }
+
+    private OnSendNotificationClickListener notificationClickListener;
+
+    public void setOnSendNotificationClickListener(OnSendNotificationClickListener listener) {
+        this.notificationClickListener = listener;
+    }
 
     /**
      * Constructor for WaitingListAdapter
@@ -60,6 +71,12 @@ public class WaitingListAdapter extends ListAdapter<WaitingListEntry, WaitingLis
     public void onBindViewHolder(@NonNull WaitingListViewHolder holder, int position) {
         WaitingListEntry entry = getItem(position);
         holder.bind(entry);
+
+        holder.btnSendNotification.setOnClickListener(v -> {
+            if (notificationClickListener != null) {
+                notificationClickListener.onSendNotificationClicked(entry);
+            }
+        });
     }
 
     /**
@@ -69,6 +86,7 @@ public class WaitingListAdapter extends ListAdapter<WaitingListEntry, WaitingLis
         private final TextView tvEntrantName;
         private final TextView tvJoinedDate;
         private final TextView tvEntrantStatus;
+        Button btnSendNotification;
 
         /**
          * Constructor for ViewHolder
@@ -80,6 +98,8 @@ public class WaitingListAdapter extends ListAdapter<WaitingListEntry, WaitingLis
             tvEntrantName = itemView.findViewById(R.id.tvEntrantName);
             tvJoinedDate = itemView.findViewById(R.id.tvJoinedDate);
             tvEntrantStatus = itemView.findViewById(R.id.tvEntrantStatus);
+            btnSendNotification = itemView.findViewById(R.id.btnSendCustomNotification);
+
         }
 
         /**

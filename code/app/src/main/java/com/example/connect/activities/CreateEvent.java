@@ -8,8 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.location.Address;
-import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -21,27 +19,24 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Locale;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.GeoPoint;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -79,7 +74,6 @@ public class CreateEvent extends AppCompatActivity {
     private Button btnBack, btnStartDate, btnStartTime, btnEndDate, btnEndTime;
     private Button btnRegistrationOpens, btnRegistrationCloses, btnSaveDraft, btnPublishQR;
     private ImageView ivEventImage, ivAddImage;
-    private SwitchMaterial switchGeolocation;
 
     // Date and Time
     private Calendar startDateTime, endDateTime, registrationOpens, registrationCloses;
@@ -233,16 +227,13 @@ public class CreateEvent extends AppCompatActivity {
                             try {
                                 byte[] decoded = android.util.Base64.decode(base64Image, android.util.Base64.DEFAULT);
                                 Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
-                                ivEventImage.setImageBitmap(bmp);
+                                applyBitmapPreview(bmp);
                             } catch (Exception e) {
                                 Log.e(TAG, "Error decoding image", e);
+                                showPlaceholderImage();
                             }
-                        }
-
-                        // Load geolocation switch state
-                        Boolean geoEnabled = documentSnapshot.getBoolean("geo_verification_enabled");
-                        if (geoEnabled != null) {
-                            switchGeolocation.setChecked(geoEnabled);
+                        } else {
+                            showPlaceholderImage();
                         }
 
                         // Change button text for edit mode
@@ -323,8 +314,7 @@ public class CreateEvent extends AppCompatActivity {
         ivEventImage = findViewById(R.id.ivEventImage);
         ivAddImage = findViewById(R.id.ivAddImage);
 
-        // Switch
-        switchGeolocation = findViewById(R.id.switchGeolocation);
+        showPlaceholderImage();
     }
 
     /**
@@ -365,11 +355,51 @@ public class CreateEvent extends AppCompatActivity {
                 result -> {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
-                        ivEventImage.setImageURI(selectedImageUri);
-                        existingBase64Image = null; // Clear existing image when new one is selected
+                        if (selectedImageUri != null) {
+                            applyUriPreview(selectedImageUri);
+                            existingBase64Image = null; // Clear existing image when new one is selected
+                        }
                     }
                 }
         );
+    }
+
+    private void applyBitmapPreview(Bitmap bitmap) {
+        if (bitmap == null) {
+            showPlaceholderImage();
+            return;
+        }
+        ivEventImage.setImageBitmap(bitmap);
+        ivAddImage.setImageBitmap(bitmap);
+        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        ivAddImage.setPadding(0, 0, 0, 0);
+        ivAddImage.clearColorFilter();
+    }
+
+    private void applyUriPreview(Uri uri) {
+        if (uri == null) {
+            showPlaceholderImage();
+            return;
+        }
+        ivEventImage.setImageURI(uri);
+        ivAddImage.setImageURI(uri);
+        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        ivAddImage.setPadding(0, 0, 0, 0);
+        ivAddImage.clearColorFilter();
+    }
+
+    private void showPlaceholderImage() {
+        if (ivEventImage == null || ivAddImage == null)
+            return;
+        ivEventImage.setImageResource(R.drawable.placeholder_img);
+        ivAddImage.setImageResource(android.R.drawable.ic_input_add);
+        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        ivAddImage.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
+        ivAddImage.setColorFilter(ContextCompat.getColor(this, R.color.dark_blue));
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     /**
@@ -879,42 +909,6 @@ public class CreateEvent extends AppCompatActivity {
     }
 
     /**
-     * Converts a location address string to a GeoPoint using geocoding.
-     * 
-     * @param locationAddress The address string to geocode
-     * @return GeoPoint with latitude and longitude, or null if geocoding fails
-     */
-    private GeoPoint geocodeLocation(String locationAddress) {
-        if (locationAddress == null || locationAddress.trim().isEmpty()) {
-            Log.w(TAG, "Location address is empty, cannot geocode");
-            return null;
-        }
-
-        try {
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            List<Address> addresses = geocoder.getFromLocationName(locationAddress, 1);
-            
-            if (addresses != null && !addresses.isEmpty()) {
-                Address address = addresses.get(0);
-                double latitude = address.getLatitude();
-                double longitude = address.getLongitude();
-                
-                Log.d(TAG, "Geocoded location: " + locationAddress + " -> (" + latitude + ", " + longitude + ")");
-                return new GeoPoint(latitude, longitude);
-            } else {
-                Log.w(TAG, "No results found for location: " + locationAddress);
-                return null;
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "Error geocoding location: " + locationAddress, e);
-            return null;
-        } catch (Exception e) {
-            Log.e(TAG, "Unexpected error during geocoding: " + locationAddress, e);
-            return null;
-        }
-    }
-
-    /**
      * Creates a comprehensive map of event data for Firestore storage.
      */
     private Map<String, Object> createEventData(boolean isDraft) {
@@ -923,8 +917,7 @@ public class CreateEvent extends AppCompatActivity {
         // Basic info
         eventData.put("event_title", etEventName.getText().toString().trim());
         eventData.put("description", etDescription.getText().toString().trim());
-        String locationText = etLocation.getText().toString().trim();
-        eventData.put("location", locationText);
+        eventData.put("location", etLocation.getText().toString().trim());
 
         // Date and time
         eventData.put("date_time", dateTimeFormat.format(startDateTime.getTime()));
@@ -990,25 +983,6 @@ public class CreateEvent extends AppCompatActivity {
         // ⭐ ADD: Initialize lottery fields
         eventData.put("draw_completed", false);
         eventData.put("selected_count", 0);
-
-        // Geolocation settings
-        boolean geoVerificationEnabled = switchGeolocation.isChecked();
-        eventData.put("geo_verification_enabled", geoVerificationEnabled);
-
-        // If geolocation is enabled, geocode the location and store the geotag
-        if (geoVerificationEnabled && !locationText.isEmpty()) {
-            GeoPoint geoLocation = geocodeLocation(locationText);
-            if (geoLocation != null) {
-                eventData.put("geo_location", geoLocation);
-                Log.d(TAG, "Stored geotag for location: " + locationText);
-            } else {
-                Log.w(TAG, "Failed to geocode location, but geolocation is enabled. Event will be saved without geotag.");
-                Toast.makeText(this, "Warning: Could not geocode location. Geolocation verification may not work properly.", Toast.LENGTH_LONG).show();
-            }
-        } else if (!geoVerificationEnabled) {
-            // Clear geo_location if geolocation is disabled
-            eventData.put("geo_location", null);
-        }
 
         return eventData;
     }
