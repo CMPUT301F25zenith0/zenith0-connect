@@ -142,8 +142,8 @@ public class UserNotificationsActivity extends AppCompatActivity {
 
         if (myEventsBtn != null) {
             myEventsBtn.setOnClickListener(v -> {
-                // TODO - Navigate to my events page
-                Toast.makeText(this, "My Events - Coming Soon", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(UserNotificationsActivity.this, MyEventsActivity.class);
+                startActivity(intent);
             });
         }
 
