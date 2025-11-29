@@ -4,23 +4,26 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardCornerRadius="16dp"
-    android:layout_margin="16dp"
-    app:cardElevation="8dp">
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginBottom="12dp"
+    app:cardElevation="6dp"
+    app:cardBackgroundColor="@color/card_bg">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:background="@android:color/white">
+        android:padding="16dp">
 
         <!-- Title -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="File a Report"
-            android:textColor="#2F4F4F"
-            android:textSize="20sp"
+            android:textColor="@color/charcoal"
+            android:textSize="26sp"
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
@@ -28,33 +31,51 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Description (Max 200 chars):"
-            android:textColor="#5F9EA0"
-            android:textSize="14sp" />
+            android:text="Description (Max 200 chars)"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginBottom="6dp"
+            android:layout_marginStart="4dp" />
 
-        <EditText
-            android:id="@+id/et_report_description"
+        <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minLines="3"
-            android:maxLines="5"
-            android:gravity="top|start"
-            android:hint="Briefly describe the issue..."
-            android:textColorHint="@color/gray_400"
-            android:inputType="textMultiLine|textCapSentences"
-            android:maxLength="200"
-            android:padding="8dp"
-            android:background="@drawable/rounded_border"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            app:boxBackgroundColor="@color/card_bg"
+            app:boxCornerRadiusBottomEnd="12dp"
+            app:boxCornerRadiusBottomStart="12dp"
+            app:boxCornerRadiusTopEnd="12dp"
+            app:boxCornerRadiusTopStart="12dp"
+            app:boxStrokeColor="@color/text_secondary"
+            app:boxStrokeWidth="1dp"
+            app:hintEnabled="false">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_report_description"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minLines="3"
+                android:maxLines="5"
+                android:gravity="top|start"
+                android:hint="Briefly describe the issue..."
+                android:textColorHint="@color/text_secondary"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLength="200"
+                android:padding="14dp"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp" />
+        </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Severity Rating -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Severity Rating (1-5 Stars):"
-            android:textColor="#5F9EA0"
-            android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
+            android:text="Severity Rating (1-5 Stars)"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            android:layout_marginBottom="8dp"
+            android:layout_marginStart="4dp" />
 
         <RatingBar
             android:id="@+id/rb_severity_rating"
@@ -64,34 +85,38 @@
             android:stepSize="1.0"
             android:rating="0.0"
             style="?android:attr/ratingBarStyle"
-            android:progressTint="#FFD700"
+            android:progressTint="@color/primary_gold"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="24dp" />
+            android:layout_marginBottom="16dp" />
 
         <!-- Button Container -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end">
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/btn_report_cancel"
-                android:layout_width="wrap_content"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="Cancel"
-                android:textColor="#2F4F4F"
-                android:backgroundTint="#F0F8FF"
-                android:layout_marginEnd="8dp"
-                style="?attr/materialButtonOutlinedStyle" />
+                android:textColor="@color/text_secondary"
+                app:strokeColor="@color/text_secondary"
+                app:strokeWidth="1dp"
+                android:layout_marginEnd="8dp" />
 
             <Button
                 android:id="@+id/btn_report_submit"
-                android:layout_width="wrap_content"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="Submit Report"
-                android:textColor="@android:color/white"
-                android:backgroundTint="#5F9EA0" />
+                android:textColor="@color/charcoal"
+                android:textStyle="bold"
+                app:backgroundTint="@color/primary_gold" />
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

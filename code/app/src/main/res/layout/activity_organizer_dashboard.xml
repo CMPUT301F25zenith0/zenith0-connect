@@ -185,7 +185,7 @@
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:listitem="@layout/item_event_card"/>
+        tools:listitem="@layout/row_organizer_event"/>
 
     <!-- Bottom Navigation (kept as buttons per your layout) -->
     <LinearLayout

@@ -181,13 +181,6 @@
             android:textStyle="bold"
             android:fontFamily="serif"/>
 
-        <TextView
-            android:id="@+id/tvViewAllPopular"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="View All"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"/>
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -219,13 +212,6 @@
             android:textStyle="bold"
             android:fontFamily="serif"/>
 
-        <TextView
-            android:id="@+id/tvViewAllMonth"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="View All"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"/>
     </LinearLayout>
 
 </LinearLayout>
