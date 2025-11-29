@@ -1,6 +1,10 @@
 package com.example.connect.adapters;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,12 +12,11 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
-import android.content.Intent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.bumptech.glide.Glide;
 import com.example.connect.R;
 import com.example.connect.models.Event;
 
@@ -94,14 +97,8 @@ public class EventAdapter extends ArrayAdapter<Event> {
         holder.eventLocation.setText(event.getLocation() != null ? event.getLocation() : "Location TBD");
         holder.eventPrice.setText(event.getPrice() != null ? event.getPrice() : "Free");
 
-        // Load image if available
-        if (event.getImageUrl() != null && !event.getImageUrl().isEmpty()) {
-            // TODO: Use Glide or Picasso to load image
-            // Glide.with(context).load(event.getImageUrl()).into(holder.eventImage);
-            holder.eventImage.setImageResource(R.drawable.placeholder_img);
-        } else {
-            holder.eventImage.setImageResource(R.drawable.placeholder_img);
-        }
+        // Load the poster image (URL > Base64 > placeholder fallback)
+        bindEventImage(holder.eventImage, event);
 
         // View Details button click
         holder.btnViewDetails.setOnClickListener(v -> {
@@ -144,5 +141,37 @@ public class EventAdapter extends ArrayAdapter<Event> {
         TextView eventPrice;
         Button btnViewDetails;
         Button btnJoinWaitlist;
+    }
+
+    private void bindEventImage(ImageView imageView, Event event) {
+        String imageUrl = event.getImageUrl();
+        String imageBase64 = event.getImageBase64();
+
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            Glide.with(context)
+                    .load(imageUrl)
+                    .placeholder(R.drawable.placeholder_img)
+                    .error(R.drawable.placeholder_img)
+                    .centerCrop()
+                    .into(imageView);
+            return;
+        }
+
+        if (imageBase64 != null && !imageBase64.trim().isEmpty()) {
+            try {
+                byte[] decoded = Base64.decode(imageBase64, Base64.DEFAULT);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                if (bitmap != null) {
+                    imageView.setImageBitmap(bitmap);
+                    imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    return;
+                }
+            } catch (IllegalArgumentException ignored) {
+                // fall through to placeholder
+            }
+        }
+
+        imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        imageView.setImageResource(R.drawable.placeholder_img);
     }
 }
