@@ -161,6 +161,159 @@ public class CreateEvent extends AppCompatActivity {
     }
 
     /**
+     * Load existing event data for editing
+     *
+     * @param eventId The ID of the event to edit
+     */
+    private void loadEventForEditing(String eventId) {
+        db.collection("events").document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Populate fields with existing data
+                        etEventName.setText(documentSnapshot.getString("event_title"));
+                        etDescription.setText(documentSnapshot.getString("description"));
+                        etLocation.setText(documentSnapshot.getString("location"));
+
+                        String price = documentSnapshot.getString("price");
+                        etPrice.setText(price != null && !price.equals("0") ? price : "");
+
+                        // Draw capacity
+                        Long drawCapacity = documentSnapshot.getLong("draw_capacity");
+                        if (drawCapacity != null && drawCapacity > 0) {
+                            etDrawCapacity.setText(String.valueOf(drawCapacity));
+                        }
+
+                        // Load waiting list capacity from waiting_lists collection
+                        db.collection("waiting_lists").document(eventId)
+                                .get()
+                                .addOnSuccessListener(waitingListDoc -> {
+                                    if (waitingListDoc.exists()) {
+                                        Long totalCapacity = waitingListDoc.getLong("total_capacity");
+                                        if (totalCapacity != null && totalCapacity > 0) {
+                                            etWaitingList.setText(String.valueOf(totalCapacity));
+                                        }
+                                        // If null or 0, leave field empty (unlimited)
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error loading waiting list capacity", e);
+                                });
+
+                        // Parse and set date/time fields
+                        String dateTimeStr = documentSnapshot.getString("date_time");
+                        if (dateTimeStr != null && !dateTimeStr.isEmpty()) {
+                            try {
+                                startDateTime.setTime(dateTimeFormat.parse(dateTimeStr));
+                                btnStartDate.setText(dateFormat.format(startDateTime.getTime()));
+                                btnStartTime.setText(timeFormat.format(startDateTime.getTime()));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing start date", e);
+                            }
+                        }
+
+                        String endTimeStr = documentSnapshot.getString("end_time");
+                        if (endTimeStr != null && !endTimeStr.isEmpty()) {
+                            try {
+                                endDateTime.setTime(dateTimeFormat.parse(endTimeStr));
+                                btnEndDate.setText(dateFormat.format(endDateTime.getTime()));
+                                btnEndTime.setText(timeFormat.format(endDateTime.getTime()));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing end date", e);
+                            }
+                        }
+
+                        String regStartStr = documentSnapshot.getString("reg_start");
+                        if (regStartStr != null && !regStartStr.isEmpty()) {
+                            try {
+                                registrationOpens.setTime(dateTimeFormat.parse(regStartStr));
+                                String dateTimeText = dateFormat.format(registrationOpens.getTime()) + " " +
+                                        timeFormat.format(registrationOpens.getTime());
+                                btnRegistrationOpens.setText(dateTimeText);
+                                btnRegistrationOpens.setTextColor(getResources().getColor(android.R.color.black));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing reg start", e);
+                            }
+                        }
+
+                        String regStopStr = documentSnapshot.getString("reg_stop");
+                        if (regStopStr != null && !regStopStr.isEmpty()) {
+                            try {
+                                registrationCloses.setTime(dateTimeFormat.parse(regStopStr));
+                                String dateTimeText = dateFormat.format(registrationCloses.getTime()) + " " +
+                                        timeFormat.format(registrationCloses.getTime());
+                                btnRegistrationCloses.setText(dateTimeText);
+                                btnRegistrationCloses.setTextColor(getResources().getColor(android.R.color.black));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing reg stop", e);
+                            }
+                        }
+
+                        // Load image if available
+                        String base64Image = documentSnapshot.getString("image_base64");
+                        if (base64Image != null && !base64Image.isEmpty()) {
+                            existingBase64Image = base64Image; // Store for later use
+                            try {
+                                byte[] decoded = android.util.Base64.decode(base64Image, android.util.Base64.DEFAULT);
+                                Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                                applyBitmapPreview(bmp);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error decoding image", e);
+                                showPlaceholderImage();
+                            }
+                        } else {
+                            showPlaceholderImage();
+                        }
+
+                        // Change button text for edit mode
+                        btnPublishQR.setText("Update Event");
+                        btnSaveDraft.setText("Save Changes");
+
+                        Toast.makeText(this, "Loaded event for editing", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading event", e);
+                    Toast.makeText(this, "Error loading event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    finish();
+                });
+    }
+
+    /**
+     * Fetches the organizer's display name from Firestore.
+     * <p>
+     * Attempts to retrieve the display_name field, falling back to full_name if not available.
+     * If neither exists, defaults to "Organizer".
+     * </p>
+     */
+    private void fetchOrganizerName() {
+        db.collection("accounts").document(currentUserId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        organizerName = documentSnapshot.getString("display_name");
+                        if (organizerName == null || organizerName.isEmpty()) {
+                            organizerName = documentSnapshot.getString("full_name");
+                        }
+                        if (organizerName == null || organizerName.isEmpty()) {
+                            organizerName = "Organizer";
+                        }
+                        Log.d(TAG, "Organizer name: " + organizerName);
+                    } else {
+                        organizerName = "Organizer";
+                        Log.w(TAG, "Account document not found for user: " + currentUserId);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    organizerName = "Organizer";
+                    Log.e(TAG, "Error fetching organizer name", e);
+                });
+    }
+
+    /**
      * Initializes all UI view references from the layout.
      * <p>
      * Connects EditTexts, Buttons, and ImageViews to their corresponding member variables.
@@ -871,18 +1024,43 @@ public class CreateEvent extends AppCompatActivity {
         Map<String, Object> waitingListData = new HashMap<>();
         waitingListData.put("event_id", eventId);
         waitingListData.put("created_at", FieldValue.serverTimestamp());
-        waitingListData.put("total_capacity", getWaitingListCapacity());
-        db.collection("waiting_lists").document(eventId).set(waitingListData);
+
+        // ✅ Get capacity (null = unlimited, number = limited)
+        Integer capacity = getWaitingListCapacity();
+        waitingListData.put("total_capacity", capacity);
+
+        db.collection("waiting_lists").document(eventId)
+                .set(waitingListData)
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Waiting list document created for event: " + eventId);
+                    Log.d(TAG, "Capacity: " + (capacity == null ? "unlimited" : capacity));
+                    Log.d(TAG, "Entrants subcollection will be created when first user joins");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error creating waiting list", e);
+                });
     }
 
     /**
-     * Parses the waiting list capacity from the input field.
+     * Parses and returns the waiting list capacity from user input.
+     * Returns null for unlimited capacity (when field is empty).
      *
-     * @return The integer capacity, or 0 if invalid
+     * @return The waiting list capacity as Integer, or null for unlimited
      */
-    private int getWaitingListCapacity() {
-        String s = etWaitingList.getText().toString().trim().replaceAll("[^0-9]", "");
-        return s.isEmpty() ? 0 : Integer.parseInt(s);
+    private Integer getWaitingListCapacity() {
+        String waitingList = etWaitingList.getText().toString().trim();
+        if (!waitingList.isEmpty()) {
+            try {
+                String cleanNumber = waitingList.replaceAll("[^0-9]", "");
+                if (!cleanNumber.isEmpty()) {
+                    int capacity = Integer.parseInt(cleanNumber);
+                    return capacity > 0 ? capacity : null;  // Return null if 0 or negative
+                }
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Error parsing waiting list capacity", e);
+            }
+        }
+        return null;  // null = unlimited capacity
     }
 
     /**

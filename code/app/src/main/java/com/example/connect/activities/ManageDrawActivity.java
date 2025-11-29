@@ -128,6 +128,8 @@ public class ManageDrawActivity extends AppCompatActivity {
         // 🔹 Initialize helper
         notificationHelper = new NotificationHelper();
 
+        lotteryManager = new LotteryManager();
+
         // Get event ID from intent
         eventId = getIntent().getStringExtra("EVENT_ID");
         if (eventId == null || eventId.isEmpty()) {
