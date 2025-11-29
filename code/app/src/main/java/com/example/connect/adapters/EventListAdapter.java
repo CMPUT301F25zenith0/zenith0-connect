@@ -166,6 +166,7 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
                 (event.getDescription() != null && event.getDescription().toLowerCase().contains(query));
     }
 
+
     static class EventViewHolder extends RecyclerView.ViewHolder {
         private static final String TAG = "EventViewHolder";
 
@@ -198,7 +199,14 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
             eventTitle.setText(event.getName() != null ? event.getName() : "Untitled Event");
             eventDateTime.setText(event.getDateTime() != null ? event.getDateTime() : "TBD");
             eventLocation.setText(event.getLocation() != null ? event.getLocation() : "Location TBD");
-            eventPrice.setText(event.getPrice() != null ? event.getPrice() : "Free");
+
+            String formattedPrice = priceFormat(event.getPrice());
+            eventPrice.setText(formattedPrice);
+            if (formattedPrice.equals("Free")) {
+                eventPrice.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+            } else {
+                eventPrice.setTextColor(itemView.getContext().getResources().getColor(R.color.primary_gold));
+            }
 
             // Handle image
             if (event.getImageBase64() != null && !event.getImageBase64().isEmpty()) {
@@ -240,6 +248,40 @@ public class EventListAdapter extends ListAdapter<Event, EventListAdapter.EventV
             });
 
             Log.d(TAG, "Bind complete for: " + event.getName());
+        }
+
+        /**
+         * Helper method to format price string.
+         * returns "Free" if value is 0 or empty, otherwise returns formatted currency (e.g., "$10.00")
+         **/
+        private static String priceFormat(String priceStr){
+            if (priceStr == null || priceStr.trim().isEmpty()) {
+                return "Free";
+            }
+
+            try {
+                // Remove everything that isn't a number or a decimal point
+                // This handles cases like "$50", "USD 50", or just "50"
+                String cleanPrice = priceStr.replaceAll("[^\\d.]", "");
+
+                if (cleanPrice.isEmpty()) {
+                    return "Free";
+                }
+
+                // Parse to double
+                double priceValue = Double.parseDouble(cleanPrice);
+
+                // 3. Check value
+                if (priceValue <= 0) {
+                    return "Free";
+                } else {
+                    // Format to 2 decimal places
+                    return String.format("$%.2f", priceValue);
+                }
+            } catch (NumberFormatException e) {
+                // If parsing fails (e.g. text is "Donation only"), return original text
+                return priceStr;
+            }
         }
     }
 }

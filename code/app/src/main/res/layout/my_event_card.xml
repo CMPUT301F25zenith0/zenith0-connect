@@ -124,6 +124,20 @@
                 android:insetBottom="0dp"/>
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_leave"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Leave List"
+                android:textSize="11sp"
+                android:textColor="@color/mist_pink"
+                app:strokeColor="@color/mist_pink"
+                android:paddingHorizontal="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:layout_marginTop="4dp" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_cancel"
                 style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
