@@ -19,13 +19,16 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Activity for displaying a map view of where entrants joined the waiting list from.
@@ -51,6 +54,7 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
     private List<WaitingListEntry> entrantsWithLocation = new ArrayList<>();
     private List<WaitingListEntry> allEntrants = new ArrayList<>();
     private Map<Marker, WaitingListEntry> markerToEntrantMap = new HashMap<>();
+    private Map<String, com.example.connect.models.User> userCache = new HashMap<>();
 
     // Firebase
     private FirebaseFirestore db;
@@ -82,13 +86,15 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
             mapFragment.getMapAsync(this);
         } else {
             Log.e(TAG, "Map fragment not found!");
-            Toast.makeText(this, "Error: Map fragment not found", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Error: Unable to load map. Please check Google Play Services.", Toast.LENGTH_LONG).show();
+            finish();
+            return;
         }
 
         // Load entrants data
         loadEntrants();
     }
-    
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -113,10 +119,10 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        
+
         // Enable zoom controls
         mMap.getUiSettings().setZoomControlsEnabled(true);
-        
+
         // Set up marker click listener
         mMap.setOnMarkerClickListener(marker -> {
             WaitingListEntry entry = markerToEntrantMap.get(marker);
@@ -127,13 +133,16 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
             }
             return true;
         });
-        
-        // Update map with loaded data
-        updateMapWithMarkers();
+
+        // Update map with loaded data if already available
+        if (!entrantsWithLocation.isEmpty()) {
+            updateMapWithMarkers();
+        }
     }
 
     /**
      * Load all entrants from the waiting list and filter those with location data
+     * Then batch load all user data
      */
     private void loadEntrants() {
         db.collection("waiting_lists")
@@ -143,24 +152,26 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
                 .addOnSuccessListener(querySnapshot -> {
                     allEntrants.clear();
                     entrantsWithLocation.clear();
-                    
+
                     Log.d(TAG, "Total documents retrieved: " + querySnapshot.size());
-                    
+
+                    Set<String> userIdsToLoad = new HashSet<>();
+
                     for (QueryDocumentSnapshot document : querySnapshot) {
                         WaitingListEntry entry = document.toObject(WaitingListEntry.class);
                         if (entry != null) {
                             entry.setDocumentId(document.getId());
                             allEntrants.add(entry);
-                            
+
                             // Try to get location from document directly if model parsing fails
                             Double latitude = entry.getLatitude();
                             Double longitude = entry.getLongitude();
-                            
+
                             // Fallback: try reading directly from document
                             if (latitude == null || longitude == null) {
                                 Object latObj = document.get("latitude");
                                 Object lngObj = document.get("longitude");
-                                
+
                                 if (latObj != null && lngObj != null) {
                                     try {
                                         if (latObj instanceof Number) {
@@ -180,115 +191,157 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
                                     }
                                 }
                             }
-                            
+
                             // Check if entry has valid location data
-                            if (latitude != null && longitude != null && 
-                                !Double.isNaN(latitude) && !Double.isNaN(longitude) &&
-                                latitude != 0.0 && longitude != 0.0) {
+                            if (latitude != null && longitude != null &&
+                                    !Double.isNaN(latitude) && !Double.isNaN(longitude) &&
+                                    latitude != 0.0 && longitude != 0.0) {
                                 entrantsWithLocation.add(entry);
                                 Log.d(TAG, "Entrant " + document.getId() + " has location: " + latitude + ", " + longitude);
-                                
-                                // Load user data for this entrant
-                                loadUserDataForEntrant(entry);
+
+                                // Collect user IDs to batch load
+                                if (entry.getUserId() != null && !entry.getUserId().isEmpty()) {
+                                    userIdsToLoad.add(entry.getUserId());
+                                }
                             } else {
                                 Log.d(TAG, "Entrant " + document.getId() + " has no valid location data. Lat: " + latitude + ", Lng: " + longitude);
                             }
                         }
                     }
-                    
-                    Log.d(TAG, "Loaded " + allEntrants.size() + " total entrants, " + 
+
+                    Log.d(TAG, "Loaded " + allEntrants.size() + " total entrants, " +
                             entrantsWithLocation.size() + " with location data");
-                    
+
                     updateStatistics();
-                    updateMapWithMarkers();
+
+                    // Batch load user data
+                    if (!userIdsToLoad.isEmpty()) {
+                        batchLoadUserData(new ArrayList<>(userIdsToLoad));
+                    } else {
+                        // No users to load, update map immediately
+                        updateMapWithMarkers();
+                    }
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Error loading entrants", e);
-                    Toast.makeText(this, "Error loading entrants: " + e.getMessage(), 
+                    Toast.makeText(this, "Error loading entrants: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
     }
 
     /**
-     * Load user data for an entrant to display name in marker
+     * Batch load user data for all entrants with location
+     * Fixed: Issue #2 - loads all users in batches instead of individual queries
      */
-    private void loadUserDataForEntrant(WaitingListEntry entry) {
-        if (entry.getUserId() == null) {
-            Log.w(TAG, "Entry has no userId");
+    private void batchLoadUserData(List<String> userIds) {
+        if (userIds.isEmpty()) {
+            updateMapWithMarkers();
             return;
         }
-        
-        db.collection("accounts")
-                .document(entry.getUserId())
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        com.example.connect.models.User user = 
-                                documentSnapshot.toObject(com.example.connect.models.User.class);
-                        if (user != null) {
-                            entry.setUser(user);
-                            Log.d(TAG, "Loaded user data for " + user.getName());
-                            // Update marker if map is ready
-                            // Firestore callbacks run on main thread, so we can update directly
-                            if (mMap != null) {
-                                updateMapWithMarkers();
+
+        // Firestore 'in' queries support up to 10 items at a time
+        final int BATCH_SIZE = 10;
+        final int totalBatches = (int) Math.ceil(userIds.size() / (double) BATCH_SIZE);
+        final int[] completedBatches = {0};
+
+        for (int i = 0; i < userIds.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, userIds.size());
+            List<String> batch = userIds.subList(i, end);
+
+            db.collection("accounts")
+                    .whereIn("__name__", batch)
+                    .get()
+                    .addOnSuccessListener(querySnapshot -> {
+                        for (DocumentSnapshot document : querySnapshot.getDocuments()) {
+                            if (document.exists()) {
+                                com.example.connect.models.User user =
+                                        document.toObject(com.example.connect.models.User.class);
+                                if (user != null) {
+                                    userCache.put(document.getId(), user);
+                                    Log.d(TAG, "Loaded user data for " + user.getName());
+                                }
                             }
                         }
-                    } else {
-                        Log.w(TAG, "User document not found for userId: " + entry.getUserId());
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading user data for entrant " + entry.getUserId(), e);
-                });
+
+                        completedBatches[0]++;
+
+                        // Once all batches are complete, assign users to entries and update map
+                        if (completedBatches[0] == totalBatches) {
+                            assignUsersToEntries();
+                            updateMapWithMarkers();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Error loading batch of user data", e);
+                        completedBatches[0]++;
+
+                        // Continue even if a batch fails
+                        if (completedBatches[0] == totalBatches) {
+                            assignUsersToEntries();
+                            updateMapWithMarkers();
+                        }
+                    });
+        }
+    }
+
+    /**
+     * Assign loaded user data to entrant entries
+     */
+    private void assignUsersToEntries() {
+        for (WaitingListEntry entry : entrantsWithLocation) {
+            if (entry.getUserId() != null && userCache.containsKey(entry.getUserId())) {
+                entry.setUser(userCache.get(entry.getUserId()));
+            }
+        }
     }
 
     /**
      * Update map with markers for all entrants that have location data
+     * Fixed: Issue #3 - only called once after all data is loaded
      */
     private void updateMapWithMarkers() {
         if (mMap == null) {
             Log.w(TAG, "Map is not ready yet");
             return;
         }
-        
+
         // Clear existing markers
         mMap.clear();
         markerToEntrantMap.clear();
-        
+
         if (entrantsWithLocation.isEmpty()) {
             Log.d(TAG, "No entrants with location data to display");
             Toast.makeText(this, "No entrants with location data to display", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         Log.d(TAG, "Adding " + entrantsWithLocation.size() + " markers to map");
-        
+
         // Add markers for each entrant
-        com.google.android.gms.maps.model.LatLngBounds.Builder boundsBuilder = 
+        com.google.android.gms.maps.model.LatLngBounds.Builder boundsBuilder =
                 new com.google.android.gms.maps.model.LatLngBounds.Builder();
         int markersAdded = 0;
-        
+
         for (WaitingListEntry entry : entrantsWithLocation) {
             Double latitude = entry.getLatitude();
             Double longitude = entry.getLongitude();
-            
-            if (latitude != null && longitude != null && 
-                !Double.isNaN(latitude) && !Double.isNaN(longitude)) {
-                
+
+            if (latitude != null && longitude != null &&
+                    !Double.isNaN(latitude) && !Double.isNaN(longitude)) {
+
                 LatLng location = new LatLng(latitude, longitude);
-                
+
                 // Create marker
                 MarkerOptions markerOptions = new MarkerOptions()
                         .position(location);
-                
+
                 // Set title if user data is available
                 if (entry.getUser() != null && entry.getUser().getName() != null) {
                     markerOptions.title(entry.getUser().getName());
                 } else {
                     markerOptions.title("Entrant");
                 }
-                
+
                 Marker marker = mMap.addMarker(markerOptions);
                 if (marker != null) {
                     markerToEntrantMap.put(marker, entry);
@@ -302,9 +355,9 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
                 Log.w(TAG, "Skipping entrant with invalid location: lat=" + latitude + ", lng=" + longitude);
             }
         }
-        
+
         Log.d(TAG, "Total markers added: " + markersAdded);
-        
+
         // Zoom to show all markers
         if (markersAdded > 0) {
             try {
@@ -343,11 +396,10 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
         int totalWithLocation = entrantsWithLocation.size();
         int totalEntrants = allEntrants.size();
         int withoutLocation = totalEntrants - totalWithLocation;
-        
+
         tvEntrantsInView.setText("Entrants In View: " + totalWithLocation);
         tvWithinZone.setText("With Location: " + totalWithLocation);
         tvOutsideZone.setText("Without Location: " + withoutLocation);
     }
 
 }
-
