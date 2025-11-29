@@ -590,6 +590,7 @@ public class CreateEvent extends AppCompatActivity {
                     calendar.set(Calendar.MONTH, month);
                     calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
                     button.setText(dateFormat.format(calendar.getTime()));
+                    button.setTextColor(getResources().getColor(android.R.color.black));
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -625,11 +626,13 @@ public class CreateEvent extends AppCompatActivity {
                     calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                     calendar.set(Calendar.MINUTE, minute);
                     button.setText(timeFormat.format(calendar.getTime()));
+                    button.setTextColor(getResources().getColor(android.R.color.black));
                 },
                 calendar.get(Calendar.HOUR_OF_DAY),
                 calendar.get(Calendar.MINUTE),
-                false
+                false  // 12-hour format
         );
+
         timePickerDialog.show();
     }
 
@@ -665,6 +668,15 @@ public class CreateEvent extends AppCompatActivity {
                             (timeView, hourOfDay, minute) -> {
                                 calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                                 calendar.set(Calendar.MINUTE, minute);
+                                calendar.set(Calendar.SECOND, 0);
+
+                                // Validate complete datetime
+                                Calendar now = Calendar.getInstance();
+                                if (calendar.before(now)) {
+                                    Toast.makeText(this, "Cannot select past date/time", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+
                                 String dateTimeText = dateFormat.format(calendar.getTime()) + " " +
                                         timeFormat.format(calendar.getTime());
                                 button.setText(dateTimeText);
@@ -672,8 +684,9 @@ public class CreateEvent extends AppCompatActivity {
                             },
                             calendar.get(Calendar.HOUR_OF_DAY),
                             calendar.get(Calendar.MINUTE),
-                            false
+                            false  // 12-hour format
                     );
+
                     timePickerDialog.show();
                 },
                 calendar.get(Calendar.YEAR),
