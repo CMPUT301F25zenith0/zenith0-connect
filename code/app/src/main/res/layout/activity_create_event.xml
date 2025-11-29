@@ -491,7 +491,8 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
                         app:thumbTint="#FFFFFF"
-                        app:trackTint="#81C4C4" />
+                        app:trackTint="@color/switch_track_color"
+                        />
                 </LinearLayout>
 
                 <!-- Price -->
