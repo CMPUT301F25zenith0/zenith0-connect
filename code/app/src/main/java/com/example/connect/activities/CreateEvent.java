@@ -223,7 +223,7 @@ public class CreateEvent extends AppCompatActivity {
 
         // ImageViews
         ivEventImage = findViewById(R.id.ivEventImage);
-        ivAddImage = findViewById(R.id.ivAddImage);
+        ivAddImage = findViewById(R.id.ivAddImage); // Plus icon
 
         // ChipGroup for labels (Merged from Block 1)
         chipGroupLabels = findViewById(R.id.chipGroupLabels);
@@ -362,10 +362,7 @@ public class CreateEvent extends AppCompatActivity {
             return;
         }
         ivEventImage.setImageBitmap(bitmap);
-        ivAddImage.setImageBitmap(bitmap);
-        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        ivAddImage.setPadding(0, 0, 0, 0);
-        ivAddImage.clearColorFilter();
+
     }
 
     /**
@@ -378,10 +375,6 @@ public class CreateEvent extends AppCompatActivity {
             return;
         }
         ivEventImage.setImageURI(uri);
-        ivAddImage.setImageURI(uri);
-        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        ivAddImage.setPadding(0, 0, 0, 0);
-        ivAddImage.clearColorFilter();
     }
 
     /**
@@ -391,10 +384,6 @@ public class CreateEvent extends AppCompatActivity {
     private void showPlaceholderImage() {
         if (ivEventImage == null || ivAddImage == null) return;
         ivEventImage.setImageResource(R.drawable.placeholder_img);
-        ivAddImage.setImageResource(android.R.drawable.ic_input_add);
-        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        ivAddImage.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
-        ivAddImage.setColorFilter(ContextCompat.getColor(this, R.color.dark_blue));
     }
 
     /**
