@@ -41,7 +41,7 @@ public class EventListActivity extends AppCompatActivity {
     private View headerView;
     private TextInputEditText searchBarHeader;
     private RecyclerView rvPopularEvents;
-    
+
     // Filter chips
     private Chip chipInterest, chipDate, chipLocation, chipClearFilters;
 
@@ -53,7 +53,7 @@ public class EventListActivity extends AppCompatActivity {
 
     private final EventRepository eventRepository = new EventRepository();
     private String currentSearchQuery = "";
-    
+
     // Filter state variables
     private String selectedDate = "";
     private String selectedInterest = "";
@@ -84,7 +84,7 @@ public class EventListActivity extends AppCompatActivity {
 
         searchBarHeader = headerView.findViewById(R.id.etSearchHeader);
         rvPopularEvents = headerView.findViewById(R.id.rvPopularEvents);
-        
+
         // Initialize filter chips
         chipInterest = headerView.findViewById(R.id.chip_interest);
         chipDate = headerView.findViewById(R.id.chip_date);
@@ -112,7 +112,7 @@ public class EventListActivity extends AppCompatActivity {
         scanBtn.setOnClickListener(v -> startActivity(new Intent(this, QRCodeScanner.class)));
 
         myEventsBtn.setOnClickListener(v ->
-                Toast.makeText(this, "My Events - Coming Soon", Toast.LENGTH_SHORT).show());
+                startActivity(new Intent(this, MyEventsActivity.class)));
 
         profileBtn.setOnClickListener(v ->
                 startActivity(new Intent(this, ProfileActivity.class)));
@@ -151,7 +151,7 @@ public class EventListActivity extends AppCompatActivity {
                 public void afterTextChanged(Editable s) { }
             });
         }
-        
+
         // Filter chip listeners
         if (chipInterest != null) {
             chipInterest.setOnClickListener(v -> showInterestFilterDialog());
@@ -162,7 +162,7 @@ public class EventListActivity extends AppCompatActivity {
                 return true;
             });
         }
-        
+
         if (chipDate != null) {
             chipDate.setOnClickListener(v -> showDateFilterDialog());
             chipDate.setOnLongClickListener(v -> {
@@ -172,7 +172,7 @@ public class EventListActivity extends AppCompatActivity {
                 return true;
             });
         }
-        
+
         if (chipLocation != null) {
             chipLocation.setOnClickListener(v -> showLocationFilterDialog());
             chipLocation.setOnLongClickListener(v -> {
@@ -182,7 +182,7 @@ public class EventListActivity extends AppCompatActivity {
                 return true;
             });
         }
-        
+
         if (chipClearFilters != null) {
             chipClearFilters.setOnClickListener(v -> clearAllFilters());
         }
@@ -289,27 +289,27 @@ public class EventListActivity extends AppCompatActivity {
 
         // Also filter popular events with the same filters
         List<Event> filteredPopular = new ArrayList<>(getPopularEvents(allEventsList));
-        
+
         // Apply search filter to popular events
         if (!currentSearchQuery.isEmpty()) {
             filteredPopular = filterBySearch(filteredPopular, currentSearchQuery);
         }
-        
+
         // Apply date filter to popular events
         if (!selectedDate.isEmpty()) {
             filteredPopular = filterByDate(filteredPopular, selectedDate);
         }
-        
+
         // Apply interest filter to popular events
         if (!selectedInterest.isEmpty()) {
             filteredPopular = filterByInterest(filteredPopular, selectedInterest);
         }
-        
+
         // Apply location filter to popular events
         if (!selectedLocation.isEmpty()) {
             filteredPopular = filterByLocation(filteredPopular, selectedLocation);
         }
-        
+
         popularEventsList.clear();
         popularEventsList.addAll(filteredPopular);
         popularEventsAdapter.notifyDataSetChanged();
