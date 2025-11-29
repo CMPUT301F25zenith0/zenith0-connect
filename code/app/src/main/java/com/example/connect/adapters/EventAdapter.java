@@ -1,7 +1,10 @@
 package com.example.connect.adapters;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Base64;
@@ -17,10 +20,12 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 
 import com.bumptech.glide.Glide;
 import com.example.connect.R;
 import com.example.connect.models.Event;
+import com.example.connect.utils.LocationHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -220,6 +225,10 @@ public class EventAdapter extends ArrayAdapter<Event> {
                         return;
                     }
 
+                    // US 02.02.02: Check if event requires geolocation
+                    Boolean requireGeo = eventDoc.getBoolean("require_geolocation");
+                    final boolean needsLocation = requireGeo != null && requireGeo;
+
                     // Check waiting list capacity
                     db.collection("waiting_lists")
                             .document(eventId)
@@ -262,7 +271,12 @@ public class EventAdapter extends ArrayAdapter<Event> {
                                                         }
 
                                                         // All checks passed - add user to waiting list
-                                                        addUserToWaitingList(eventId, userId, totalCapacity);
+                                                        // US 02.02.02: Capture location if required
+                                                        if (needsLocation) {
+                                                            captureLocationAndAdd(eventId, userId, totalCapacity);
+                                                        } else {
+                                                            addUserToWaitingList(eventId, userId, totalCapacity, null, null);
+                                                        }
                                                     })
                                                     .addOnFailureListener(e -> {
                                                         Toast.makeText(context, "Error checking waiting list: " + e.getMessage(),
@@ -286,10 +300,37 @@ public class EventAdapter extends ArrayAdapter<Event> {
     }
 
     /**
+     * Captures location and then adds user to waiting list
+     */
+    private void captureLocationAndAdd(String eventId, String userId, Long totalCapacity) {
+        LocationHelper locationHelper = new LocationHelper(context);
+        
+        // Check if permission is already granted
+        if (locationHelper.hasLocationPermission()) {
+            // Permission already granted, get location
+            locationHelper.getLastLocation((latitude, longitude) -> {
+                if (latitude != null && longitude != null) {
+                    Log.d("EventAdapter", "Location captured: " + latitude + ", " + longitude);
+                    addUserToWaitingList(eventId, userId, totalCapacity, latitude, longitude);
+                } else {
+                    Toast.makeText(context, "Unable to get location. Please enable location services.", Toast.LENGTH_LONG).show();
+                }
+            });
+        } else {
+            // Permission not granted - navigate to EventDetails where permission can be properly requested
+            Toast.makeText(context, "Location permission required. Opening event details...", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(context, com.example.connect.activities.EventDetails.class);
+            intent.putExtra("EVENT_ID", eventId);
+            context.startActivity(intent);
+        }
+    }
+
+    /**
      * Helper method to add user to waiting list subcollection.
      * Ensures waiting list document exists before adding entrant.
+     * US 02.02.02: Includes location data if provided.
      */
-    private void addUserToWaitingList(String eventId, String userId, Long totalCapacity) {
+    private void addUserToWaitingList(String eventId, String userId, Long totalCapacity, Double latitude, Double longitude) {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         // Ensure the waiting list document exists
@@ -307,6 +348,13 @@ public class EventAdapter extends ArrayAdapter<Event> {
                     entrantData.put("user_id", userId);
                     entrantData.put("status", "waiting");
                     entrantData.put("joined_date", FieldValue.serverTimestamp());
+                    
+                    // US 02.02.02: Add location data if available
+                    if (latitude != null && longitude != null) {
+                        entrantData.put("latitude", latitude);
+                        entrantData.put("longitude", longitude);
+                        entrantData.put("location_captured_at", FieldValue.serverTimestamp());
+                    }
 
                     db.collection("waiting_lists")
                             .document(eventId)

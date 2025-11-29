@@ -1,6 +1,8 @@
 package com.example.connect.activities;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -13,10 +15,16 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
 import com.bumptech.glide.Glide;
+import com.example.connect.models.Event;
+import com.example.connect.utils.LocationHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -59,6 +67,10 @@ public class EventDetails extends AppCompatActivity {
     // Initialize Firebase
     private FirebaseFirestore db;
     private String eventId;
+    
+    // Location permission request (US 02.02.02)
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+    private String pendingUserIdForLocation = null; // Store userId when waiting for permission
 
     /**
      * Called when the activity is first created.
@@ -502,8 +514,114 @@ public class EventDetails extends AppCompatActivity {
     /**
      * Helper method to add user to waiting list subcollection.
      * Ensures waiting list document exists before adding entrant.
+     * US 02.02.02: Captures location if event requires geolocation.
      */
     private void addUserToWaitingList(String userId) {
+        // First check if event requires geolocation and get event data
+        db.collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(eventDoc -> {
+                    boolean requireGeo = false;
+                    if (eventDoc.exists()) {
+                        Boolean requireGeoObj = eventDoc.getBoolean("require_geolocation");
+                        requireGeo = requireGeoObj != null && requireGeoObj;
+                    }
+                    
+                    // If geolocation required, capture location first
+                    if (requireGeo) {
+                        captureLocationAndAddToWaitingList(userId);
+                    } else {
+                        // No geolocation required, proceed normally
+                        addToWaitingList(userId, null, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("EventDetails", "Error checking event geolocation requirement", e);
+                    // Continue without location if event check fails
+                    addToWaitingList(userId, null, null);
+                });
+    }
+    
+    /**
+     * Captures location and then adds user to waiting list
+     */
+    private void captureLocationAndAddToWaitingList(String userId) {
+        LocationHelper locationHelper = new LocationHelper(this);
+        
+        // Check if permission is already granted
+        if (locationHelper.hasLocationPermission()) {
+            // Permission already granted, get location
+            locationHelper.getLastLocation((latitude, longitude) -> {
+                if (latitude != null && longitude != null) {
+                    Log.d("EventDetails", "Location captured: " + latitude + ", " + longitude);
+                    addToWaitingList(userId, latitude, longitude);
+                } else {
+                    Toast.makeText(this, "Unable to get location. Please enable location services.", Toast.LENGTH_LONG).show();
+                }
+            });
+        } else {
+            // Permission not granted, request it
+            pendingUserIdForLocation = userId;
+            requestLocationPermission();
+        }
+    }
+    
+    /**
+     * Request location permission from user
+     */
+    private void requestLocationPermission() {
+        // Check if we should show explanation
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            // Show explanation dialog
+            new AlertDialog.Builder(this)
+                    .setTitle("Location Permission Required")
+                    .setMessage("This event requires location verification. Please allow location access to join the waiting list.")
+                    .setPositiveButton("Allow", (dialog, which) -> {
+                        // Request permission
+                        ActivityCompat.requestPermissions(this,
+                                new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                                LOCATION_PERMISSION_REQUEST_CODE);
+                    })
+                    .setNegativeButton("Deny", (dialog, which) -> {
+                        Toast.makeText(this, "Location permission is required to join this event's waiting list", Toast.LENGTH_LONG).show();
+                        pendingUserIdForLocation = null;
+                    })
+                    .show();
+        } else {
+            // Request permission directly
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+    
+    /**
+     * Handle permission request result
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, proceed with location capture
+                if (pendingUserIdForLocation != null) {
+                    captureLocationAndAddToWaitingList(pendingUserIdForLocation);
+                    pendingUserIdForLocation = null;
+                }
+            } else {
+                // Permission denied
+                Toast.makeText(this, "Location permission denied. Cannot join waiting list without location.", Toast.LENGTH_LONG).show();
+                pendingUserIdForLocation = null;
+            }
+        }
+    }
+    
+    /**
+     * Adds user to waiting list with optional location data
+     */
+    private void addToWaitingList(String userId, Double latitude, Double longitude) {
         // First, get the current waiting list to preserve total_capacity
         db.collection("waiting_lists")
                 .document(eventId)
@@ -530,6 +648,13 @@ public class EventDetails extends AppCompatActivity {
                                 entrantData.put("user_id", userId);
                                 entrantData.put("status", "waiting");
                                 entrantData.put("joined_date", FieldValue.serverTimestamp());
+                                
+                                // US 02.02.02: Add location data if available
+                                if (latitude != null && longitude != null) {
+                                    entrantData.put("latitude", latitude);
+                                    entrantData.put("longitude", longitude);
+                                    entrantData.put("location_captured_at", FieldValue.serverTimestamp());
+                                }
 
                                 db.collection("waiting_lists")
                                         .document(eventId)

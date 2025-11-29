@@ -31,6 +31,7 @@ import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
@@ -91,6 +92,7 @@ public class CreateEvent extends AppCompatActivity {
     private Button btnBack, btnStartDate, btnStartTime, btnEndDate, btnEndTime;
     private Button btnRegistrationOpens, btnRegistrationCloses, btnSaveDraft, btnPublishQR;
     private ImageView ivEventImage, ivAddImage;
+    private SwitchMaterial switchGeolocation; // US 02.02.03
 
     // --- Date and Time ---
     private Calendar startDateTime, endDateTime, registrationOpens, registrationCloses;
@@ -225,6 +227,9 @@ public class CreateEvent extends AppCompatActivity {
 
         // ChipGroup for labels (Merged from Block 1)
         chipGroupLabels = findViewById(R.id.chipGroupLabels);
+
+        // Geolocation toggle (US 02.02.03)
+        switchGeolocation = findViewById(R.id.switchGeolocation);
 
         // Initial UI State (Merged from Block 2)
         showPlaceholderImage();
@@ -526,6 +531,12 @@ public class CreateEvent extends AppCompatActivity {
                                     chip.setChecked(true);
                                 }
                             }
+                        }
+
+                        // US 02.02.03: Load geolocation requirement toggle state
+                        Boolean requireGeo = documentSnapshot.getBoolean("require_geolocation");
+                        if (switchGeolocation != null) {
+                            switchGeolocation.setChecked(requireGeo != null && requireGeo);
                         }
 
                         btnPublishQR.setText("Update Event");
@@ -977,6 +988,10 @@ public class CreateEvent extends AppCompatActivity {
         eventData.put("org_name", organizerName);
         eventData.put("draw_completed", false);
         eventData.put("selected_count", 0);
+
+        // US 02.02.03: Save geolocation requirement toggle state
+        boolean requireGeo = switchGeolocation != null && switchGeolocation.isChecked();
+        eventData.put("require_geolocation", requireGeo);
 
         // MERGED: Labels from Block 1
         eventData.put("labels", selectedLabels);

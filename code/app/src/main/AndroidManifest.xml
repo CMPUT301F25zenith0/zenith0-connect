@@ -14,6 +14,10 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- Location Services (US 02.02.02) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:name=".ConnectApplication"
         android:allowBackup="true"
@@ -24,6 +28,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Connect">
+
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="" />
 
         <!-- ✅ Start the app with MainActivity -->
         <activity
@@ -68,6 +77,9 @@
             android:name=".activities.ManageDrawActivity"
             android:exported="false"
             android:theme="@style/Theme.Connect" />
+        <activity
+            android:name=".activities.EntrantMapActivity"
+            android:exported="false" />
 
         <!-- Admin Activities -->
         <activity

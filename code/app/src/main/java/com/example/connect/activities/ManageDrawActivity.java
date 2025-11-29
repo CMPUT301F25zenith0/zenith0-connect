@@ -329,7 +329,10 @@ public class ManageDrawActivity extends AppCompatActivity {
         });
 
         btnNavMap.setOnClickListener(v -> {
-            Toast.makeText(this, "Map - Coming soon", Toast.LENGTH_SHORT).show();
+            // US 02.02.02: Launch map view showing where entrants joined from
+            Intent intent = new Intent(ManageDrawActivity.this, EntrantMapActivity.class);
+            intent.putExtra("EVENT_ID", eventId);
+            startActivity(intent);
         });
 
         btnNavProfile.setOnClickListener(v -> {

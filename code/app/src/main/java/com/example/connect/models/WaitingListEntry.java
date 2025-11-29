@@ -24,6 +24,13 @@ public class WaitingListEntry {
     private Timestamp enrolledDate;
     private Timestamp canceledDate;
 
+    // Location fields for map view (US 02.02.02)
+    @PropertyName("latitude")
+    private Double latitude;
+    @PropertyName("longitude")
+    private Double longitude;
+    @PropertyName("location_captured_at")
+    private Timestamp locationCapturedAt;
 
     // User data (fetched separately)
     private User user;
@@ -109,6 +116,37 @@ public class WaitingListEntry {
     @PropertyName("canceled_date")
     public void setCanceledDate(Timestamp canceledDate) {
         this.canceledDate = canceledDate;
+    }
+
+    // Location getters and setters (US 02.02.02)
+    @PropertyName("latitude")
+    public Double getLatitude() {
+        return latitude;
+    }
+
+    @PropertyName("latitude")
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    @PropertyName("longitude")
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    @PropertyName("longitude")
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+
+    @PropertyName("location_captured_at")
+    public Timestamp getLocationCapturedAt() {
+        return locationCapturedAt;
+    }
+
+    @PropertyName("location_captured_at")
+    public void setLocationCapturedAt(Timestamp locationCapturedAt) {
+        this.locationCapturedAt = locationCapturedAt;
     }
 
     // User object (not stored in Firestore, fetched separately)

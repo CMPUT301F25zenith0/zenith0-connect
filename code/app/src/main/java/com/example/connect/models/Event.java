@@ -67,6 +67,10 @@ public class Event {
     @PropertyName("selected_count")
     private int selectedCount = 0;
 
+    // US 02.02.03: Geolocation requirement toggle
+    @PropertyName("require_geolocation")
+    private boolean requireGeolocation = false;
+
     /** Default constructor required for Firestore */
     public Event() {
         // Required for Firestore deserialization
@@ -186,6 +190,17 @@ public class Event {
 
     @PropertyName("selected_count")
     public void setSelectedCount(int selectedCount) { this.selectedCount = selectedCount; }
+
+    // US 02.02.03: Geolocation requirement getters and setters
+    @PropertyName("require_geolocation")
+    public boolean isRequireGeolocation() {
+        return requireGeolocation;
+    }
+
+    @PropertyName("require_geolocation")
+    public void setRequireGeolocation(boolean requireGeolocation) {
+        this.requireGeolocation = requireGeolocation;
+    }
 
     /**
      * Check if event is at capacity
