@@ -538,8 +538,8 @@ public class EventDetails extends AppCompatActivity {
                 })
                 .addOnFailureListener(e -> {
                     Log.e("EventDetails", "Error checking event geolocation requirement", e);
-                    // Continue without location if event check fails
-                    addToWaitingList(userId, null, null);
+                    // don't; continue, should fail
+                    Toast.makeText(this, "Error accessing event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
     
