@@ -6,8 +6,10 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -18,8 +20,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
@@ -28,14 +29,20 @@ import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -44,12 +51,13 @@ import java.util.Map;
  * <p>
  * This activity provides a comprehensive event creation interface that allows organizers to:
  * <ul>
- *   <li>Set event details (name, description, location, price)</li>
- *   <li>Upload event images to Firebase Storage</li>
- *   <li>Configure date/time and registration periods</li>
- *   <li>Set capacity limits and waiting list parameters</li>
- *   <li>Save drafts or publish events with QR code generation</li>
- *   <li>Edit existing events</li>
+ * <li>Set event details (name, description, location, price)</li>
+ * <li>Select event categories/labels (Technology, Music, etc.)</li>
+ * <li>Upload event images to Firebase Storage with visual previews</li>
+ * <li>Configure date/time and registration periods with strict validation</li>
+ * <li>Set capacity limits and waiting list parameters</li>
+ * <li>Save drafts or publish events with QR code generation</li>
+ * <li>Edit existing events</li>
  * </ul>
  * </p>
  * <p>
@@ -59,38 +67,47 @@ import java.util.Map;
  * </p>
  *
  * @author Digaant
- * @version 3.0
+ * @version 3.1 (Merged)
  */
 public class CreateEvent extends AppCompatActivity {
 
     private static final String TAG = "CreateEvent";
 
-    // Edit mode
+    // --- Label / Chips Data ---
+    private ChipGroup chipGroupLabels;
+    private List<String> selectedLabels = new ArrayList<>();
+    private final String[] AVAILABLE_LABELS = {
+            "Technology", "Music", "Art", "Sports", "Travel",
+            "Food", "Gaming", "Photography", "Science", "Business",
+            "Health", "Education", "Fashion", "Movies", "Literature"
+    };
+
+    // --- Edit mode ---
     private boolean isEditMode = false;
     private String editEventId = null;
 
-    // UI Components
+    // --- UI Components ---
     private EditText etEventName, etDescription, etDrawCapacity, etWaitingList, etLocation, etPrice;
     private Button btnBack, btnStartDate, btnStartTime, btnEndDate, btnEndTime;
     private Button btnRegistrationOpens, btnRegistrationCloses, btnSaveDraft, btnPublishQR;
     private ImageView ivEventImage, ivAddImage;
 
-    // Date and Time
+    // --- Date and Time ---
     private Calendar startDateTime, endDateTime, registrationOpens, registrationCloses;
     private SimpleDateFormat dateFormat, timeFormat, dateTimeFormat;
 
-    // Image Upload
+    // --- Image Upload ---
     private Uri selectedImageUri;
     private String existingBase64Image = null; // Store existing image when editing
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
-    // Firebase
+    // --- Firebase ---
     private FirebaseFirestore db;
     private FirebaseAuth auth;
     private String currentUserId;
     private String organizerName;
 
-    // Dialog
+    // --- Dialog ---
     private AlertDialog qrDialog;
 
     /**
@@ -134,6 +151,7 @@ public class CreateEvent extends AppCompatActivity {
         initializeViews();
         initializeDateTimeFormats();
         setupImagePicker();
+        setupLabelChips(); // Merged: Setup chips
         setupClickListeners();
 
         // Load event data if in edit mode
@@ -143,151 +161,10 @@ public class CreateEvent extends AppCompatActivity {
     }
 
     /**
-     * Load existing event data for editing
-     *
-     * @param eventId The ID of the event to edit
-     */
-    private void loadEventForEditing(String eventId) {
-        db.collection("events").document(eventId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        // Populate fields with existing data
-                        etEventName.setText(documentSnapshot.getString("event_title"));
-                        etDescription.setText(documentSnapshot.getString("description"));
-                        etLocation.setText(documentSnapshot.getString("location"));
-
-                        String price = documentSnapshot.getString("price");
-                        etPrice.setText(price != null && !price.equals("0") ? price : "");
-
-                        // Draw capacity and waiting list
-                        Long drawCapacity = documentSnapshot.getLong("draw_capacity");
-                        if (drawCapacity != null && drawCapacity > 0) {
-                            etDrawCapacity.setText(String.valueOf(drawCapacity));
-                        }
-
-                        Long waitingList = documentSnapshot.getLong("waiting_list");
-                        if (waitingList != null && waitingList > 0) {
-                            etWaitingList.setText(String.valueOf(waitingList));
-                        }
-
-                        // Parse and set date/time fields
-                        String dateTimeStr = documentSnapshot.getString("date_time");
-                        if (dateTimeStr != null && !dateTimeStr.isEmpty()) {
-                            try {
-                                startDateTime.setTime(dateTimeFormat.parse(dateTimeStr));
-                                btnStartDate.setText(dateFormat.format(startDateTime.getTime()));
-                                btnStartTime.setText(timeFormat.format(startDateTime.getTime()));
-                            } catch (Exception e) {
-                                Log.e(TAG, "Error parsing start date", e);
-                            }
-                        }
-
-                        String endTimeStr = documentSnapshot.getString("end_time");
-                        if (endTimeStr != null && !endTimeStr.isEmpty()) {
-                            try {
-                                endDateTime.setTime(dateTimeFormat.parse(endTimeStr));
-                                btnEndDate.setText(dateFormat.format(endDateTime.getTime()));
-                                btnEndTime.setText(timeFormat.format(endDateTime.getTime()));
-                            } catch (Exception e) {
-                                Log.e(TAG, "Error parsing end date", e);
-                            }
-                        }
-
-                        String regStartStr = documentSnapshot.getString("reg_start");
-                        if (regStartStr != null && !regStartStr.isEmpty()) {
-                            try {
-                                registrationOpens.setTime(dateTimeFormat.parse(regStartStr));
-                                String dateTimeText = dateFormat.format(registrationOpens.getTime()) + " " +
-                                        timeFormat.format(registrationOpens.getTime());
-                                btnRegistrationOpens.setText(dateTimeText);
-                                btnRegistrationOpens.setTextColor(getResources().getColor(android.R.color.black));
-                            } catch (Exception e) {
-                                Log.e(TAG, "Error parsing reg start", e);
-                            }
-                        }
-
-                        String regStopStr = documentSnapshot.getString("reg_stop");
-                        if (regStopStr != null && !regStopStr.isEmpty()) {
-                            try {
-                                registrationCloses.setTime(dateTimeFormat.parse(regStopStr));
-                                String dateTimeText = dateFormat.format(registrationCloses.getTime()) + " " +
-                                        timeFormat.format(registrationCloses.getTime());
-                                btnRegistrationCloses.setText(dateTimeText);
-                                btnRegistrationCloses.setTextColor(getResources().getColor(android.R.color.black));
-                            } catch (Exception e) {
-                                Log.e(TAG, "Error parsing reg stop", e);
-                            }
-                        }
-
-                        // Load image if available
-                        String base64Image = documentSnapshot.getString("image_base64");
-                        if (base64Image != null && !base64Image.isEmpty()) {
-                            existingBase64Image = base64Image; // Store for later use
-                            try {
-                                byte[] decoded = android.util.Base64.decode(base64Image, android.util.Base64.DEFAULT);
-                                Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
-                                applyBitmapPreview(bmp);
-                            } catch (Exception e) {
-                                Log.e(TAG, "Error decoding image", e);
-                                showPlaceholderImage();
-                            }
-                        } else {
-                            showPlaceholderImage();
-                        }
-
-                        // Change button text for edit mode
-                        btnPublishQR.setText("Update Event");
-                        btnSaveDraft.setText("Save Changes");
-
-                        Toast.makeText(this, "Loaded event for editing", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
-                        finish();
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error loading event", e);
-                    Toast.makeText(this, "Error loading event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    finish();
-                });
-    }
-
-    /**
-     * Fetches the organizer's display name from Firestore.
-     * <p>
-     * Attempts to retrieve the display_name field, falling back to full_name if not available.
-     * If neither exists, defaults to "Organizer".
-     * </p>
-     */
-    private void fetchOrganizerName() {
-        db.collection("accounts").document(currentUserId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        organizerName = documentSnapshot.getString("display_name");
-                        if (organizerName == null || organizerName.isEmpty()) {
-                            organizerName = documentSnapshot.getString("full_name");
-                        }
-                        if (organizerName == null || organizerName.isEmpty()) {
-                            organizerName = "Organizer";
-                        }
-                        Log.d(TAG, "Organizer name: " + organizerName);
-                    } else {
-                        organizerName = "Organizer";
-                        Log.w(TAG, "Account document not found for user: " + currentUserId);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    organizerName = "Organizer";
-                    Log.e(TAG, "Error fetching organizer name", e);
-                });
-    }
-
-    /**
      * Initializes all UI view references from the layout.
      * <p>
      * Connects EditTexts, Buttons, and ImageViews to their corresponding member variables.
+     * Also initializes the default placeholder state for the image view.
      * </p>
      */
     private void initializeViews() {
@@ -314,13 +191,73 @@ public class CreateEvent extends AppCompatActivity {
         ivEventImage = findViewById(R.id.ivEventImage);
         ivAddImage = findViewById(R.id.ivAddImage);
 
+        // ChipGroup for labels (Merged from Block 1)
+        chipGroupLabels = findViewById(R.id.chipGroupLabels);
+
+        // Initial UI State (Merged from Block 2)
         showPlaceholderImage();
+    }
+
+    /**
+     * Generates chips for event labels with visual state logic (Selected vs Unselected).
+     * <p>
+     * Dynamically adds chips to the ChipGroup based on the AVAILABLE_LABELS array.
+     * Handles selection toggling and visual updates for selected states.
+     * </p>
+     */
+    private void setupLabelChips() {
+        if (chipGroupLabels == null) return;
+
+        chipGroupLabels.removeAllViews();
+
+        // Define color states
+        int[][] states = new int[][] {
+                new int[] { android.R.attr.state_checked },
+                new int[] { -android.R.attr.state_checked }
+        };
+        int[] backgroundColors = new int[] {
+                Color.parseColor("#0C3B5E"),  // Selected: Dark blue
+                Color.parseColor("#E0E0E0")   // Unselected: Light gray
+        };
+        int[] textColors = new int[] {
+                Color.WHITE,  // Selected text
+                Color.BLACK   // Unselected text
+        };
+
+        ColorStateList backgroundColorList = new ColorStateList(states, backgroundColors);
+        ColorStateList textColorList = new ColorStateList(states, textColors);
+
+        for (String label : AVAILABLE_LABELS) {
+            Chip chip = new Chip(this);
+            chip.setText(label);
+            chip.setCheckable(true);
+            chip.setClickable(true);
+
+            // Apply visual states
+            chip.setCheckedIconVisible(true);
+            chip.setCheckedIconTint(ColorStateList.valueOf(Color.WHITE));
+            chip.setChipBackgroundColor(backgroundColorList);
+            chip.setTextColor(textColorList);
+
+            // Handle selection/deselection
+            chip.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                if (isChecked) {
+                    if (!selectedLabels.contains(label)) {
+                        selectedLabels.add(label);
+                    }
+                } else {
+                    selectedLabels.remove(label);
+                }
+            });
+
+            chipGroupLabels.addView(chip);
+        }
     }
 
     /**
      * Initializes date and time formatting objects and sets default calendar values.
      * <p>
-     * Default event times are set to April 1, 2025, from 10:00 AM to 12:00 PM.
+     * Default event times are set to "Tomorrow" at 10:00 AM.
      * Date format: "MMM d, yyyy"
      * Time format: "hh:mma"
      * DateTime format: "yyyy-MM-dd'T'HH:mm:ss"
@@ -331,22 +268,34 @@ public class CreateEvent extends AppCompatActivity {
         timeFormat = new SimpleDateFormat("hh:mma", Locale.getDefault());
         dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
 
-        // Initialize calendars with default values
+        // Initialize calendars with current date/time + 1 day (Block 1 Logic)
         startDateTime = Calendar.getInstance();
-        startDateTime.set(2025, Calendar.APRIL, 1, 10, 0);
+        startDateTime.add(Calendar.DAY_OF_YEAR, 1);
+        startDateTime.set(Calendar.HOUR_OF_DAY, 10);
+        startDateTime.set(Calendar.MINUTE, 0);
+        startDateTime.set(Calendar.SECOND, 0);
 
         endDateTime = Calendar.getInstance();
-        endDateTime.set(2025, Calendar.APRIL, 1, 12, 0);
+        endDateTime.add(Calendar.DAY_OF_YEAR, 1);
+        endDateTime.set(Calendar.HOUR_OF_DAY, 12);
+        endDateTime.set(Calendar.MINUTE, 0);
+        endDateTime.set(Calendar.SECOND, 0);
 
         registrationOpens = Calendar.getInstance();
         registrationCloses = Calendar.getInstance();
+
+        // Update button text to show default dates
+        btnStartDate.setText(dateFormat.format(startDateTime.getTime()));
+        btnStartTime.setText(timeFormat.format(startDateTime.getTime()));
+        btnEndDate.setText(dateFormat.format(endDateTime.getTime()));
+        btnEndTime.setText(timeFormat.format(endDateTime.getTime()));
     }
 
     /**
      * Sets up the activity result launcher for image selection.
      * <p>
      * Registers a callback that handles the result of the image picker intent,
-     * updating the event image view when an image is successfully selected.
+     * applying a visual preview if successful.
      * </p>
      */
     private void setupImagePicker() {
@@ -356,14 +305,20 @@ public class CreateEvent extends AppCompatActivity {
                     if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                         selectedImageUri = result.getData().getData();
                         if (selectedImageUri != null) {
-                            applyUriPreview(selectedImageUri);
-                            existingBase64Image = null; // Clear existing image when new one is selected
+                            applyUriPreview(selectedImageUri); // Block 2 helper
+                            existingBase64Image = null; // Clear existing image
                         }
                     }
                 }
         );
     }
 
+    // --- Enhanced Image UI Helpers (From Block 2) ---
+
+    /**
+     * Applies a Bitmap image to the event image views with appropriate scaling.
+     * @param bitmap The bitmap to display
+     */
     private void applyBitmapPreview(Bitmap bitmap) {
         if (bitmap == null) {
             showPlaceholderImage();
@@ -376,6 +331,10 @@ public class CreateEvent extends AppCompatActivity {
         ivAddImage.clearColorFilter();
     }
 
+    /**
+     * Applies a URI image to the event image views with appropriate scaling.
+     * @param uri The URI of the image to display
+     */
     private void applyUriPreview(Uri uri) {
         if (uri == null) {
             showPlaceholderImage();
@@ -388,9 +347,12 @@ public class CreateEvent extends AppCompatActivity {
         ivAddImage.clearColorFilter();
     }
 
+    /**
+     * Resets the image views to show the default placeholder state.
+     * Adds padding and color filters to the "Add Image" icon.
+     */
     private void showPlaceholderImage() {
-        if (ivEventImage == null || ivAddImage == null)
-            return;
+        if (ivEventImage == null || ivAddImage == null) return;
         ivEventImage.setImageResource(R.drawable.placeholder_img);
         ivAddImage.setImageResource(android.R.drawable.ic_input_add);
         ivAddImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
@@ -398,8 +360,160 @@ public class CreateEvent extends AppCompatActivity {
         ivAddImage.setColorFilter(ContextCompat.getColor(this, R.color.dark_blue));
     }
 
+    /**
+     * Helper to convert density-independent pixels to pixels.
+     */
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
+    // -----------------------------------------------
+
+    /**
+     * Load existing event data for editing.
+     * <p>
+     * Fetches event details from Firestore, populates text fields, sets date buttons,
+     * decodes the Base64 image, and selects the appropriate label chips.
+     * </p>
+     *
+     * @param eventId The ID of the event to edit
+     */
+    private void loadEventForEditing(String eventId) {
+        db.collection("events").document(eventId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        // Populate basic fields
+                        etEventName.setText(documentSnapshot.getString("event_title"));
+                        etDescription.setText(documentSnapshot.getString("description"));
+                        etLocation.setText(documentSnapshot.getString("location"));
+
+                        String price = documentSnapshot.getString("price");
+                        etPrice.setText(price != null && !price.equals("0") ? price : "");
+
+                        // Draw capacity and waiting list
+                        Long drawCapacity = documentSnapshot.getLong("draw_capacity");
+                        if (drawCapacity != null && drawCapacity > 0) {
+                            etDrawCapacity.setText(String.valueOf(drawCapacity));
+                        }
+
+                        Long waitingList = documentSnapshot.getLong("waiting_list");
+                        if (waitingList != null && waitingList > 0) {
+                            etWaitingList.setText(String.valueOf(waitingList));
+                        }
+
+                        // Parse Date/Time fields
+                        parseAndSetDate(documentSnapshot.getString("date_time"), startDateTime, btnStartDate, btnStartTime);
+                        parseAndSetDate(documentSnapshot.getString("end_time"), endDateTime, btnEndDate, btnEndTime);
+                        parseAndSetRegDate(documentSnapshot.getString("reg_start"), registrationOpens, btnRegistrationOpens);
+                        parseAndSetRegDate(documentSnapshot.getString("reg_stop"), registrationCloses, btnRegistrationCloses);
+
+                        // Load Image (Block 2 Logic)
+                        String base64Image = documentSnapshot.getString("image_base64");
+                        if (base64Image != null && !base64Image.isEmpty()) {
+                            existingBase64Image = base64Image;
+                            try {
+                                byte[] decoded = android.util.Base64.decode(base64Image, android.util.Base64.DEFAULT);
+                                Bitmap bmp = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                                applyBitmapPreview(bmp);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error decoding image", e);
+                                showPlaceholderImage();
+                            }
+                        } else {
+                            showPlaceholderImage();
+                        }
+
+                        // Load Labels (Block 1 Logic)
+                        List<String> labels = (List<String>) documentSnapshot.get("labels");
+                        if (labels != null && !labels.isEmpty()) {
+                            selectedLabels.clear();
+                            selectedLabels.addAll(labels);
+
+                            // Check corresponding chips
+                            if (chipGroupLabels != null) {
+                                for (int i = 0; i < chipGroupLabels.getChildCount(); i++) {
+                                    Chip chip = (Chip) chipGroupLabels.getChildAt(i);
+                                    if (labels.contains(chip.getText().toString())) {
+                                        chip.setChecked(true);
+                                    }
+                                }
+                            }
+                        }
+
+                        btnPublishQR.setText("Update Event");
+                        btnSaveDraft.setText("Save Changes");
+                        Toast.makeText(this, "Loaded event for editing", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading event", e);
+                    Toast.makeText(this, "Error loading event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    finish();
+                });
+    }
+
+    /**
+     * Helper to parse date strings and update UI buttons.
+     */
+    private void parseAndSetDate(String dateStr, Calendar calendar, Button dateBtn, Button timeBtn) {
+        if (dateStr != null && !dateStr.isEmpty()) {
+            try {
+                calendar.setTime(dateTimeFormat.parse(dateStr));
+                dateBtn.setText(dateFormat.format(calendar.getTime()));
+                timeBtn.setText(timeFormat.format(calendar.getTime()));
+            } catch (Exception e) {
+                Log.e(TAG, "Error parsing date", e);
+            }
+        }
+    }
+
+    /**
+     * Helper to parse registration date strings and update UI buttons.
+     */
+    private void parseAndSetRegDate(String dateStr, Calendar calendar, Button btn) {
+        if (dateStr != null && !dateStr.isEmpty()) {
+            try {
+                calendar.setTime(dateTimeFormat.parse(dateStr));
+                String dateTimeText = dateFormat.format(calendar.getTime()) + " " +
+                        timeFormat.format(calendar.getTime());
+                btn.setText(dateTimeText);
+                btn.setTextColor(getResources().getColor(android.R.color.black));
+            } catch (Exception e) {
+                Log.e(TAG, "Error parsing reg date", e);
+            }
+        }
+    }
+
+    /**
+     * Fetches the organizer's display name from Firestore.
+     * <p>
+     * Attempts to retrieve the display_name field, falling back to full_name if not available.
+     * If neither exists, defaults to "Organizer".
+     * </p>
+     */
+    private void fetchOrganizerName() {
+        db.collection("accounts").document(currentUserId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        organizerName = documentSnapshot.getString("display_name");
+                        if (organizerName == null || organizerName.isEmpty()) {
+                            organizerName = documentSnapshot.getString("full_name");
+                        }
+                        if (organizerName == null || organizerName.isEmpty()) {
+                            organizerName = "Organizer";
+                        }
+                    } else {
+                        organizerName = "Organizer";
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    organizerName = "Organizer";
+                });
     }
 
     /**
@@ -410,26 +524,18 @@ public class CreateEvent extends AppCompatActivity {
      * </p>
      */
     private void setupClickListeners() {
-        // Back button
         btnBack.setOnClickListener(v -> finish());
-
-        // Image upload
         ivAddImage.setOnClickListener(v -> openImagePicker());
         ivEventImage.setOnClickListener(v -> openImagePicker());
 
-        // Start Date and Time
-        btnStartDate.setOnClickListener(v -> showDatePicker(startDateTime, btnStartDate, true));
-        btnStartTime.setOnClickListener(v -> showTimePicker(startDateTime, btnStartTime, true));
+        btnStartDate.setOnClickListener(v -> showDatePicker(startDateTime, btnStartDate));
+        btnStartTime.setOnClickListener(v -> showTimePicker(startDateTime, btnStartTime));
+        btnEndDate.setOnClickListener(v -> showDatePicker(endDateTime, btnEndDate));
+        btnEndTime.setOnClickListener(v -> showTimePicker(endDateTime, btnEndTime));
 
-        // End Date and Time
-        btnEndDate.setOnClickListener(v -> showDatePicker(endDateTime, btnEndDate, false));
-        btnEndTime.setOnClickListener(v -> showTimePicker(endDateTime, btnEndTime, false));
+        btnRegistrationOpens.setOnClickListener(v -> showDateTimePicker(registrationOpens, btnRegistrationOpens));
+        btnRegistrationCloses.setOnClickListener(v -> showDateTimePicker(registrationCloses, btnRegistrationCloses));
 
-        // Registration Period
-        btnRegistrationOpens.setOnClickListener(v -> showDateTimePicker(registrationOpens, btnRegistrationOpens, "Opens"));
-        btnRegistrationCloses.setOnClickListener(v -> showDateTimePicker(registrationCloses, btnRegistrationCloses, "Closes"));
-
-        // Bottom Buttons
         btnSaveDraft.setOnClickListener(v -> saveDraft());
         btnPublishQR.setOnClickListener(v -> {
             publishAndGenerateQR();
@@ -437,32 +543,19 @@ public class CreateEvent extends AppCompatActivity {
         });
     }
 
+    /**
+     * Updates the user's status to "organizer" in Firestore upon publishing an event.
+     */
     private void updateUserStatus() {
-
-        // Ensure currentUserId is not null
-        if (currentUserId == null) {
-            Log.e("UpdateStatus", "No current user ID found!");
-            return;
-        }
-
-        // Update the field "organizer" to true
-        db.collection("accounts")
-                .document(currentUserId)
+        if (currentUserId == null) return;
+        db.collection("accounts").document(currentUserId)
                 .update("organizer", true)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d("UpdateStatus", "User set as organizer");
-                })
-                .addOnFailureListener(e -> {
-                    Log.e("UpdateStatus", "Failed to update organizer", e);
-                });
+                .addOnSuccessListener(aVoid -> Log.d("UpdateStatus", "User set as organizer"))
+                .addOnFailureListener(e -> Log.e("UpdateStatus", "Failed to update organizer", e));
     }
-
 
     /**
      * Launches the system image picker to select an event image.
-     * <p>
-     * Opens the device's media store to allow selection of an image from the gallery.
-     * </p>
      */
     private void openImagePicker() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -472,15 +565,27 @@ public class CreateEvent extends AppCompatActivity {
 
     /**
      * Displays a date picker dialog and updates the specified calendar and button.
+     * Includes strict validation to prevent selecting past dates.
      *
-     * @param calendar The Calendar object to update with the selected date
+     * @param calendar The Calendar object to update
      * @param button The Button to display the selected date
-     * @param isStart True if this is for the event start date, false for end date
      */
-    private void showDatePicker(Calendar calendar, Button button, boolean isStart) {
+    private void showDatePicker(Calendar calendar, Button button) {
+        // Block 1 Logic: Prevent past dates
+        Calendar minDate = Calendar.getInstance();
+        minDate.set(Calendar.HOUR_OF_DAY, 0);
+        minDate.set(Calendar.MINUTE, 0);
+        minDate.set(Calendar.SECOND, 0);
+
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
                 (view, year, month, dayOfMonth) -> {
+                    Calendar selectedDate = Calendar.getInstance();
+                    selectedDate.set(year, month, dayOfMonth);
+                    if (selectedDate.before(minDate)) {
+                        Toast.makeText(this, "Cannot select past dates", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     calendar.set(Calendar.YEAR, year);
                     calendar.set(Calendar.MONTH, month);
                     calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
@@ -490,20 +595,33 @@ public class CreateEvent extends AppCompatActivity {
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
+        datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
         datePickerDialog.show();
     }
 
     /**
      * Displays a time picker dialog and updates the specified calendar and button.
+     * Includes checks to prevent selecting past times for the current day.
      *
-     * @param calendar The Calendar object to update with the selected time
+     * @param calendar The Calendar object to update
      * @param button The Button to display the selected time
-     * @param isStart True if this is for the event start time, false for end time
      */
-    private void showTimePicker(Calendar calendar, Button button, boolean isStart) {
+    private void showTimePicker(Calendar calendar, Button button) {
         TimePickerDialog timePickerDialog = new TimePickerDialog(
                 this,
+                android.R.style.Theme_Holo_Light_Dialog_NoActionBar,
                 (view, hourOfDay, minute) -> {
+                    Calendar temp = (Calendar) calendar.clone();
+                    temp.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    temp.set(Calendar.MINUTE, minute);
+
+                    // Block 1 Logic: Simple check
+                    Calendar now = Calendar.getInstance();
+                    if (temp.before(now)) {
+                        Toast.makeText(this, "Cannot select past time", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                     calendar.set(Calendar.MINUTE, minute);
                     button.setText(timeFormat.format(calendar.getTime()));
@@ -517,26 +635,33 @@ public class CreateEvent extends AppCompatActivity {
 
     /**
      * Displays combined date and time picker dialogs for registration periods.
-     * <p>
-     * Shows a date picker first, then automatically displays a time picker.
-     * The button text is updated with the complete date time string.
-     * </p>
+     * Shows date picker first, then automatically triggers time picker.
      *
      * @param calendar The Calendar object to update
      * @param button The Button to display the selected date-time
-     * @param label Label indicating the purpose (e.g., "Opens", "Closes")
      */
-    private void showDateTimePicker(Calendar calendar, Button button, String label) {
+    private void showDateTimePicker(Calendar calendar, Button button) {
+        Calendar minDate = Calendar.getInstance();
+        minDate.set(Calendar.HOUR_OF_DAY, 0);
+        minDate.set(Calendar.MINUTE, 0);
+        minDate.set(Calendar.SECOND, 0);
+
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 this,
                 (view, year, month, dayOfMonth) -> {
+                    Calendar selectedDate = Calendar.getInstance();
+                    selectedDate.set(year, month, dayOfMonth);
+                    if (selectedDate.before(minDate)) {
+                        Toast.makeText(this, "Cannot select past dates", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     calendar.set(Calendar.YEAR, year);
                     calendar.set(Calendar.MONTH, month);
                     calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
 
-                    // After date is selected, show time picker
                     TimePickerDialog timePickerDialog = new TimePickerDialog(
                             this,
+                            android.R.style.Theme_Holo_Light_Dialog_NoActionBar,
                             (timeView, hourOfDay, minute) -> {
                                 calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
                                 calendar.set(Calendar.MINUTE, minute);
@@ -555,13 +680,16 @@ public class CreateEvent extends AppCompatActivity {
                 calendar.get(Calendar.MONTH),
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
+        datePickerDialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
         datePickerDialog.show();
     }
 
     /**
      * Validates all required input fields before saving or publishing.
      * <p>
-     * Checks for non-empty event name, description, location, and valid date range.
+     * Checks for non-empty event name, description, location.
+     * Enforces that end time is after start time and start time is not in the past.
+     * Validates that registration windows are logical (close after open).
      * </p>
      *
      * @return true if all validations pass, false otherwise
@@ -585,419 +713,260 @@ public class CreateEvent extends AppCompatActivity {
             return false;
         }
 
+        // Strict Date Validation (Block 1)
+        Calendar now = Calendar.getInstance();
+        if (startDateTime.before(now)) {
+            Toast.makeText(this, "Event start time cannot be in the past", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
         if (endDateTime.before(startDateTime)) {
             Toast.makeText(this, "End time must be after start time", Toast.LENGTH_SHORT).show();
             return false;
+        }
+
+        // Validate registration period if set
+        if (!btnRegistrationOpens.getText().toString().contains("Select") &&
+                !btnRegistrationCloses.getText().toString().contains("Select")) {
+
+            if (registrationOpens.before(now)) {
+                Toast.makeText(this, "Registration opening time cannot be in the past", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+
+            if (registrationCloses.before(registrationOpens)) {
+                Toast.makeText(this, "Registration closing must be after opening", Toast.LENGTH_SHORT).show();
+                return false;
+            }
         }
 
         return true;
     }
 
     /**
-     * Saves the current event as a draft in Firestore or updates existing draft.
-     * <p>
-     * Validates inputs, creates event data with "draft" status, and saves to the
-     * "events" collection. Shows success/failure messages and closes activity on success.
-     * </p>
+     * Saves the current event as a draft in Firestore.
+     * Validates inputs, creates event data with "draft" status, and saves to the "events" collection.
      */
     private void saveDraft() {
-        if (!validateInputs()) {
-            return;
-        }
-
+        if (!validateInputs()) return;
         Toast.makeText(this, "Saving...", Toast.LENGTH_SHORT).show();
 
-        // Create event data map
         Map<String, Object> eventData = createEventData(true);
+        saveOrUpdateEvent(eventData, "Draft saved", "Failed to save draft");
+    }
 
-        // Add existing image if no new image selected
-        if (selectedImageUri == null && existingBase64Image != null) {
-            eventData.put("image_base64", existingBase64Image);
-        } else if (selectedImageUri != null) {
+    /**
+     * Publishes the event and generates a QR code.
+     * Validates inputs, converts image, saves data, and then triggers QR generation.
+     */
+    private void publishAndGenerateQR() {
+        if (!validateInputs()) return;
+        Toast.makeText(this, isEditMode ? "Updating event..." : "Publishing event...", Toast.LENGTH_SHORT).show();
+
+        Map<String, Object> eventData = createEventData(false);
+        saveOrUpdateEvent(eventData, "Event published", "Failed to publish");
+    }
+
+    /**
+     * Helper to handle image conversion and Firestore save operations.
+     * Updates existing documents in edit mode or adds new ones for new events.
+     *
+     * @param eventData Map of event fields
+     * @param successMsg Toast message for success
+     * @param failMsg Toast message prefix for failure
+     */
+    private void saveOrUpdateEvent(Map<String, Object> eventData, String successMsg, String failMsg) {
+        // Handle Image
+        if (selectedImageUri != null) {
             String base64Image = convertImageToBase64(selectedImageUri);
-            if (base64Image != null) {
-                eventData.put("image_base64", base64Image);
-            }
+            if (base64Image != null) eventData.put("image_base64", base64Image);
+        } else if (existingBase64Image != null) {
+            eventData.put("image_base64", existingBase64Image);
         }
 
         if (isEditMode && editEventId != null) {
-            // Update existing draft
             db.collection("events").document(editEventId)
                     .set(eventData, com.google.firebase.firestore.SetOptions.merge())
                     .addOnSuccessListener(aVoid -> {
-                        Log.d(TAG, "Draft updated with ID: " + editEventId);
-                        Toast.makeText(this, "Changes saved successfully", Toast.LENGTH_SHORT).show();
-                        finish();
+                        if (!"draft".equals(eventData.get("status"))) {
+                            // If publishing, generate QR
+                            generateQRAndShow(editEventId);
+                        } else {
+                            finish();
+                        }
                     })
-                    .addOnFailureListener(e -> {
-                        Log.e(TAG, "Error updating draft", e);
-                        Toast.makeText(this, "Failed to save changes: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+                    .addOnFailureListener(e -> Toast.makeText(this, failMsg + ": " + e.getMessage(), Toast.LENGTH_SHORT).show());
         } else {
-            // Save new draft
             db.collection("events")
                     .add(eventData)
-                    .addOnSuccessListener(documentReference -> {
-                        Log.d(TAG, "Draft saved with ID: " + documentReference.getId());
-                        Toast.makeText(this, "Draft saved successfully", Toast.LENGTH_SHORT).show();
-                        finish();
+                    .addOnSuccessListener(ref -> {
+                        String id = ref.getId();
+                        if (!"draft".equals(eventData.get("status"))) {
+                            generateQRAndShow(id);
+                            createWaitingList(id);
+                        } else {
+                            finish();
+                        }
                     })
-                    .addOnFailureListener(e -> {
-                        Log.e(TAG, "Error saving draft", e);
-                        Toast.makeText(this, "Failed to save draft: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
+                    .addOnFailureListener(e -> Toast.makeText(this, failMsg + ": " + e.getMessage(), Toast.LENGTH_SHORT).show());
         }
     }
 
     /**
-     * Publishes the event and generates a QR code for registration.
-     * <p>
-     * Converts image to Base64 and stores directly in Firestore if selected.
-     * Updates existing event if in edit mode.
-     * </p>
-     */
-    private void publishAndGenerateQR() {
-        if (!validateInputs()) {
-            return;
-        }
-
-        Toast.makeText(this, isEditMode ? "Updating event..." : "Publishing event...", Toast.LENGTH_SHORT).show();
-
-        // Determine which image to use
-        String base64Image = null;
-        if (selectedImageUri != null) {
-            base64Image = convertImageToBase64(selectedImageUri);
-        } else if (existingBase64Image != null) {
-            base64Image = existingBase64Image;
-        }
-
-        publishEventWithBase64Image(base64Image);
-    }
-
-    /**
-     * Converts the selected image URI to Base64 string.
+     * Generates QR code data, saves it to the event document, and displays the QR dialog.
      *
-     * @param imageUri The URI of the selected image
-     * @return Base64 encoded string of the image, or null if conversion fails
+     * @param eventId The ID of the event
+     */
+    private void generateQRAndShow(String eventId) {
+        String qrData = QRGeneration.generateEventQRCodeData(eventId);
+        Map<String, Object> qrUpdate = new HashMap<>();
+        qrUpdate.put("qr_code_data", qrData);
+        db.collection("events").document(eventId).set(qrUpdate, com.google.firebase.firestore.SetOptions.merge());
+        showQRDialog(eventId, qrData);
+    }
+
+    /**
+     * Converts a Uri to a compressed Base64 string for storage.
+     * Resizes large images to max 800px dimension to save bandwidth/storage.
+     *
+     * @param imageUri The URI of the image to convert
+     * @return Base64 string of the compressed image
      */
     private String convertImageToBase64(Uri imageUri) {
         try {
             InputStream inputStream = getContentResolver().openInputStream(imageUri);
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-
-            // Resize image to reduce size (max 800x800)
             int maxSize = 800;
-            int width = bitmap.getWidth();
-            int height = bitmap.getHeight();
-
-            float ratio = Math.min((float) maxSize / width, (float) maxSize / height);
-            int newWidth = Math.round(width * ratio);
-            int newHeight = Math.round(height * ratio);
-
-            Bitmap resized = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
-
-            // Convert to Base64
+            float ratio = Math.min((float) maxSize / bitmap.getWidth(), (float) maxSize / bitmap.getHeight());
+            Bitmap resized = Bitmap.createScaledBitmap(bitmap, Math.round(bitmap.getWidth() * ratio), Math.round(bitmap.getHeight() * ratio), true);
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             resized.compress(Bitmap.CompressFormat.JPEG, 80, byteArrayOutputStream);
-            byte[] byteArray = byteArrayOutputStream.toByteArray();
-
-            return android.util.Base64.encodeToString(byteArray, android.util.Base64.DEFAULT);
+            return android.util.Base64.encodeToString(byteArrayOutputStream.toByteArray(), android.util.Base64.DEFAULT);
         } catch (Exception e) {
-            Log.e(TAG, "Error converting image to Base64", e);
-            Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Error converting image", e);
             return null;
         }
     }
 
     /**
-     * Publishes the event to Firestore with Base64 image.
-     * Updates existing event if in edit mode, creates new event otherwise.
+     * Creates the waiting list structure in Firestore for a new event.
+     * Sets initial capacity and timestamps.
      *
-     * @param base64Image The Base64 encoded image string, or null if no image
-     */
-    private void publishEventWithBase64Image(String base64Image) {
-        // Create event data map
-        Map<String, Object> eventData = createEventData(false);
-
-        // Add Base64 image if available
-        if (base64Image != null) {
-            eventData.put("image_base64", base64Image);
-        }
-
-        if (isEditMode && editEventId != null) {
-            // Update existing event
-            db.collection("events").document(editEventId)
-                    .set(eventData, com.google.firebase.firestore.SetOptions.merge())
-                    .addOnSuccessListener(aVoid -> {
-                        Log.d(TAG, "Event updated with ID: " + editEventId);
-                        Toast.makeText(this, "Event updated successfully!", Toast.LENGTH_SHORT).show();
-                        finish();
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e(TAG, "Error updating event", e);
-                        Toast.makeText(this, "Failed to update event: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    });
-        } else {
-            // Create new event
-            db.collection("events")
-                    .add(eventData)
-                    .addOnSuccessListener(documentReference -> {
-                        String eventId = documentReference.getId();
-                        Log.d(TAG, "Event published with ID: " + eventId);
-
-                        // Generate QR code data
-                        String qrData = QRGeneration.generateEventQRCodeData(eventId);
-
-                        // Update event document with QR code data
-                        Map<String, Object> qrUpdate = new HashMap<>();
-                        qrUpdate.put("qr_code_data", qrData);
-
-                        db.collection("events").document(eventId)
-                                .set(qrUpdate, com.google.firebase.firestore.SetOptions.merge())
-                                .addOnSuccessListener(aVoid -> {
-                                    Log.d(TAG, "QR code data saved to event");
-                                })
-                                .addOnFailureListener(e -> {
-                                    Log.e(TAG, "Error saving QR code data: " + e.getMessage(), e);
-                                });
-
-                        // Create waiting list structure
-                        createWaitingList(eventId);
-
-                        // Show QR dialog
-                        showQRDialog(eventId, qrData);
-
-                        Toast.makeText(this, "Event published successfully!", Toast.LENGTH_SHORT).show();
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e(TAG, "Error publishing event", e);
-                        Toast.makeText(this, "Failed to publish event: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    });
-        }
-    }
-
-    /**
-     * Creates the waiting list structure in Firestore for the published event.
-     * Creates a document in "waiting_lists" collection with event metadata.
-     * The entrants subcollection will be created automatically when first user joins.
-     *
-     * @param eventId The unique identifier of the event
+     * @param eventId The ID of the event
      */
     private void createWaitingList(String eventId) {
         Map<String, Object> waitingListData = new HashMap<>();
         waitingListData.put("event_id", eventId);
         waitingListData.put("created_at", FieldValue.serverTimestamp());
         waitingListData.put("total_capacity", getWaitingListCapacity());
-        // DON'T add "entries" array - we're using subcollection structure
-
-        db.collection("waiting_lists").document(eventId)
-                .set(waitingListData)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Waiting list document created for event: " + eventId);
-                    Log.d(TAG, "Entrants subcollection will be created when first user joins");
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error creating waiting list", e);
-                });
+        db.collection("waiting_lists").document(eventId).set(waitingListData);
     }
 
     /**
-     * Parses and returns the waiting list capacity from user input.
-     * <p>
-     * Extracts numeric characters from the input field and converts to an integer.
-     * Returns 0 if input is empty or invalid.
-     * </p>
+     * Parses the waiting list capacity from the input field.
      *
-     * @return The waiting list capacity as an integer, or 0 if invalid
+     * @return The integer capacity, or 0 if invalid
      */
     private int getWaitingListCapacity() {
-        String waitingList = etWaitingList.getText().toString().trim();
-        if (!waitingList.isEmpty()) {
-            try {
-                String cleanNumber = waitingList.replaceAll("[^0-9]", "");
-                return cleanNumber.isEmpty() ? 0 : Integer.parseInt(cleanNumber);
-            } catch (NumberFormatException e) {
-                return 0;
-            }
-        }
-        return 0;
+        String s = etWaitingList.getText().toString().trim().replaceAll("[^0-9]", "");
+        return s.isEmpty() ? 0 : Integer.parseInt(s);
     }
 
     /**
-     * Displays a dialog showing the generated QR code with sharing options.
-     * <p>
-     * The dialog includes QR code image, Copy Link button, Share button, and Close button.
-     * </p>
+     * Creates a map of all event data for Firestore storage.
+     * Includes labels, calculated capacities, and timestamps.
      *
-     * @param eventId The unique identifier of the event
-     * @param qrData The QR code data string to be shared
-     */
-    private void showQRDialog(String eventId, String qrData) {
-        // Inflate the dialog layout
-        LayoutInflater inflater = LayoutInflater.from(this);
-        View dialogView = inflater.inflate(R.layout.dialog_qr_generated, null);
-
-        // Get views from dialog
-        ImageView imgQr = dialogView.findViewById(R.id.imgQr);
-        MaterialButton btnCopyLink = dialogView.findViewById(R.id.btnCopyLink);
-        MaterialButton btnShareQr = dialogView.findViewById(R.id.btnShareQr);
-        MaterialButton btnClose = dialogView.findViewById(R.id.btnClose);
-
-        // Generate and display QR code
-        Bitmap qrBitmap = QRGeneration.generateEventQRCode(eventId, 500, 500);
-        if (qrBitmap != null) {
-            imgQr.setImageBitmap(qrBitmap);
-        } else {
-            Log.e(TAG, "Error generating QR code");
-            Toast.makeText(this, "Failed to generate QR code", Toast.LENGTH_SHORT).show();
-        }
-
-        // Create dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setView(dialogView);
-        qrDialog = builder.create();
-
-        // Make dialog background transparent
-        if (qrDialog.getWindow() != null) {
-            qrDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
-
-        // Set up button listeners
-        btnCopyLink.setOnClickListener(v -> copyLinkToClipboard(qrData));
-        btnShareQr.setOnClickListener(v -> shareQRCode(qrData));
-        btnClose.setOnClickListener(v -> {
-            qrDialog.dismiss();
-            finish();
-        });
-
-        qrDialog.show();
-    }
-
-    /**
-     * Copies the event link to the system clipboard.
-     * <p>
-     * Creates a ClipData object with the QR data and places it on the clipboard.
-     * Shows a toast message to confirm the action.
-     * </p>
-     *
-     * @param qrData The event link or QR data to copy
-     */
-    private void copyLinkToClipboard(String qrData) {
-        ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-        ClipData clip = ClipData.newPlainText("Event Link", qrData);
-        clipboard.setPrimaryClip(clip);
-        Toast.makeText(this, "Link copied to clipboard", Toast.LENGTH_SHORT).show();
-    }
-
-    /**
-     * Opens the system share sheet to share the event QR code data.
-     * <p>
-     * Creates an ACTION_SEND intent with the event information and opens
-     * the Android share chooser.
-     * </p>
-     *
-     * @param qrData The event link or QR data to share
-     */
-    private void shareQRCode(String qrData) {
-        Intent shareIntent = new Intent(Intent.ACTION_SEND);
-        shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_SUBJECT, "Event QR Code");
-        shareIntent.putExtra(Intent.EXTRA_TEXT, "Join the event: " + qrData);
-        startActivity(Intent.createChooser(shareIntent, "Share Event"));
-    }
-
-    /**
-     * Creates a comprehensive map of event data for Firestore storage.
+     * @param isDraft True if saving as draft, false if publishing
+     * @return Map of event data
      */
     private Map<String, Object> createEventData(boolean isDraft) {
         Map<String, Object> eventData = new HashMap<>();
-
-        // Basic info
         eventData.put("event_title", etEventName.getText().toString().trim());
         eventData.put("description", etDescription.getText().toString().trim());
         eventData.put("location", etLocation.getText().toString().trim());
-
-        // Date and time
         eventData.put("date_time", dateTimeFormat.format(startDateTime.getTime()));
         eventData.put("end_time", dateTimeFormat.format(endDateTime.getTime()));
 
-        // Registration period
-        if (btnRegistrationOpens.getText().toString().contains("Select")) {
-            eventData.put("reg_start", "");
-        } else {
+        if (!btnRegistrationOpens.getText().toString().contains("Select"))
             eventData.put("reg_start", dateTimeFormat.format(registrationOpens.getTime()));
-        }
+        else eventData.put("reg_start", "");
 
-        if (btnRegistrationCloses.getText().toString().contains("Select")) {
-            eventData.put("reg_stop", "");
-        } else {
+        if (!btnRegistrationCloses.getText().toString().contains("Select"))
             eventData.put("reg_stop", dateTimeFormat.format(registrationCloses.getTime()));
-        }
+        else eventData.put("reg_stop", "");
 
-        // ⭐ FIX: Capacity - Parse draw_capacity properly
-        String drawCapacityStr = etDrawCapacity.getText().toString().trim();
-        int drawCapacity = 0;
-        if (!drawCapacityStr.isEmpty()) {
-            try {
-                // Remove any non-numeric characters and parse
-                String cleanNumber = drawCapacityStr.replaceAll("[^0-9]", "");
-                if (!cleanNumber.isEmpty()) {
-                    drawCapacity = Integer.parseInt(cleanNumber);
-                }
-            } catch (NumberFormatException e) {
-                Log.e(TAG, "Error parsing draw capacity", e);
-                drawCapacity = 0;
-            }
-        }
-
-        eventData.put("draw_capacity", drawCapacity);
-        Log.d(TAG, "Saving draw_capacity: " + drawCapacity);
-
-        // ⭐ Also set max_participants to same value
-        eventData.put("max_participants", drawCapacity);
-
-        // Waiting list (starts at 0, updated as users join)
+        // Draw Capacity (Refined logic from Block 2)
+        String drawCapStr = etDrawCapacity.getText().toString().trim().replaceAll("[^0-9]", "");
+        int drawCap = drawCapStr.isEmpty() ? 0 : Integer.parseInt(drawCapStr);
+        eventData.put("draw_capacity", drawCap);
+        eventData.put("max_participants", drawCap);
         eventData.put("waiting_list", 0);
 
-        // Price
         String price = etPrice.getText().toString().trim();
         eventData.put("price", price.isEmpty() ? "0" : price);
-
-        // Status and metadata
         eventData.put("status", isDraft ? "draft" : "published");
 
-        // Only set created_at for new events
-        if (!isEditMode) {
-            eventData.put("created_at", System.currentTimeMillis());
-        }
-
-        // Always update the modified timestamp
+        if (!isEditMode) eventData.put("created_at", System.currentTimeMillis());
         eventData.put("updated_at", System.currentTimeMillis());
-
-        // Organizer info
         eventData.put("organizer_id", currentUserId);
-        eventData.put("org_name", organizerName != null ? organizerName : "Organizer");
-
-        // ⭐ ADD: Initialize lottery fields
+        eventData.put("org_name", organizerName);
         eventData.put("draw_completed", false);
         eventData.put("selected_count", 0);
+
+        // MERGED: Labels from Block 1
+        eventData.put("labels", selectedLabels);
 
         return eventData;
     }
 
     /**
+     * Displays a dialog showing the generated QR code with sharing options.
+     *
+     * @param eventId The ID of the event
+     * @param qrData The data encoded in the QR code
+     */
+    private void showQRDialog(String eventId, String qrData) {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View dialogView = inflater.inflate(R.layout.dialog_qr_generated, null);
+        ImageView imgQr = dialogView.findViewById(R.id.imgQr);
+        MaterialButton btnCopyLink = dialogView.findViewById(R.id.btnCopyLink);
+        MaterialButton btnShareQr = dialogView.findViewById(R.id.btnShareQr);
+        MaterialButton btnClose = dialogView.findViewById(R.id.btnClose);
+
+        Bitmap qrBitmap = QRGeneration.generateEventQRCode(eventId, 500, 500);
+        if (qrBitmap != null) imgQr.setImageBitmap(qrBitmap);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+        qrDialog = builder.create();
+        if (qrDialog.getWindow() != null) qrDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+
+        btnCopyLink.setOnClickListener(v -> {
+            ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            cm.setPrimaryClip(ClipData.newPlainText("Event Link", qrData));
+            Toast.makeText(this, "Link copied", Toast.LENGTH_SHORT).show();
+        });
+        btnShareQr.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_SUBJECT, "Event QR Code");
+            intent.putExtra(Intent.EXTRA_TEXT, "Join: " + qrData);
+            startActivity(Intent.createChooser(intent, "Share Event"));
+        });
+        btnClose.setOnClickListener(v -> {
+            qrDialog.dismiss();
+            finish();
+        });
+        qrDialog.show();
+    }
+
+    /**
      * Cleans up resources when the activity is destroyed.
-     * <p>
-     * Dismisses the QR dialog if it's currently showing to prevent window leaks.
-     * </p>
+     * Dismisses any active dialogs to prevent memory leaks.
      */
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (qrDialog != null && qrDialog.isShowing()) {
-            qrDialog.dismiss();
-        }
+        if (qrDialog != null && qrDialog.isShowing()) qrDialog.dismiss();
     }
 }
