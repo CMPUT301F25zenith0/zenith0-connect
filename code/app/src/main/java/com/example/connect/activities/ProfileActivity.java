@@ -34,7 +34,9 @@ import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.SetOptions;
 
 import java.io.ByteArrayOutputStream;
@@ -461,14 +463,257 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     /**
-     * Delete the user's profile from both Firestore and Firebase Auth.
+     * Delete the user's profile completely from Firebase Auth and Firestore.
+     * This method:
+     * 1. Deletes all events organized by this user (and their waiting lists)
+     * 2. Removes user from all waiting lists they joined
+     * 3. Removes user from all event arrays (chosen_entrants, enrolled_users)
+     * 4. Deletes user's account document from Firestore
+     * 5. Deletes user from Firebase Authentication
+     * 
+     * Note: Firebase Auth requires recent authentication (within last hour) to delete account.
      */
     private void deleteProfile() {
         if (firebaseUser == null) return;
-        db.collection("accounts").document(userId).delete().addOnCompleteListener(task -> {
-            firebaseUser.delete().addOnCompleteListener(t -> {
-                performLogout();
+        
+        // Show loading indicator
+        Toast.makeText(this, "Deleting account and all related data...", Toast.LENGTH_SHORT).show();
+        
+        // Step 1: Delete all events organized by this user and their waiting lists
+        deleteOrganizedEvents(() -> {
+            // Step 2: Remove user from all waiting lists
+            removeFromAllWaitingLists(() -> {
+                // Step 3: Remove user from event arrays (chosen_entrants, enrolled_users)
+                removeFromEventArrays(() -> {
+                    // Step 4: Delete from Firestore accounts collection
+                    db.collection("accounts").document(userId).delete()
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d(TAG, "Account deleted from Firestore");
+                                // Step 5: Delete from Firebase Authentication
+                                deleteFromFirebaseAuth();
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Failed to delete from Firestore: " + e.getMessage());
+                                // Still try to delete from Auth
+                                deleteFromFirebaseAuth();
+                                Toast.makeText(this, "Some data may not have been deleted. Please contact support.", Toast.LENGTH_LONG).show();
+                            });
+                });
             });
+        });
+    }
+    
+    /**
+     * Delete all events organized by this user and their associated waiting lists.
+     */
+    private void deleteOrganizedEvents(Runnable onComplete) {
+        db.collection("events")
+                .whereEqualTo("organizer_id", userId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        Log.d(TAG, "No events found for organizer: " + userId);
+                        onComplete.run();
+                        return;
+                    }
+                    
+                    int totalEvents = querySnapshot.size();
+                    final int[] deletedCount = {0};
+                    
+                    for (QueryDocumentSnapshot eventDoc : querySnapshot) {
+                        String eventId = eventDoc.getId();
+                        
+                        // Delete waiting list for this event
+                        db.collection("waiting_lists").document(eventId)
+                                .collection("entrants")
+                                .get()
+                                .addOnSuccessListener(entrantsSnapshot -> {
+                                    // Delete all entrants from this waiting list
+                                    for (QueryDocumentSnapshot entrantDoc : entrantsSnapshot) {
+                                        entrantDoc.getReference().delete();
+                                    }
+                                    
+                                    // Delete the waiting list document itself
+                                    db.collection("waiting_lists").document(eventId).delete();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error deleting waiting list for event " + eventId + ": " + e.getMessage());
+                                });
+                        
+                        // Delete the event itself
+                        eventDoc.getReference().delete()
+                                .addOnSuccessListener(aVoid -> {
+                                    deletedCount[0]++;
+                                    Log.d(TAG, "Deleted event: " + eventId + " (" + deletedCount[0] + "/" + totalEvents + ")");
+                                    if (deletedCount[0] == totalEvents) {
+                                        onComplete.run();
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    deletedCount[0]++;
+                                    Log.e(TAG, "Error deleting event " + eventId + ": " + e.getMessage());
+                                    if (deletedCount[0] == totalEvents) {
+                                        onComplete.run();
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching organized events: " + e.getMessage());
+                    // Continue with deletion process even if this fails
+                    onComplete.run();
+                });
+    }
+    
+    /**
+     * Remove user from all waiting lists they joined.
+     */
+    private void removeFromAllWaitingLists(Runnable onComplete) {
+        // Get all waiting lists
+        db.collection("waiting_lists")
+                .get()
+                .addOnSuccessListener(waitingListSnapshot -> {
+                    if (waitingListSnapshot.isEmpty()) {
+                        Log.d(TAG, "No waiting lists found");
+                        onComplete.run();
+                        return;
+                    }
+                    
+                    int totalWaitingLists = waitingListSnapshot.size();
+                    final int[] processedCount = {0};
+                    
+                    for (QueryDocumentSnapshot waitingListDoc : waitingListSnapshot) {
+                        String eventId = waitingListDoc.getId();
+                        
+                        // Check if user is in the entrants subcollection for this waiting list
+                        db.collection("waiting_lists")
+                                .document(eventId)
+                                .collection("entrants")
+                                .whereEqualTo("user_id", userId)
+                                .get()
+                                .addOnSuccessListener(entrantsSnapshot -> {
+                                    // Delete all entrant documents for this user
+                                    for (QueryDocumentSnapshot entrantDoc : entrantsSnapshot) {
+                                        entrantDoc.getReference().delete()
+                                                .addOnSuccessListener(aVoid -> {
+                                                    Log.d(TAG, "Removed user from waiting list: " + eventId);
+                                                })
+                                                .addOnFailureListener(e -> {
+                                                    Log.e(TAG, "Error removing user from waiting list " + eventId + ": " + e.getMessage());
+                                                });
+                                    }
+                                    
+                                    processedCount[0]++;
+                                    if (processedCount[0] == totalWaitingLists) {
+                                        onComplete.run();
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error checking waiting list " + eventId + ": " + e.getMessage());
+                                    processedCount[0]++;
+                                    if (processedCount[0] == totalWaitingLists) {
+                                        onComplete.run();
+                                    }
+                                });
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching waiting lists: " + e.getMessage());
+                    // Continue with deletion process even if this fails
+                    onComplete.run();
+                });
+    }
+    
+    /**
+     * Remove user from event arrays (chosen_entrants, enrolled_users) in all events.
+     */
+    private void removeFromEventArrays(Runnable onComplete) {
+        db.collection("events")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        Log.d(TAG, "No events found to update");
+                        onComplete.run();
+                        return;
+                    }
+                    
+                    int totalEvents = querySnapshot.size();
+                    final int[] updatedCount = {0};
+                    
+                    for (QueryDocumentSnapshot eventDoc : querySnapshot) {
+                        // Check if event has chosen_entrants or enrolled_users arrays
+                        boolean needsUpdate = false;
+                        
+                        if (eventDoc.contains("chosen_entrants")) {
+                            List<String> chosenEntrants = (List<String>) eventDoc.get("chosen_entrants");
+                            if (chosenEntrants != null && chosenEntrants.contains(userId)) {
+                                needsUpdate = true;
+                            }
+                        }
+                        
+                        if (eventDoc.contains("enrolled_users")) {
+                            List<String> enrolledUsers = (List<String>) eventDoc.get("enrolled_users");
+                            if (enrolledUsers != null && enrolledUsers.contains(userId)) {
+                                needsUpdate = true;
+                            }
+                        }
+                        
+                        if (needsUpdate) {
+                            eventDoc.getReference().update(
+                                    "chosen_entrants", FieldValue.arrayRemove(userId),
+                                    "enrolled_users", FieldValue.arrayRemove(userId)
+                            )
+                            .addOnSuccessListener(aVoid -> {
+                                updatedCount[0]++;
+                                Log.d(TAG, "Removed user from event arrays: " + eventDoc.getId());
+                                if (updatedCount[0] == totalEvents) {
+                                    onComplete.run();
+                                }
+                            })
+                            .addOnFailureListener(e -> {
+                                updatedCount[0]++;
+                                Log.e(TAG, "Error updating event " + eventDoc.getId() + ": " + e.getMessage());
+                                if (updatedCount[0] == totalEvents) {
+                                    onComplete.run();
+                                }
+                            });
+                        } else {
+                            updatedCount[0]++;
+                            if (updatedCount[0] == totalEvents) {
+                                onComplete.run();
+                            }
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error fetching events for array cleanup: " + e.getMessage());
+                    // Continue with deletion process even if this fails
+                    onComplete.run();
+                });
+    }
+    
+    /**
+     * Delete user from Firebase Authentication.
+     */
+    private void deleteFromFirebaseAuth() {
+        firebaseUser.delete()
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "User deleted from Firebase Authentication");
+                    Toast.makeText(this, "Account deleted successfully.", Toast.LENGTH_SHORT).show();
+                    performLogout();
+                })
+                .addOnFailureListener(e -> {
+                    Exception exception = e;
+                    String errorMessage = "Failed to delete account from authentication";
+                    if (exception != null && exception.getMessage() != null) {
+                        if (exception.getMessage().contains("requires recent authentication")) {
+                            errorMessage = "Account deletion requires recent login. Please log out and log back in, then try again.";
+                        } else {
+                            errorMessage = "Failed to delete account from authentication: " + exception.getMessage();
+                        }
+                    }
+                    Log.e(TAG, "Failed to delete from Firebase Auth: " + exception);
+                    Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
         });
     }
 
