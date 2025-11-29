@@ -1,9 +1,12 @@
 package com.example.connect.activities;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,9 +23,14 @@ import com.example.connect.R;
 import com.example.connect.adapters.EventAdapter;
 import com.example.connect.adapters.PopularEventsAdapter;
 import com.example.connect.models.Event;
+import com.example.connect.models.User;
 import com.example.connect.network.EventRepository;
 import com.google.android.material.chip.Chip;
+import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -41,6 +49,7 @@ public class EventListActivity extends AppCompatActivity {
     private View headerView;
     private TextInputEditText searchBarHeader;
     private RecyclerView rvPopularEvents;
+    private ShapeableImageView profileHeaderImage;
 
     // Filter chips
     private Chip chipInterest, chipDate, chipLocation, chipClearFilters;
@@ -67,6 +76,7 @@ public class EventListActivity extends AppCompatActivity {
         initViews();
         setupAdapter();
         setupClickListeners();
+        loadProfileImage();
         loadEvents();
     }
 
@@ -90,6 +100,9 @@ public class EventListActivity extends AppCompatActivity {
         chipDate = headerView.findViewById(R.id.chip_date);
         chipLocation = headerView.findViewById(R.id.chip_location);
         chipClearFilters = headerView.findViewById(R.id.chip_clear_filters);
+
+        // Initialize profile header image
+        profileHeaderImage = headerView.findViewById(R.id.ivProfileHeader);
 
         eventsListView.addHeaderView(headerView);
     }
@@ -481,9 +494,46 @@ public class EventListActivity extends AppCompatActivity {
         Toast.makeText(this, "All filters cleared", Toast.LENGTH_SHORT).show();
     }
 
+    /**
+     * Load the user's profile image from Firestore and display it in the header.
+     * If no profile image exists, the placeholder will remain.
+     */
+    private void loadProfileImage() {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null || profileHeaderImage == null) {
+            return;
+        }
+
+        String userId = firebaseUser.getUid();
+        FirebaseFirestore.getInstance()
+                .collection("accounts")
+                .document(userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        User user = task.getResult().toObject(User.class);
+                        if (user != null) {
+                            String base64Image = user.getProfileImageUrl();
+                            if (base64Image != null && !base64Image.isEmpty()) {
+                                try {
+                                    byte[] decodedString = Base64.decode(base64Image, Base64.DEFAULT);
+                                    Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+                                    if (decodedByte != null) {
+                                        profileHeaderImage.setImageBitmap(decodedByte);
+                                    }
+                                } catch (Exception e) {
+                                    Log.e("EventListActivity", "Error decoding profile image", e);
+                                }
+                            }
+                        }
+                    }
+                });
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         loadEvents();
+        loadProfileImage();
     }
 }

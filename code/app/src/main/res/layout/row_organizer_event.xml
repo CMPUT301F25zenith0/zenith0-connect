@@ -42,7 +42,8 @@
                 android:layout_gravity="bottom|end"
                 android:layout_margin="4dp"
                 android:src="@android:drawable/ic_input_add"
-                android:contentDescription="Add Image"/>
+                android:contentDescription="Add Image"
+                app:tint="#4CAF50"/>
         </FrameLayout>
 
         <!-- Event Details -->
