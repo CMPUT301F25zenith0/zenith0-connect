@@ -160,16 +160,27 @@ public class CreateEvent extends AppCompatActivity {
                         String price = documentSnapshot.getString("price");
                         etPrice.setText(price != null && !price.equals("0") ? price : "");
 
-                        // Draw capacity and waiting list
+                        // Draw capacity
                         Long drawCapacity = documentSnapshot.getLong("draw_capacity");
                         if (drawCapacity != null && drawCapacity > 0) {
                             etDrawCapacity.setText(String.valueOf(drawCapacity));
                         }
 
-                        Long waitingList = documentSnapshot.getLong("waiting_list");
-                        if (waitingList != null && waitingList > 0) {
-                            etWaitingList.setText(String.valueOf(waitingList));
-                        }
+                        // Load waiting list capacity from waiting_lists collection
+                        db.collection("waiting_lists").document(eventId)
+                                .get()
+                                .addOnSuccessListener(waitingListDoc -> {
+                                    if (waitingListDoc.exists()) {
+                                        Long totalCapacity = waitingListDoc.getLong("total_capacity");
+                                        if (totalCapacity != null && totalCapacity > 0) {
+                                            etWaitingList.setText(String.valueOf(totalCapacity));
+                                        }
+                                        // If null or 0, leave field empty (unlimited)
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error loading waiting list capacity", e);
+                                });
 
                         // Parse and set date/time fields
                         String dateTimeStr = documentSnapshot.getString("date_time");
@@ -789,13 +800,16 @@ public class CreateEvent extends AppCompatActivity {
         Map<String, Object> waitingListData = new HashMap<>();
         waitingListData.put("event_id", eventId);
         waitingListData.put("created_at", FieldValue.serverTimestamp());
-        waitingListData.put("total_capacity", getWaitingListCapacity());
-        // DON'T add "entries" array - we're using subcollection structure
+
+        // ✅ Get capacity (null = unlimited, number = limited)
+        Integer capacity = getWaitingListCapacity();
+        waitingListData.put("total_capacity", capacity);
 
         db.collection("waiting_lists").document(eventId)
                 .set(waitingListData)
                 .addOnSuccessListener(aVoid -> {
                     Log.d(TAG, "Waiting list document created for event: " + eventId);
+                    Log.d(TAG, "Capacity: " + (capacity == null ? "unlimited" : capacity));
                     Log.d(TAG, "Entrants subcollection will be created when first user joins");
                 })
                 .addOnFailureListener(e -> {
@@ -805,24 +819,24 @@ public class CreateEvent extends AppCompatActivity {
 
     /**
      * Parses and returns the waiting list capacity from user input.
-     * <p>
-     * Extracts numeric characters from the input field and converts to an integer.
-     * Returns 0 if input is empty or invalid.
-     * </p>
+     * Returns null for unlimited capacity (when field is empty).
      *
-     * @return The waiting list capacity as an integer, or 0 if invalid
+     * @return The waiting list capacity as Integer, or null for unlimited
      */
-    private int getWaitingListCapacity() {
+    private Integer getWaitingListCapacity() {
         String waitingList = etWaitingList.getText().toString().trim();
         if (!waitingList.isEmpty()) {
             try {
                 String cleanNumber = waitingList.replaceAll("[^0-9]", "");
-                return cleanNumber.isEmpty() ? 0 : Integer.parseInt(cleanNumber);
+                if (!cleanNumber.isEmpty()) {
+                    int capacity = Integer.parseInt(cleanNumber);
+                    return capacity > 0 ? capacity : null;  // Return null if 0 or negative
+                }
             } catch (NumberFormatException e) {
-                return 0;
+                Log.e(TAG, "Error parsing waiting list capacity", e);
             }
         }
-        return 0;
+        return null;  // null = unlimited capacity
     }
 
     /**

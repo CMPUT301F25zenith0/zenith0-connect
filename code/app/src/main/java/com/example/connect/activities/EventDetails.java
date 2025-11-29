@@ -380,6 +380,18 @@ public class EventDetails extends AppCompatActivity {
      * - Adding user ID to waiting list collection
      * - Handling errors and edge cases
      */
+    /**
+     * Adds the current (logged in) user to the event's waiting list in Firestore.
+     * Checks total_capacity (waiting list limit) before adding to prevent exceeding the limit.
+     * If total_capacity is null or 0, allows unlimited entries.
+     * Updates the waiting list count and displays a success message.
+     */
+    /**
+     * Adds the current (logged in) user to the event's waiting list in Firestore.
+     * Checks total_capacity (waiting list limit) before adding to prevent exceeding the limit.
+     * If total_capacity is null or 0, allows unlimited entries.
+     * Updates the waiting list count and displays a success message.
+     */
     private void joinWaitingList() {
         if (eventId == null)
             return;
@@ -389,77 +401,84 @@ public class EventDetails extends AppCompatActivity {
                 ? FirebaseAuth.getInstance().getCurrentUser().getUid()
                 : null;
 
-        // Edge case should never occur --> If it does, it tells us there is a mix up in
-        // the database
         if (userId == null) {
             Toast.makeText(this, "Please sign in to join the waiting list", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Get the event's draw_capacity
+        // Check if user is the organizer first
         db.collection("events")
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(eventDoc -> {
-                    // Checks if the event actually exists --> edge case, if the user was able to
-                    // open this detail page, the event exits
                     if (!eventDoc.exists()) {
                         Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Check if user is the organizer --> organizer cannot join their own event as a
-                    // user
+                    // Check if user is the organizer
                     String organizerId = eventDoc.getString("organizer_id");
                     if (organizerId != null && organizerId.equals(userId)) {
                         Toast.makeText(this, "Organizers cannot join their own event", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Get draw_capacity from event document
-                    Long drawCapacity = eventDoc.getLong("draw_capacity");
-                    if (drawCapacity == null || drawCapacity == 0) {
-                        Toast.makeText(this, "Draw capacity not set for this event", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    // Check if user already in waiting list
+                    // ✅ Check waiting list capacity (not draw_capacity)
                     db.collection("waiting_lists")
                             .document(eventId)
-                            .collection("entrants")
-                            .document(userId)
                             .get()
-                            .addOnSuccessListener(entrantDoc -> {
-                                if (entrantDoc.exists()) {
-                                    Toast.makeText(this, "You're already on the waiting list", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
+                            .addOnSuccessListener(waitingListDoc -> {
+                                // ✅ Get total_capacity from waiting_lists collection (not events)
+                                final Long totalCapacity = waitingListDoc.exists()
+                                        ? waitingListDoc.getLong("total_capacity")
+                                        : null;
 
-                                // Check current waiting list size
+                                // Check if user already in waiting list
                                 db.collection("waiting_lists")
                                         .document(eventId)
                                         .collection("entrants")
-                                        .whereEqualTo("status", "waiting")
+                                        .document(userId)
                                         .get()
-                                        .addOnSuccessListener(querySnapshot -> {
-                                            int currentSize = querySnapshot.size();
-
-                                            // Check if capacity is reached
-                                            if (currentSize >= drawCapacity) {
-                                                Toast.makeText(this, "Waiting list is full", Toast.LENGTH_SHORT).show();
+                                        .addOnSuccessListener(entrantDoc -> {
+                                            if (entrantDoc.exists()) {
+                                                Toast.makeText(this, "You're already on the waiting list",
+                                                        Toast.LENGTH_SHORT).show();
                                                 return;
                                             }
 
-                                            // Add user to waiting list
-                                            addUserToWaitingList(userId);
+                                            // ✅ Count ALL entrants (regardless of status) for capacity check
+                                            db.collection("waiting_lists")
+                                                    .document(eventId)
+                                                    .collection("entrants")
+                                                    .get()
+                                                    .addOnSuccessListener(querySnapshot -> {
+                                                        int currentSize = querySnapshot.size();
+
+                                                        // ✅ ENFORCE: Only check limit if total_capacity is set and > 0
+                                                        // null or 0 = unlimited waiting list
+                                                        if (totalCapacity != null && totalCapacity > 0
+                                                                && currentSize >= totalCapacity) {
+                                                            Toast.makeText(this,
+                                                                    "Waiting list is full (" + totalCapacity + " entrants)",
+                                                                    Toast.LENGTH_SHORT).show();
+                                                            return;
+                                                        }
+
+                                                        // All checks passed - add user to waiting list
+                                                        addUserToWaitingList(userId);
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        Toast.makeText(this, "Error checking waiting list: " + e.getMessage(),
+                                                                Toast.LENGTH_SHORT).show();
+                                                    });
                                         })
                                         .addOnFailureListener(e -> {
-                                            Toast.makeText(this, "Error checking waiting list: " + e.getMessage(),
+                                            Toast.makeText(this, "Error checking your status: " + e.getMessage(),
                                                     Toast.LENGTH_SHORT).show();
                                         });
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error checking your status: " + e.getMessage(),
+                                Toast.makeText(this, "Error accessing waiting list: " + e.getMessage(),
                                         Toast.LENGTH_SHORT).show();
                             });
                 })
@@ -472,39 +491,59 @@ public class EventDetails extends AppCompatActivity {
     /**
      * Helper method to add user to waiting list subcollection
      */
+    /**
+     * Helper method to add user to waiting list subcollection.
+     * Ensures waiting list document exists before adding entrant.
+     */
     private void addUserToWaitingList(String userId) {
-        // First, ensure the waiting list document exists
-        Map<String, Object> waitingListDoc = new HashMap<>();
-        waitingListDoc.put("event_id", eventId);
-        waitingListDoc.put("created_at", FieldValue.serverTimestamp());
-        waitingListDoc.put("total_capacity", 0);
-
+        // First, get the current waiting list to preserve total_capacity
         db.collection("waiting_lists")
                 .document(eventId)
-                .set(waitingListDoc, com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(aVoid -> {
-                    // Now add user to entrants subcollection
-                    Map<String, Object> entrantData = new HashMap<>();
-                    entrantData.put("user_id", userId);
-                    entrantData.put("status", "waiting");
-                    entrantData.put("joined_date", FieldValue.serverTimestamp());
+                .get()
+                .addOnSuccessListener(waitingListDoc -> {
+                    // Preserve existing total_capacity or set to null (unlimited)
+                    Object totalCapacity = null;
+                    if (waitingListDoc.exists()) {
+                        totalCapacity = waitingListDoc.get("total_capacity");
+                    }
+
+                    // Ensure the waiting list document exists
+                    Map<String, Object> waitingListData = new HashMap<>();
+                    waitingListData.put("event_id", eventId);
+                    waitingListData.put("created_at", FieldValue.serverTimestamp());
+                    waitingListData.put("total_capacity", totalCapacity); // ✅ Preserve capacity
 
                     db.collection("waiting_lists")
                             .document(eventId)
-                            .collection("entrants")
-                            .document(userId)
-                            .set(entrantData)
-                            .addOnSuccessListener(aVoid2 -> {
-                                Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
-                                loadEventDetails(eventId);
+                            .set(waitingListData, com.google.firebase.firestore.SetOptions.merge())
+                            .addOnSuccessListener(aVoid -> {
+                                // Now add user to entrants subcollection
+                                Map<String, Object> entrantData = new HashMap<>();
+                                entrantData.put("user_id", userId);
+                                entrantData.put("status", "waiting");
+                                entrantData.put("joined_date", FieldValue.serverTimestamp());
+
+                                db.collection("waiting_lists")
+                                        .document(eventId)
+                                        .collection("entrants")
+                                        .document(userId)
+                                        .set(entrantData)
+                                        .addOnSuccessListener(aVoid2 -> {
+                                            Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+                                            loadEventDetails(eventId);
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Toast.makeText(this, "Error joining: " + e.getMessage(),
+                                                    Toast.LENGTH_SHORT).show();
+                                        });
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error joining: " + e.getMessage(),
+                                Toast.makeText(this, "Error creating waiting list: " + e.getMessage(),
                                         Toast.LENGTH_SHORT).show();
                             });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error creating waiting list: " + e.getMessage(),
+                    Toast.makeText(this, "Error accessing waiting list: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
     }
