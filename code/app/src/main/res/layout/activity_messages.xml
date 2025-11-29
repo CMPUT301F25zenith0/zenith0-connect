@@ -328,13 +328,13 @@
             android:minHeight="48dp"
             android:text="DASHBOARD"
             android:textAllCaps="true"
-            android:textColor="@color/accent_orange"
+            android:textColor="@color/text_secondary"
             android:textSize="11sp"
             app:backgroundTint="@android:color/transparent"
             app:icon="@android:drawable/ic_menu_view"
             app:iconGravity="textTop"
             app:iconSize="24dp"
-            app:iconTint="@color/accent_orange" />
+            app:iconTint="@color/text_secondary" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavMessage"
@@ -346,13 +346,13 @@
             android:minHeight="48dp"
             android:text="MESSAGE"
             android:textAllCaps="true"
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/accent_orange"
             android:textSize="11sp"
             app:backgroundTint="@android:color/transparent"
             app:icon="@android:drawable/ic_dialog_email"
             app:iconGravity="textTop"
             app:iconSize="24dp"
-            app:iconTint="@color/text_secondary" />
+            app:iconTint="@color/accent_orange" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavMap"
