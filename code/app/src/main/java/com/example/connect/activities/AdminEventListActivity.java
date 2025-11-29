@@ -19,8 +19,10 @@ import com.example.connect.adapters.AdminEventAdapter;
 import com.example.connect.models.Event;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -164,21 +166,49 @@ public class AdminEventListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Deletes the event, but first deletes all documents in its waitlist subcollection.
+     * @param event The event object to be deleted.
+     */
     private void deleteEvent(Event event) {
-        if (event.getEventId() == null)
+        if (event.getEventId() == null) {
+            Toast.makeText(this, "Error: Event ID is missing.", Toast.LENGTH_SHORT).show();
             return;
+        }
 
-        // Confirm deletion (Optional: Add a dialog here)
-        // For now, direct delete
-
-        db.collection("events").document(event.getEventId())
-                .delete()
+        // Delete the waitlist subcollection documents first
+        deleteWaitlistForEvent(event.getEventId())
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(this, "Event deleted", Toast.LENGTH_SHORT).show();
-                    loadEvents(); // Refresh list
+                    // If waitlist deletion is successful, delete the event document
+                    db.collection("events").document(event.getEventId())
+                            .delete()
+                            .addOnSuccessListener(aVoid1 -> {
+                                Toast.makeText(this, "Event and waitlist deleted successfully", Toast.LENGTH_SHORT).show();
+                                loadEvents(); // Refresh list
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(this, "Error deleting event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                Log.e("AdminEventList", "Error deleting event document: " + event.getEventId(), e);
+                            });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error deleting event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Error deleting waitlist: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Log.e("AdminEventList", "Error deleting waitlist for event: " + event.getEventId(), e);
                 });
+    }
+
+    /**
+     * Deletes the document from the top-level 'waiting_lists' collection
+     * where the document ID matches the eventId.
+     *
+     * @param eventId The ID of the event, which is assumed to be the document ID
+     * of the corresponding waiting list entry.
+     * @return Successfull or Failed completion
+     */
+    private com.google.android.gms.tasks.Task<Void> deleteWaitlistForEvent(String eventId) {
+        // 1. Access the top-level collection 'waiting_lists'
+        // 2. Target the specific document using the eventId as the document ID
+        return db.collection("waiting_lists").document(eventId)
+                .delete(); // Delete the document directly
     }
 }
