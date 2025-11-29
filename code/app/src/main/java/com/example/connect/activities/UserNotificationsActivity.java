@@ -1,6 +1,7 @@
 package com.example.connect.activities;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -16,6 +17,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
 import com.example.connect.utils.LotteryManager;
@@ -41,8 +43,8 @@ public class UserNotificationsActivity extends AppCompatActivity {
     private RecyclerView recyclerViewNotifications;
     private View tvNoNotifications;
     private NotificationAdapter adapter;
-    private MaterialButton btnBack;
-    private ImageButton notiBackBtn;  // Changed to ImageButton
+    private ImageButton btnBack;
+    private ImageButton notiBackBtn;  // Legacy compatibility
     private MaterialButton btnToggle;
     private MaterialButton homeBtn, myEventsBtn, scanBtn, profileBtn, notificationBtn;
 
@@ -140,8 +142,8 @@ public class UserNotificationsActivity extends AppCompatActivity {
 
         if (myEventsBtn != null) {
             myEventsBtn.setOnClickListener(v -> {
-                // TODO - Navigate to my events page
-                Toast.makeText(this, "My Events - Coming Soon", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(UserNotificationsActivity.this, MyEventsActivity.class);
+                startActivity(intent);
             });
         }
 
@@ -214,10 +216,14 @@ public class UserNotificationsActivity extends AppCompatActivity {
             // Optional: Change button appearance based on state
             if (notificationsEnabled) {
                 btnToggle.setBackgroundTintList(
-                        getResources().getColorStateList(android.R.color.holo_green_dark, null));
+                        ColorStateList.valueOf(ContextCompat.getColor(this, R.color.dark_blue)));
+                btnToggle.setTextColor(ContextCompat.getColor(this, R.color.white));
+                btnToggle.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.mist_pink)));
             } else {
                 btnToggle.setBackgroundTintList(
-                        getResources().getColorStateList(android.R.color.holo_red_dark, null));
+                        ColorStateList.valueOf(ContextCompat.getColor(this, R.color.mist_pink)));
+                btnToggle.setTextColor(ContextCompat.getColor(this, R.color.dark_blue));
+                btnToggle.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.calm_blue_light)));
             }
         }
     }

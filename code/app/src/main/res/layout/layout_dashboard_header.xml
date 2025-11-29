@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="16dp">
+
+    <!-- Top Bar: Location & Profile -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="16dp">
+
+        <TextView
+            android:id="@+id/tvHeaderTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Discover Events"
+            android:textColor="@color/mist_pink"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:fontFamily="serif"/>
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/ivProfileHeader"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_profile_placeholder"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
+            android:background="@color/text_field_bg"
+            android:padding="1dp"/>
+
+    </LinearLayout>
+
+    <!-- Search Bar -->
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginBottom="24dp"
+        android:hint="@string/search_events_hint"
+        app:boxBackgroundColor="@color/mist_pink"
+        app:boxStrokeColor="@color/interests"
+        app:boxStrokeWidth="1dp"
+        app:boxCornerRadiusTopStart="16dp"
+        app:boxCornerRadiusTopEnd="16dp"
+        app:boxCornerRadiusBottomStart="16dp"
+        app:boxCornerRadiusBottomEnd="16dp"
+        app:startIconDrawable="@drawable/ic_search"
+        app:startIconTint="@color/interests"
+        app:hintTextColor="@color/interests">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etSearchHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:textColor="@color/interests"
+            android:textSize="14sp"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- FILTER CHIPS AS BETTING CHIPS -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="24dp"
+        android:paddingBottom="12dp"
+        android:gravity="center_vertical">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_interest"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_interest"
+            android:textColor="@color/white"
+            android:checkable="false"
+            android:clickable="true"
+            android:focusable="true"
+            app:chipBackgroundColor="@color/dark_blue"
+            app:chipStrokeColor="@color/dark_blue_light"
+            app:chipStrokeWidth="2dp"
+            app:chipCornerRadius="20dp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp"
+            android:minHeight="36dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_date"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_date"
+            android:textColor="@color/white"
+            android:checkable="false"
+            android:clickable="true"
+            android:focusable="true"
+            app:chipBackgroundColor="@color/dark_blue"
+            app:chipStrokeColor="@color/dark_blue_light"
+            app:chipStrokeWidth="2dp"
+            app:chipCornerRadius="20dp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp"
+            android:minHeight="36dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_location"
+            style="@style/Widget.MaterialComponents.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/filter_location"
+            android:textColor="@color/white"
+            android:checkable="false"
+            android:clickable="true"
+            android:focusable="true"
+            app:chipBackgroundColor="@color/dark_blue"
+            app:chipStrokeColor="@color/dark_blue_light"
+            app:chipStrokeWidth="2dp"
+            app:chipCornerRadius="20dp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp"
+            android:minHeight="36dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"/>
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/chip_clear_filters"
+            style="@style/Widget.MaterialComponents.Chip.Action"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checkable="false"
+            android:clickable="true"
+            android:focusable="true"
+            app:chipIcon="@drawable/ic_clear"
+            app:chipIconTint="@color/calm_blue_dark"
+            android:text="CLEAR"
+            android:textColor="@color/calm_blue_dark"
+            app:chipBackgroundColor="@color/calm_blue_light"
+            app:chipStrokeColor="@color/calm_blue"
+            app:chipStrokeWidth="1dp"
+            app:chipCornerRadius="20dp"
+            android:textStyle="bold"
+            app:iconStartPadding="4dp"
+            app:textStartPadding="0dp"
+            android:minHeight="36dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"/>
+
+    </LinearLayout>
+
+    <!-- Popular Events Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="24dp"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Popular Event"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="serif"/>
+
+        <TextView
+            android:id="@+id/tvViewAllPopular"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View All"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"/>
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvPopularEvents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:paddingStart="24dp"
+        android:paddingEnd="8dp"
+        android:orientation="horizontal"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- All Events Section Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="24dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="All Events"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="serif"/>
+
+        <TextView
+            android:id="@+id/tvViewAllMonth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View All"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"/>
+    </LinearLayout>
+
+</LinearLayout>
+

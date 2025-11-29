@@ -5,23 +5,93 @@
     android:layout_height="match_parent"
     android:background="@color/background_dark">
 
-    <!-- HEADER: JACKPOT BOARD -->
-    <!-- ListView for Events (Scrollable) -->
-    <!-- Header View will be added programmatically -->
+    <TextView
+        android:id="@+id/pageTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="My Events"
+        android:textColor="@color/text_primary"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:padding="16dp"
+        android:layout_alignParentTop="true"/>
 
-    <!-- ListView for Events (Scrollable) -->
+    <LinearLayout
+        android:id="@+id/tab_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/pageTitle"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="8dp"
+        android:weightSum="3">
+
+        <Button
+            android:id="@+id/btn_tab_waitlist"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Waitlist"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary"
+            android:backgroundTint="@android:color/transparent"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/btn_tab_selected"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Selected"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:backgroundTint="@android:color/transparent"
+            android:textColor="@color/text_secondary"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp"
+            android:layout_marginHorizontal="2dp"/>
+
+        <Button
+            android:id="@+id/btn_tab_confirmed"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Confirmed"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:backgroundTint="@android:color/transparent"
+            android:textColor="@color/text_secondary"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp"
+            android:layout_marginStart="4dp"/>
+
+    </LinearLayout>
+
     <ListView
-        android:id="@+id/events_ListView"
+        android:id="@+id/my_events_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_below="@id/tab_container"
         android:layout_above="@id/bottomNavigation"
-        android:padding="16dp"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="16dp"
         android:divider="@android:color/transparent"
         android:dividerHeight="16dp"
-        android:scrollbars="vertical"
-        android:clipToPadding="false"/>
+        android:clipToPadding="false"
+        android:scrollbars="vertical"/>
 
-    <!-- Bottom Navigation (Refined) -->
+    <TextView
+        android:id="@+id/empty_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="No events found in this section."
+        android:textColor="@color/text_secondary"
+        android:visibility="gone"/>
+
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
@@ -40,10 +110,10 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Home"
-            android:textColor="@color/primary_gold"
+            android:textColor="@color/text_secondary"
             android:textSize="10sp"
             app:icon="@android:drawable/ic_menu_view"
-            app:iconTint="@color/primary_gold"
+            app:iconTint="@color/text_secondary"
             app:iconGravity="textTop"
             app:iconSize="24dp"
             android:backgroundTint="@android:color/transparent"/>
@@ -55,10 +125,10 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Events"
-            android:textColor="@color/text_secondary"
+            android:textColor="@color/primary_gold"
             android:textSize="10sp"
             app:icon="@android:drawable/ic_menu_agenda"
-            app:iconTint="@color/text_secondary"
+            app:iconTint="@color/primary_gold"
             app:iconGravity="textTop"
             app:iconSize="24dp"
             android:backgroundTint="@android:color/transparent"/>
