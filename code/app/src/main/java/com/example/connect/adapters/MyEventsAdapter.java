@@ -38,16 +38,51 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
 
     private int currentTabMode;
     private Context context;
+    private FirebaseFirestore db; // Added instance variable for efficiency
 
     public MyEventsAdapter(Context context, List<Event> events, int tabMode) {
         super(context, 0, events);
         this.context = context;
         this.currentTabMode = tabMode;
+        this.db = FirebaseFirestore.getInstance(); // Initialize Firestore once
     }
 
     public void setTabState(int tabMode) {
         this.currentTabMode = tabMode;
         notifyDataSetChanged();
+    }
+    /**
+     * Helper method to format price string.
+     * returns "Free" if value is 0 or empty, otherwise returns formatted currency (e.g., "$10.00")
+     **/
+    private static String priceFormat(String priceStr){
+        if (priceStr == null || priceStr.trim().isEmpty()) {
+            return "Free";
+        }
+
+        try {
+            // Remove everything that isn't a number or a decimal point
+            // This handles cases like "$50", "USD 50", or just "50"
+            String cleanPrice = priceStr.replaceAll("[^\\d.]", "");
+
+            if (cleanPrice.isEmpty()) {
+                return "Free";
+            }
+
+            // Parse to double
+            double priceValue = Double.parseDouble(cleanPrice);
+
+            // 3. Check value
+            if (priceValue <= 0) {
+                return "Free";
+            } else {
+                // Format to 2 decimal places
+                return String.format("$%.2f", priceValue);
+            }
+        } catch (NumberFormatException e) {
+            // If parsing fails (e.g. text is "Donation only"), return original text
+            return priceStr;
+        }
     }
 
     @NonNull
@@ -68,7 +103,9 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
         if (event != null) {
             title.setText(event.getName());
             time.setText(event.getDateTime() != null ? event.getDateTime() : "TBD");
-            price.setText(event.getPrice() != null ? "$" + event.getPrice() : "Free");
+
+            String formatterPrice = priceFormat(event.getPrice());
+            price.setText(formatterPrice);
 
             if (event.getImageBase64() != null && !event.getImageBase64().isEmpty()) {
                 try {
@@ -87,6 +124,12 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
         // Button Logic
         MaterialButton btnAccept = convertView.findViewById(R.id.btn_accept);
         MaterialButton btnCancel = convertView.findViewById(R.id.btn_cancel);
+        MaterialButton btnLeave = convertView.findViewById(R.id.btn_leave);
+
+        // Reset visibility first to avoid recycling issues
+        btnAccept.setVisibility(View.GONE);
+        btnCancel.setVisibility(View.GONE);
+        btnLeave.setVisibility(View.GONE);
 
         if (currentTabMode == TAB_SELECTED) {
             // SELECTED: Accept or Decline
@@ -100,8 +143,6 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
 
         } else if (currentTabMode == TAB_CONFIRMED) {
             // CONFIRMED: Can only Cancel Attendance
-            btnAccept.setVisibility(View.GONE);
-
             btnCancel.setVisibility(View.VISIBLE);
             btnCancel.setText("Cancel");
             btnCancel.setTextColor(ContextCompat.getColor(context, R.color.mist_pink));
@@ -109,21 +150,73 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
 
         } else {
             // WAITLIST: Can only Leave List
-            btnAccept.setVisibility(View.GONE);
+            btnLeave.setVisibility(View.VISIBLE);
 
-            btnCancel.setVisibility(View.VISIBLE);
-            btnCancel.setText("Leave List");
-            btnCancel.setTextColor(ContextCompat.getColor(context, R.color.mist_pink));
-            btnCancel.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.mist_pink)));
+            btnLeave.setText("Leave List");
+            btnLeave.setTextColor(ContextCompat.getColor(context, R.color.mist_pink));
+            btnLeave.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.mist_pink)));
         }
 
-        // 3. Click Listeners
+        // --- Click Listeners ---
+
         btnAccept.setOnClickListener(v -> {
             // TODO: Update status to 'confirmed' in DB
         });
 
         btnCancel.setOnClickListener(v -> {
             // TODO: Update status in DB
+        });
+
+        // LEAVE WAITLIST LOGIC
+        btnLeave.setOnClickListener(v -> {
+            if (event == null || event.getEventId() == null) return;
+
+            // Get current user ID from Firebase Auth
+            FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+            String userId = (currentUser != null) ? currentUser.getUid() : null;
+
+            if (userId == null) {
+                Toast.makeText(context, "Please sign in to leave the waiting list", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String eventId = event.getEventId();
+
+            // Check if user is in the waiting list
+            db.collection("waiting_lists")
+                    .document(eventId)
+                    .collection("entrants")
+                    .document(userId)
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (!documentSnapshot.exists()) {
+                            Toast.makeText(context, "You're not on the waiting list", Toast.LENGTH_SHORT).show();
+                            // Optional: Remove from UI anyway since they aren't in DB
+                            remove(event);
+                            notifyDataSetChanged();
+                            return;
+                        }
+
+                        // Remove user from waiting list
+                        db.collection("waiting_lists")
+                                .document(eventId)
+                                .collection("entrants")
+                                .document(userId)
+                                .delete()
+                                .addOnSuccessListener(aVoid -> {
+                                    Toast.makeText(context, "Left waiting list", Toast.LENGTH_SHORT).show();
+
+                                    // Remove the item from the Adapter's list and refresh UI
+                                    remove(event);
+                                    notifyDataSetChanged();
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(context, "Error leaving: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                });
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(context, "Error checking status: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
         });
 
         return convertView;

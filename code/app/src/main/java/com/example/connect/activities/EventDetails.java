@@ -248,7 +248,7 @@ public class EventDetails extends AppCompatActivity {
             String dateTime, String location, String price,
             String registrationWindow) {
         eventTitle.setText(eventName != null ? eventName : "Event Title");
-        tvOrgName.setText(organizationName != null ? organizationName : "Organization Name");
+        tvOrgName.setText(organizationName != null ? "By " + organizationName : "Organization Name");
         tvDateTime.setText(dateTime != null ? dateTime : "Date & Time");
         tvLocation.setText(location != null ? location : "Location");
         tvPrice.setText(price != null ? price : "Price");
