@@ -55,6 +55,7 @@
     <color name="background_dark">#F8FAFC</color>
     <color name="card_bg">#FFFFFF</color>
     <color name="text_primary">#0F172A</color>
+    <color name="charcoal">#1A1A1A</color>
 
     <!-- Vision UI Theme (Dark/Neon) -->
     <color name="vision_bg">#0F1535</color>

@@ -51,6 +51,39 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
         this.currentTabMode = tabMode;
         notifyDataSetChanged();
     }
+    /**
+     * Helper method to format price string.
+     * returns "Free" if value is 0 or empty, otherwise returns formatted currency (e.g., "$10.00")
+     **/
+    private static String priceFormat(String priceStr){
+        if (priceStr == null || priceStr.trim().isEmpty()) {
+            return "Free";
+        }
+
+        try {
+            // Remove everything that isn't a number or a decimal point
+            // This handles cases like "$50", "USD 50", or just "50"
+            String cleanPrice = priceStr.replaceAll("[^\\d.]", "");
+
+            if (cleanPrice.isEmpty()) {
+                return "Free";
+            }
+
+            // Parse to double
+            double priceValue = Double.parseDouble(cleanPrice);
+
+            // 3. Check value
+            if (priceValue <= 0) {
+                return "Free";
+            } else {
+                // Format to 2 decimal places
+                return String.format("$%.2f", priceValue);
+            }
+        } catch (NumberFormatException e) {
+            // If parsing fails (e.g. text is "Donation only"), return original text
+            return priceStr;
+        }
+    }
 
     @NonNull
     @Override
@@ -70,7 +103,9 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
         if (event != null) {
             title.setText(event.getName());
             time.setText(event.getDateTime() != null ? event.getDateTime() : "TBD");
-            price.setText(event.getPrice() != null ? "$" + event.getPrice() : "Free");
+
+            String formatterPrice = priceFormat(event.getPrice());
+            price.setText(formatterPrice);
 
             if (event.getImageBase64() != null && !event.getImageBase64().isEmpty()) {
                 try {
