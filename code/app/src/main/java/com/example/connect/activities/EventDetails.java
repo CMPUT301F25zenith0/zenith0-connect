@@ -285,25 +285,33 @@ public class EventDetails extends AppCompatActivity {
         eventImage.setImageResource(android.R.drawable.ic_menu_gallery);
     }
 
+    /**
+     * Sets up a real-time listener for the waiting list count.
+     * Counts entrants from the subcollection and updates the UI.
+     *
+     * @param eventId The unique identifier of the event
+     */
     private void listenForWaitlist(String eventId) {
         if (waitlistRegistration != null) {
             waitlistRegistration.remove();
         }
 
+        // ✅ Listen to the entrants subcollection instead of the document
         waitlistRegistration = db.collection("waiting_lists")
                 .document(eventId)
-                .addSnapshotListener((snapshot, error) -> {
+                .collection("entrants")  // ✅ Count from subcollection
+                .addSnapshotListener((querySnapshot, error) -> {
                     if (error != null) {
+                        Log.e("EventDetails", "Error listening to waitlist", error);
                         return;
                     }
 
                     int count = 0;
-                    if (snapshot != null && snapshot.exists()) {
-                        java.util.List<String> entries = (java.util.List<String>) snapshot.get("entries");
-                        count = entries != null ? entries.size() : 0;
+                    if (querySnapshot != null) {
+                        count = querySnapshot.size();  // ✅ Count all entrants
                     }
-                    Log.d("EventDetails", "Count" + String.valueOf(count));
 
+                    Log.d("EventDetails", "Waitlist count: " + count);
                     tvWaitingList.setText("Live Waitlist: " + count + " entrant" + (count == 1 ? "" : "s"));
                 });
     }

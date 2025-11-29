@@ -423,24 +423,81 @@ public class CreateEvent extends AppCompatActivity {
                         String price = documentSnapshot.getString("price");
                         etPrice.setText(price != null && !price.equals("0") ? price : "");
 
-                        // Draw capacity and waiting list
+                        // Draw capacity
                         Long drawCapacity = documentSnapshot.getLong("draw_capacity");
                         if (drawCapacity != null && drawCapacity > 0) {
                             etDrawCapacity.setText(String.valueOf(drawCapacity));
                         }
 
-                        Long waitingList = documentSnapshot.getLong("waiting_list");
-                        if (waitingList != null && waitingList > 0) {
-                            etWaitingList.setText(String.valueOf(waitingList));
+                        // ✅ CORRECT: Load waiting list capacity from waiting_lists collection
+                        db.collection("waiting_lists").document(eventId)
+                                .get()
+                                .addOnSuccessListener(waitingListDoc -> {
+                                    if (waitingListDoc.exists()) {
+                                        Long totalCapacity = waitingListDoc.getLong("total_capacity");
+                                        if (totalCapacity != null && totalCapacity > 0) {
+                                            etWaitingList.setText(String.valueOf(totalCapacity));
+                                        }
+                                        // If null or 0, leave field empty (unlimited)
+                                    }
+                                })
+                                .addOnFailureListener(e -> {
+                                    Log.e(TAG, "Error loading waiting list capacity", e);
+                                });
+
+                        // Parse and set date/time fields - START DATE/TIME
+                        String dateTimeStr = documentSnapshot.getString("date_time");
+                        if (dateTimeStr != null && !dateTimeStr.isEmpty()) {
+                            try {
+                                startDateTime.setTime(dateTimeFormat.parse(dateTimeStr));
+                                btnStartDate.setText(dateFormat.format(startDateTime.getTime()));
+                                btnStartTime.setText(timeFormat.format(startDateTime.getTime()));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing start date", e);
+                            }
                         }
 
-                        // Parse Date/Time fields
-                        parseAndSetDate(documentSnapshot.getString("date_time"), startDateTime, btnStartDate, btnStartTime);
-                        parseAndSetDate(documentSnapshot.getString("end_time"), endDateTime, btnEndDate, btnEndTime);
-                        parseAndSetRegDate(documentSnapshot.getString("reg_start"), registrationOpens, btnRegistrationOpens);
-                        parseAndSetRegDate(documentSnapshot.getString("reg_stop"), registrationCloses, btnRegistrationCloses);
+                        // END DATE/TIME
+                        String endTimeStr = documentSnapshot.getString("end_time");
+                        if (endTimeStr != null && !endTimeStr.isEmpty()) {
+                            try {
+                                endDateTime.setTime(dateTimeFormat.parse(endTimeStr));
+                                btnEndDate.setText(dateFormat.format(endDateTime.getTime()));
+                                btnEndTime.setText(timeFormat.format(endDateTime.getTime()));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing end date", e);
+                            }
+                        }
 
-                        // Load Image (Block 2 Logic)
+                        // REGISTRATION OPENS
+                        String regStartStr = documentSnapshot.getString("reg_start");
+                        if (regStartStr != null && !regStartStr.isEmpty()) {
+                            try {
+                                registrationOpens.setTime(dateTimeFormat.parse(regStartStr));
+                                String dateTimeText = dateFormat.format(registrationOpens.getTime()) + " " +
+                                        timeFormat.format(registrationOpens.getTime());
+                                btnRegistrationOpens.setText(dateTimeText);
+                                btnRegistrationOpens.setTextColor(getResources().getColor(android.R.color.black));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing reg start", e);
+                            }
+                        }
+
+                        // REGISTRATION CLOSES
+                        String regStopStr = documentSnapshot.getString("reg_stop");
+                        if (regStopStr != null && !regStopStr.isEmpty()) {
+                            try {
+                                registrationCloses.setTime(dateTimeFormat.parse(regStopStr));
+                                String dateTimeText = dateFormat.format(registrationCloses.getTime()) + " " +
+                                        timeFormat.format(registrationCloses.getTime());
+                                btnRegistrationCloses.setText(dateTimeText);
+                                btnRegistrationCloses.setTextColor(getResources().getColor(android.R.color.black));
+                            } catch (Exception e) {
+                                Log.e(TAG, "Error parsing reg stop", e);
+                            }
+                        }
+
+                        // Load image if available
                         String base64Image = documentSnapshot.getString("image_base64");
                         if (base64Image != null && !base64Image.isEmpty()) {
                             existingBase64Image = base64Image;
@@ -456,19 +513,17 @@ public class CreateEvent extends AppCompatActivity {
                             showPlaceholderImage();
                         }
 
-                        // Load Labels (Block 1 Logic)
+                        // ✅ Load labels if available
                         List<String> labels = (List<String>) documentSnapshot.get("labels");
                         if (labels != null && !labels.isEmpty()) {
                             selectedLabels.clear();
                             selectedLabels.addAll(labels);
 
                             // Check corresponding chips
-                            if (chipGroupLabels != null) {
-                                for (int i = 0; i < chipGroupLabels.getChildCount(); i++) {
-                                    Chip chip = (Chip) chipGroupLabels.getChildAt(i);
-                                    if (labels.contains(chip.getText().toString())) {
-                                        chip.setChecked(true);
-                                    }
+                            for (int i = 0; i < chipGroupLabels.getChildCount(); i++) {
+                                Chip chip = (Chip) chipGroupLabels.getChildAt(i);
+                                if (labels.contains(chip.getText().toString())) {
+                                    chip.setChecked(true);
                                 }
                             }
                         }
@@ -487,39 +542,6 @@ public class CreateEvent extends AppCompatActivity {
                     finish();
                 });
     }
-
-    /**
-     * Helper to parse date strings and update UI buttons.
-     */
-    private void parseAndSetDate(String dateStr, Calendar calendar, Button dateBtn, Button timeBtn) {
-        if (dateStr != null && !dateStr.isEmpty()) {
-            try {
-                calendar.setTime(dateTimeFormat.parse(dateStr));
-                dateBtn.setText(dateFormat.format(calendar.getTime()));
-                timeBtn.setText(timeFormat.format(calendar.getTime()));
-            } catch (Exception e) {
-                Log.e(TAG, "Error parsing date", e);
-            }
-        }
-    }
-
-    /**
-     * Helper to parse registration date strings and update UI buttons.
-     */
-    private void parseAndSetRegDate(String dateStr, Calendar calendar, Button btn) {
-        if (dateStr != null && !dateStr.isEmpty()) {
-            try {
-                calendar.setTime(dateTimeFormat.parse(dateStr));
-                String dateTimeText = dateFormat.format(calendar.getTime()) + " " +
-                        timeFormat.format(calendar.getTime());
-                btn.setText(dateTimeText);
-                btn.setTextColor(getResources().getColor(android.R.color.black));
-            } catch (Exception e) {
-                Log.e(TAG, "Error parsing reg date", e);
-            }
-        }
-    }
-
 
     /**
      * Configures click listeners for all interactive UI elements.
