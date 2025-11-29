@@ -173,16 +173,45 @@ public class EventDetails extends AppCompatActivity {
             return;
         }
 
-        if (hasLocationPermission()) {
-            captureLocationAndJoin();
-        } else {
-            ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
-        }
+        fetchUserProfileLocation();
     }
 
     private boolean hasLocationPermission() {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
                 || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void fetchUserProfileLocation() {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() == null) {
+            Toast.makeText(this, "Please sign in to join the waiting list", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String userId = auth.getCurrentUser().getUid();
+        db.collection("accounts")
+                .document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    GeoPoint homeLocation = documentSnapshot.getGeoPoint("home_location");
+                    if (homeLocation != null) {
+                        verifyDistanceAndJoin(homeLocation);
+                    } else {
+                        requestDeviceLocationCapture();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Unable to load your profile location. Trying device location...", Toast.LENGTH_SHORT).show();
+                    requestDeviceLocationCapture();
+                });
+    }
+
+    private void requestDeviceLocationCapture() {
+        if (hasLocationPermission()) {
+            captureLocationAndJoin();
+        } else {
+            ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
+        }
     }
 
     @SuppressLint("MissingPermission")
