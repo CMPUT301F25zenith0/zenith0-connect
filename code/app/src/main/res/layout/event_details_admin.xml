@@ -65,15 +65,31 @@
                             android:textSize="14sp" />
                     </LinearLayout>
 
-                    <Button
-                        android:id="@+id/btn_info"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    <LinearLayout
+                        android:id="@+id/info_button_group"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
-                        android:text="Summary"
-                        android:textColor="@color/vision_text_primary"
-                        app:strokeColor="@color/vision_text_primary" />
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btn_info"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Summary"
+                            android:textColor="@color/vision_text_primary"
+                            app:strokeColor="@color/vision_text_primary" />
+
+                        <Button
+                            android:id="@+id/btn_lottery_info"
+                            style="@style/Widget.MaterialComponents.Button.TextButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Lottery"
+                            android:textColor="@color/vision_text_primary" />
+                    </LinearLayout>
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 

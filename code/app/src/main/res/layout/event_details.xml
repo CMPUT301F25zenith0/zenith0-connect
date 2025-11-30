@@ -243,18 +243,34 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="16dp" />
 
-            <Button
-                android:id="@+id/btn_info"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Info"
-                android:textColor="@color/white"
-                android:backgroundTint="@color/dark_blue"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="16dp"
-                android:paddingStart="32dp"
-                android:paddingEnd="32dp" />
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/btn_info"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Info"
+                    android:textColor="@color/white"
+                    android:backgroundTint="@color/dark_blue"
+                    android:layout_marginEnd="8dp"/>
+
+                <Button
+                    android:id="@+id/btn_lottery_info"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Lottery Criteria"
+                    android:textColor="@color/dark_blue"
+                    app:strokeColor="@color/dark_blue"/>
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/btnContainer"

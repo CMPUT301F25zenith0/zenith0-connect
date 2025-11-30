@@ -66,7 +66,7 @@ public class EventDetails extends AppCompatActivity {
     private TextView eventTitle, tvOrgName, tvDateTime, tvLocation, tvPrice, tvRegWindow, tvWaitingList;
     private com.google.firebase.firestore.ListenerRegistration waitlistRegistration;
     private String description;
-    private Button btnInfo, btnJoinList, btnLeaveList;
+    private Button btnInfo, btnLotteryInfo, btnJoinList, btnLeaveList;
     private boolean isAdminView;
 
     // Initialize Firebase
@@ -135,6 +135,7 @@ public class EventDetails extends AppCompatActivity {
         tvRegWindow = findViewById(R.id.tv_reg_window);
         tvWaitingList = findViewById(R.id.tv_waiting_list);
         btnInfo = findViewById(R.id.btn_info);
+        btnLotteryInfo = findViewById(R.id.btn_lottery_info);
         btnJoinList = findViewById(R.id.btn_join_list);
         btnLeaveList = findViewById(R.id.btn_leave_list);
 
@@ -154,6 +155,10 @@ public class EventDetails extends AppCompatActivity {
         btnInfo.setOnClickListener(v -> {
             showEventInfo();
         });
+
+        if (btnLotteryInfo != null) {
+            btnLotteryInfo.setOnClickListener(v -> showLotteryCriteriaInfo());
+        }
 
         // ------TO BE IMPLEMENTED-----
         // Join waiting list button
@@ -876,6 +881,14 @@ public class EventDetails extends AppCompatActivity {
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
+    }
+
+    private void showLotteryCriteriaInfo() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Lottery Criteria")
+                .setMessage("The draw happens randomly on the users on the waiting list.")
+                .setPositiveButton("Got it", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     /**
