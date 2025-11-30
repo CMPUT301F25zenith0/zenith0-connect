@@ -49,12 +49,12 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    tools:text="Summer Gala 2025"
+                    tools:text="Event Title"
                     android:textSize="20sp"
                     android:textStyle="bold"
-                    android:textColor="#FFFFFF"
+                    android:textColor="@color/charcoal"
                     android:maxLines="1"
-                    android:ellipsize="end"/>
+                    android:visibility="visible"/>
 
                 <TextView
                     android:id="@+id/eventPrice"
