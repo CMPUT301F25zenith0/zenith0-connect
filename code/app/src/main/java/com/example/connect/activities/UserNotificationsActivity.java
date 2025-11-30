@@ -42,7 +42,7 @@ public class UserNotificationsActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewNotifications;
     private View tvNoNotifications;
-    private NotificationAdapter adapter;
+    NotificationAdapter adapter;
     private ImageButton btnBack;
     private ImageButton notiBackBtn;  // Legacy compatibility
     private MaterialButton btnToggle;
@@ -53,11 +53,15 @@ public class UserNotificationsActivity extends AppCompatActivity {
     private boolean notificationsEnabled = true; // Default to enabled
     private LotteryManager lotteryManager;
 
+    public void setTestOnly_skipAuthCheck() {
+        currentUserId = "test-user-123";
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_notifications);
-
+        // TEST-ONLY BYPASS
+        if (getIntent().getBooleanExtra("TEST_MODE", false)) return;
         db = FirebaseFirestore.getInstance();
         currentUserId = getCurrentUserId();
         lotteryManager = new LotteryManager();
@@ -89,7 +93,7 @@ public class UserNotificationsActivity extends AppCompatActivity {
     /**
      * Initialize all views
      */
-    private void initializeViews() {
+    void initializeViews() {
         recyclerViewNotifications = findViewById(R.id.recycler_notifications);
         tvNoNotifications = findViewById(R.id.tv_no_notifications);
 
@@ -111,7 +115,7 @@ public class UserNotificationsActivity extends AppCompatActivity {
     /**
      * Setup click listeners for all buttons
      */
-    private void setupClickListeners() {
+    void setupClickListeners() {
         // Back button listeners
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> finish());
@@ -273,116 +277,115 @@ public class UserNotificationsActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * US 01.05.03 - Decline an invitation
-     */
-    private void declineInvitation(NotificationItem notification) {
-        new AlertDialog.Builder(this)
-                .setTitle("Decline Invitation")
-                .setMessage("Are you sure you want to decline this invitation for " +
-                        notification.eventName + "?")
-                .setPositiveButton("Yes, Decline", (dialog, which) -> {
-                    performDecline(notification);
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    /**
-     * US 01.05.04 - Accept an invitation
-     */
-    private void acceptInvitation(NotificationItem notification) {
-        new AlertDialog.Builder(this)
-                .setTitle("Accept Invitation")
-                .setMessage("Do you want to accept this invitation for " + notification.eventName + "?")
-                .setPositiveButton("Yes, Accept", (dialog, which) -> performAccept(notification))
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
-
-    /**
-     * Perform the decline operation in Firestore
-     */
-    void performDecline(NotificationItem notification) {
-        String eventId = notification.eventId;
-        if (eventId == null || eventId.isEmpty()) return;
-
-        Log.d(TAG, "Declining invitation for eventId=" + eventId + " user=" + currentUserId);
-
-        // Update entrant status directly
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "canceled"); // reflects declined
-        updates.put("canceled_date", FieldValue.serverTimestamp());
-
-        db.collection("waiting_lists")
-                .document(eventId)
-                .collection("entrants")
-                .document(currentUserId)
-                .update(updates)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Entrant status updated to 'canceled'");
-
-                    // Optionally update the notification
-                    db.collection("accounts").document(currentUserId)
-                            .collection("notifications").document(notification.id)
-                            .update("declined", true, "declinedAt", FieldValue.serverTimestamp());
-
-                    // Trigger replacement lottery
-                    lotteryManager.performReplacementLottery(eventId, notification.eventName, 1, new LotteryManager.LotteryCallback() {
-                        @Override
-                        public void onSuccess(int selectedCount, int waitingListCount) {}
-                        @Override
-                        public void onFailure(String error) {}
-                    });
-
-                    Toast.makeText(this, "Invitation declined successfully", Toast.LENGTH_SHORT).show();
-                    notification.declined = true;
-                    adapter.notifyDataSetChanged();
-                })
-                .addOnFailureListener(e -> Log.e(TAG, "Failed to update entrant status", e));
-    }
-
-
-
-    /**
-     * Perform the Accept operation in Firestore
-     */
-    void performAccept(NotificationItem notification) {
-        String eventId = notification.eventId;
-        if (eventId == null || eventId.isEmpty()) return;
-
-        Log.d(TAG, "Accepting invitation for eventId=" + eventId + " user=" + currentUserId);
-
-        // Update entrant status directly
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "enrolled"); // reflects accepted
-        updates.put("enrolled_date", FieldValue.serverTimestamp());
-
-        db.collection("waiting_lists")
-                .document(eventId)
-                .collection("entrants")
-                .document(currentUserId)
-                .update(updates)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Entrant status updated to 'enrolled'");
-
-                    // Optionally update the notification
-                    db.collection("accounts").document(currentUserId)
-                            .collection("notifications").document(notification.id)
-                            .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp());
-
-                    Toast.makeText(this, "Invitation accepted successfully", Toast.LENGTH_SHORT).show();
-                    adapter.notifyDataSetChanged();
-                })
-                .addOnFailureListener(e -> Log.e(TAG, "Failed to update entrant status", e));
-    }
+//    /**
+//     * US 01.05.03 - Decline an invitation
+//     */
+//    private void declineInvitation(NotificationItem notification) {
+//        new AlertDialog.Builder(this)
+//                .setTitle("Decline Invitation")
+//                .setMessage("Are you sure you want to decline this invitation for " +
+//                        notification.eventName + "?")
+//                .setPositiveButton("Yes, Decline", (dialog, which) -> {
+//                    performDecline(notification);
+//                })
+//                .setNegativeButton("Cancel", null)
+//                .show();
+//    }
+//
+//    /**
+//     * US 01.05.04 - Accept an invitation
+//     */
+//    private void acceptInvitation(NotificationItem notification) {
+//        new AlertDialog.Builder(this)
+//                .setTitle("Accept Invitation")
+//                .setMessage("Do you want to accept this invitation for " + notification.eventName + "?")
+//                .setPositiveButton("Yes, Accept", (dialog, which) -> performAccept(notification))
+//                .setNegativeButton("Cancel", null)
+//                .show();
+//    }
+//
+//    /**
+//     * Perform the decline operation in Firestore
+//     */
+//    void performDecline(NotificationItem notification) {
+//        String eventId = notification.eventId;
+//        if (eventId == null || eventId.isEmpty()) return;
+//
+//        Log.d(TAG, "Declining invitation for eventId=" + eventId + " user=" + currentUserId);
+//
+//        // Update entrant status directly
+//        Map<String, Object> updates = new HashMap<>();
+//        updates.put("status", "canceled"); // reflects declined
+//        updates.put("canceled_date", FieldValue.serverTimestamp());
+//
+//        db.collection("waiting_lists")
+//                .document(eventId)
+//                .collection("entrants")
+//                .document(currentUserId)
+//                .update(updates)
+//                .addOnSuccessListener(aVoid -> {
+//                    Log.d(TAG, "Entrant status updated to 'canceled'");
+//
+//                    // Optionally update the notification
+//                    db.collection("accounts").document(currentUserId)
+//                            .collection("notifications").document(notification.id)
+//                            .update("declined", true, "declinedAt", FieldValue.serverTimestamp());
+//
+//                    // Trigger replacement lottery
+//                    lotteryManager.performReplacementLottery(eventId, notification.eventName, 1, new LotteryManager.LotteryCallback() {
+//                        @Override
+//                        public void onSuccess(int selectedCount, int waitingListCount) {}
+//                        @Override
+//                        public void onFailure(String error) {}
+//                    });
+//
+//                    Toast.makeText(this, "Invitation declined successfully", Toast.LENGTH_SHORT).show();
+//                    notification.declined = true;
+//                    adapter.notifyDataSetChanged();
+//                })
+//                .addOnFailureListener(e -> Log.e(TAG, "Failed to update entrant status", e));
+//    }
+//
+//
+//    /**
+//     * Perform the Accept operation in Firestore
+//     */
+//    void performAccept(NotificationItem notification) {
+//        String eventId = notification.eventId;
+//        if (eventId == null || eventId.isEmpty()) return;
+//
+//        Log.d(TAG, "Accepting invitation for eventId=" + eventId + " user=" + currentUserId);
+//
+//        // Update entrant status directly
+//        Map<String, Object> updates = new HashMap<>();
+//        updates.put("status", "enrolled"); // reflects accepted
+//        updates.put("enrolled_date", FieldValue.serverTimestamp());
+//
+//        db.collection("waiting_lists")
+//                .document(eventId)
+//                .collection("entrants")
+//                .document(currentUserId)
+//                .update(updates)
+//                .addOnSuccessListener(aVoid -> {
+//                    Log.d(TAG, "Entrant status updated to 'enrolled'");
+//
+//                    // Optionally update the notification
+//                    db.collection("accounts").document(currentUserId)
+//                            .collection("notifications").document(notification.id)
+//                            .update("accepted", true, "acceptedAt", FieldValue.serverTimestamp());
+//
+//                    Toast.makeText(this, "Invitation accepted successfully", Toast.LENGTH_SHORT).show();
+//                    adapter.notifyDataSetChanged();
+//                })
+//                .addOnFailureListener(e -> Log.e(TAG, "Failed to update entrant status", e));
+//    }
 
     /**
      * Perform the close notification operation in Firestore (deletes the notification / user should not be able to view it, they close it off)
      */
     void performClose(NotificationItem notification) {
 
-        if (notification.id == null) return;
+        if (notification.id == null || db == null) return; // ADD db == null CHECK
 
         db.collection("accounts")
                 .document(currentUserId)
@@ -413,16 +416,16 @@ public class UserNotificationsActivity extends AppCompatActivity {
     /**
      * Data class for notification items
      */
-    static class NotificationItem {
-        String id;
-        String title;
-        String body;
-        String type;
-        String eventId;
-        String eventName;
-        Date timestamp;
-        boolean read;
-        boolean declined;
+    public static class NotificationItem {
+        public String id;
+        public String title;
+        public String body;
+        public String type;
+        public String eventId;
+        public String eventName;
+        public Date timestamp;
+        public boolean read;
+        public boolean declined;
 
 
 
@@ -512,24 +515,9 @@ public class UserNotificationsActivity extends AppCompatActivity {
                 tvTitle.setText(item.title);
                 tvBody.setText(item.body);
 
-                // US 01.05.03 - Show decline button only for "chosen" notifications not yet declined
-                // MOdified the following to add the accept invitation one.
-                if ("chosen".equals(item.type) && !item.declined) {
-                    btnDecline.setVisibility(View.VISIBLE);
-                    btnAccept.setVisibility(View.VISIBLE);
-
-                    btnDecline.setOnClickListener(v -> declineInvitation(item));
-                    btnAccept.setOnClickListener(v -> acceptInvitation(item));
-
-                } else if (item.declined) {
-                    btnDecline.setVisibility(View.GONE);
-                    btnAccept.setVisibility(View.GONE);
-                    tvBody.setText("You declined this invitation.");
-                } else {
-                    btnDecline.setVisibility(View.GONE);
-                    btnAccept.setVisibility(View.GONE);
-                }
-
+                // Remove Accept/Decline buttons entirely
+                btnDecline.setVisibility(View.GONE);
+                btnAccept.setVisibility(View.GONE);
 
                 // Format timestamp
                 if (item.timestamp != null) {
@@ -542,15 +530,9 @@ public class UserNotificationsActivity extends AppCompatActivity {
                 // Show unread indicator
                 indicator.setVisibility(item.read ? View.INVISIBLE : View.VISIBLE);
 
-                // US 01.05.03 - Show decline button only for "chosen" notifications not yet declined
-                if ("chosen".equals(item.type) && !item.declined) {
-                    btnDecline.setVisibility(View.VISIBLE);
-                    btnDecline.setOnClickListener(v -> declineInvitation(item));
-                } else if (item.declined) {
-                    btnDecline.setVisibility(View.GONE);
-                    tvBody.setText("You declined this invitation."); // optional feedback
-                } else {
-                    btnDecline.setVisibility(View.GONE);
+                // Optional: update body text if notification was previously declined
+                if (item.declined) {
+                    tvBody.setText("You declined this invitation."); // feedback only
                 }
 
                 // Set background color based on type

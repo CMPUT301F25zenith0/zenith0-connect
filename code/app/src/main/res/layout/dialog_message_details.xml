@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Title"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_light"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvDetailTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Notification Title"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary_light"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Body -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Message"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_light"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvDetailBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Message body content goes here..."
+            android:textSize="14sp"
+            android:textColor="@color/text_primary_light"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@color/mist_pink"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Event -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Event"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_light"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvDetailEvent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Event Name"
+            android:textSize="14sp"
+            android:textColor="@color/dark_blue"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Type -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Type"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_light"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvDetailType"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="General"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary_light"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Recipient -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Recipient"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_light"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvDetailRecipient"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Loading..."
+            android:textSize="14sp"
+            android:textColor="@color/text_primary_light"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Timestamp -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sent"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_light"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvDetailTimestamp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Jan 01, 2024 12:00"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary_light"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Status -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Status"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_secondary_light"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvDetailStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Unread"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+    </LinearLayout>
+</ScrollView>

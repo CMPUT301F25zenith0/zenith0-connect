@@ -1,170 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="20dp"
-    app:cardCornerRadius="24dp"
-    app:cardElevation="8dp"
-    app:cardBackgroundColor="#FFFFFF">
+    android:orientation="vertical"
+    android:padding="20dp">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <!-- Event Selection -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select Event"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary_light"
+        android:layout_marginBottom="8dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerEvent"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Recipient Group Selection -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Send To"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary_light"
+        android:layout_marginBottom="8dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerRecipients"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:background="@drawable/rounded_border"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Message Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Message Title"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary_light"
+        android:layout_marginBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etMessageTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="20dp">
+        android:hint="Enter title"
+        android:textColorHint="@color/text_secondary_light"
+        android:textSize="14sp"
+        android:background="@drawable/rounded_border"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:maxLines="1"/>
 
-        <!-- Close Button (icon) -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnClose"
-            style="@style/Widget.Material3.Button.TextButton"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:contentDescription="Close"
-            android:minWidth="32dp"
-            android:minHeight="32dp"
-            android:padding="0dp"
-            app:icon="@android:drawable/ic_menu_close_clear_cancel"
-            app:iconTint="#000000"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+    <!-- Message Body -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Message"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary_light"
+        android:layout_marginBottom="8dp"/>
 
-        <!-- Title -->
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="New Message"
-            android:textColor="#000000"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/btnClose" />
+    <EditText
+        android:id="@+id/etMessageBody"
+        android:layout_width="match_parent"
+        android:layout_height="120dp"
+        android:hint="Enter your message"
+        android:textColorHint="@color/text_secondary_light"
+        android:textSize="14sp"
+        android:background="@drawable/rounded_border"
+        android:padding="12dp"
+        android:gravity="top"
+        android:layout_marginBottom="20dp"
+        android:maxLength="500"
+        android:inputType="textMultiLine"/>
 
-        <!-- To Label -->
-        <TextView
-            android:id="@+id/tvToLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="To"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="24dp"
-            app:layout_constraintTop_toBottomOf="@id/tvTitle"
-            app:layout_constraintStart_toStartOf="parent" />
-
-        <!-- To Dropdown -->
-        <Spinner
-            android:id="@+id/spinnerTo"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:background="@android:drawable/btn_dropdown"
-            android:backgroundTint="#F5F5F5"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@id/tvToLabel"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <!-- Event Label -->
-        <TextView
-            android:id="@+id/tvEventLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Event"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/spinnerTo"
-            app:layout_constraintStart_toStartOf="parent" />
-
-        <!-- Event Dropdown -->
-        <Spinner
-            android:id="@+id/spinnerEvent"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:background="@android:drawable/btn_dropdown"
-            android:backgroundTint="#F5F5F5"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@id/tvEventLabel"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <!-- Message Label -->
-        <TextView
-            android:id="@+id/tvMessageLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Message"
-            android:textColor="#000000"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/spinnerEvent"
-            app:layout_constraintStart_toStartOf="parent" />
-
-        <!-- Message Text Area -->
-        <EditText
-            android:id="@+id/etMessage"
-            android:layout_width="0dp"
-            android:layout_height="150dp"
-            android:hint="Enter Message"
-            android:textColorHint="#CCCCCC"
-            android:textSize="14sp"
-            android:gravity="top|start"
-            android:inputType="textMultiLine"
-            android:background="@android:drawable/edit_text"
-            android:backgroundTint="#F5F5F5"
-            android:padding="12dp"
-            android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@id/tvMessageLabel"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <!-- Action Buttons -->
-        <LinearLayout
-            android:id="@+id/actionRow"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginTop="20dp"
-            app:layout_constraintTop_toBottomOf="@id/etMessage"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCancel"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Cancel"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:backgroundTint="#92B8A0"
-                android:layout_marginEnd="12dp"
-                app:cornerRadius="24dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSend"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="Send"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:backgroundTint="#92B8A0"
-                app:cornerRadius="24dp" />
-        </LinearLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-</com.google.android.material.card.MaterialCardView>
+    <!-- Send Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSendMessage"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Send Message"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:backgroundTint="@color/dark_blue"
+        app:cornerRadius="24dp"/>
+</LinearLayout>

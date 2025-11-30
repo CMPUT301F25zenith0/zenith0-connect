@@ -22,8 +22,11 @@ import java.util.Map;
  * Background worker that sends daily notifications to users about recommended events
  * based on their interest preferences.
  *
+ * Updated to prevent spam by checking if user already received recommendations
+ * in the last 24 hours.
+ *
  * @author Zenith Team
- * @version 1.0
+ * @version 1.1
  */
 public class DailyNotificationWorker extends Worker {
 
@@ -80,7 +83,41 @@ public class DailyNotificationWorker extends Worker {
         }
 
         Log.d(TAG, "Processing user " + userId + " with interests: " + interests);
-        fetchRecommendedEvents(userId, interests);
+
+        // Check if user already received recommendations in last 24 hours
+        checkLastRecommendation(userId, interests);
+    }
+
+    /**
+     * Check if user has received recommendation notifications in the last 24 hours
+     * to prevent spam. Only sends recommendations if user is eligible.
+     */
+    private void checkLastRecommendation(String userId, List<String> interests) {
+        // Calculate timestamp for 24 hours ago
+        long oneDayAgo = System.currentTimeMillis() - (24 * 60 * 60 * 1000);
+        com.google.firebase.Timestamp cutoffTimestamp =
+                new com.google.firebase.Timestamp(oneDayAgo / 1000, 0);
+
+        db.collection("notification_logs")
+                .whereEqualTo("recipientId", userId)
+                .whereEqualTo("type", "recommendations")
+                .whereGreaterThan("timestamp", cutoffTimestamp)
+                .limit(1)
+                .get()
+                .addOnSuccessListener(query -> {
+                    if (!query.isEmpty()) {
+                        Log.d(TAG, "User " + userId + " already received recommendations in last 24h - skipping");
+                        return;
+                    }
+
+                    Log.d(TAG, "User " + userId + " eligible for recommendations (no notifications in last 24h)");
+                    fetchRecommendedEvents(userId, interests);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error checking last recommendation for " + userId, e);
+                    // On error, proceed anyway to avoid blocking legitimate notifications
+                    fetchRecommendedEvents(userId, interests);
+                });
     }
 
     private void fetchRecommendedEvents(String userId, List<String> interests) {
@@ -127,6 +164,7 @@ public class DailyNotificationWorker extends Worker {
                         return;
                     }
 
+                    Log.d(TAG, "Found " + recommendedEventIds.size() + " recommended events for user: " + userId);
                     sendDailyRecommendation(userId, recommendedEventIds, recommendedTitles);
                 });
     }
@@ -138,6 +176,7 @@ public class DailyNotificationWorker extends Worker {
         Date date = sdf.parse(isoDate);
         return date != null ? date.getTime() : 0;
     }
+
     private void sendDailyRecommendation(String userId, List<String> eventIds, List<String> eventTitles) {
         String title = "Events You Might Like!";
 
@@ -178,7 +217,8 @@ public class DailyNotificationWorker extends Worker {
                     }
                 },
                 title,
-                body.toString()
+                body.toString(),
+                "recommendations"
         );
     }
 }

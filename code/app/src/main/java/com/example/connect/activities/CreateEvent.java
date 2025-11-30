@@ -88,7 +88,7 @@ public class CreateEvent extends AppCompatActivity {
     private String editEventId = null;
 
     // --- UI Components ---
-    private EditText etEventName, etDescription, etDrawCapacity, etWaitingList, etLocation, etPrice;
+    private EditText etEventName, etDescription, etDrawCapacity, etWaitingList, etLocation, etPrice, etUnresponsiveHours ;
     private Button btnBack, btnStartDate, btnStartTime, btnEndDate, btnEndTime;
     private Button btnRegistrationOpens, btnRegistrationCloses, btnSaveDraft, btnPublishQR;
     private ImageView ivEventImage, ivAddImage;
@@ -209,6 +209,7 @@ public class CreateEvent extends AppCompatActivity {
         etWaitingList = findViewById(R.id.etWaitingList);
         etLocation = findViewById(R.id.etLocation);
         etPrice = findViewById(R.id.etPrice);
+        etUnresponsiveHours = findViewById(R.id.etUnresponsiveHours);
 
         // Buttons
         btnBack = findViewById(R.id.btnBack);
@@ -416,6 +417,14 @@ public class CreateEvent extends AppCompatActivity {
 
                         String price = documentSnapshot.getString("price");
                         etPrice.setText(price != null && !price.equals("0") ? price : "");
+
+                        // Load Unresponsive Entrants Duration
+                        Long unresponsiveHours = documentSnapshot.getLong("unresponsive_hours");
+                        if (unresponsiveHours == null || unresponsiveHours <= 0) {
+                            unresponsiveHours = 24L; // default fallback
+                        }
+                        etUnresponsiveHours.setText(String.valueOf(unresponsiveHours));
+
 
                         // Draw capacity
                         Long drawCapacity = documentSnapshot.getLong("draw_capacity");
@@ -970,6 +979,19 @@ public class CreateEvent extends AppCompatActivity {
         String price = etPrice.getText().toString().trim();
         eventData.put("price", price.isEmpty() ? "0" : price);
         eventData.put("status", isDraft ? "draft" : "published");
+
+        // Unresponsive Entrants Duration
+        long unresponsiveHours = 24L; // default
+        String hoursStr = etUnresponsiveHours.getText().toString().trim();
+        if (!hoursStr.isEmpty()) {
+            try {
+                unresponsiveHours = Long.parseLong(hoursStr);
+                if (unresponsiveHours <= 0) unresponsiveHours = 24L; // fallback
+            } catch (NumberFormatException e) {
+                unresponsiveHours = 24L; // fallback
+            }
+        }
+        eventData.put("unresponsive_hours", unresponsiveHours);
 
         if (!isEditMode) eventData.put("created_at", System.currentTimeMillis());
         eventData.put("updated_at", System.currentTimeMillis());

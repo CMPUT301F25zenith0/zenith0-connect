@@ -257,7 +257,8 @@ public class AdminProfileListActivity extends AppCompatActivity {
                                                                 }
                                                             },
                                                             notifTitle,
-                                                            notifBody
+                                                            notifBody,
+                                                            "event_Cancelled"
                                                     );
                                                 }
                                             });
