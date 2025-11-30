@@ -91,7 +91,7 @@ public class CreateEvent extends AppCompatActivity {
     private String editEventId = null;
 
     // --- UI Components ---
-    private EditText etEventName, etDescription, etDrawCapacity, etWaitingList, etLocation, etLatitude, etLongitude, etPrice;
+    private EditText etEventName, etDescription, etDrawCapacity, etWaitingList, etLocation, etLatitude, etLongitude, etPrice, etUnresponsiveHours;
     private Button btnBack, btnStartDate, btnStartTime, btnEndDate, btnEndTime;
     private Button btnRegistrationOpens, btnRegistrationCloses, btnSaveDraft, btnPublishQR;
     private ImageView ivEventImage, ivAddImage;
