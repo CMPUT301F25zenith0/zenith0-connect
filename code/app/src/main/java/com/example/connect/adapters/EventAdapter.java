@@ -7,6 +7,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -32,6 +37,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -52,6 +58,8 @@ import java.util.Map;
  * @version 3.0
  */
 public class EventAdapter extends ArrayAdapter<Event> {
+
+    private static final float GEO_RADIUS_METERS = 5_000f;
 
     private final Context context;
     private final List<Event> events;
@@ -263,70 +271,79 @@ public class EventAdapter extends ArrayAdapter<Event> {
                     // US 02.02.02: Check if event requires geolocation
                     Boolean requireGeo = eventDoc.getBoolean("require_geolocation");
                     final boolean needsLocation = requireGeo != null && requireGeo;
+                    final Double eventLatitude = eventDoc.getDouble("location_latitude");
+                    final Double eventLongitude = eventDoc.getDouble("location_longitude");
 
-                    // Check waiting list capacity
-                    db.collection("waiting_lists")
-                            .document(eventId)
-                            .get()
-                            .addOnSuccessListener(waitingListDoc -> {
-                                // Get total_capacity from waiting_lists collection
-                                final Long totalCapacity = waitingListDoc.exists()
-                                        ? waitingListDoc.getLong("total_capacity")
-                                        : null;
+        final String locationText = eventDoc.getString("location");
+        resolveEventCoordinates(eventLatitude, eventLongitude, locationText, (resolvedLat, resolvedLng) -> {
+            // Check waiting list capacity after coordinates resolved (if needed)
+            db.collection("waiting_lists")
+                    .document(eventId)
+                    .get()
+                    .addOnSuccessListener(waitingListDoc -> {
+                        // Get total_capacity from waiting_lists collection
+                        final Long totalCapacity = waitingListDoc.exists()
+                                ? waitingListDoc.getLong("total_capacity")
+                                : null;
 
-                                // Check if user already in waiting list
-                                db.collection("waiting_lists")
-                                        .document(eventId)
-                                        .collection("entrants")
-                                        .document(userId)
-                                        .get()
-                                        .addOnSuccessListener(entrantDoc -> {
-                                            if (entrantDoc.exists()) {
-                                                Toast.makeText(context, "You're already on the waiting list",
+                        // Check if user already in waiting list
+                        db.collection("waiting_lists")
+                                .document(eventId)
+                                .collection("entrants")
+                                .document(userId)
+                                .get()
+                                .addOnSuccessListener(entrantDoc -> {
+                                    if (entrantDoc.exists()) {
+                                        Toast.makeText(context, "You're already on the waiting list",
+                                                Toast.LENGTH_SHORT).show();
+                                        return;
+                                    }
+
+                                    // Count ALL entrants for capacity check
+                                    db.collection("waiting_lists")
+                                            .document(eventId)
+                                            .collection("entrants")
+                                            .get()
+                                            .addOnSuccessListener(querySnapshot -> {
+                                                int currentSize = querySnapshot.size();
+
+                                                // Only check limit if total_capacity is set and > 0
+                                                // null or 0 = unlimited waiting list
+                                                if (totalCapacity != null && totalCapacity > 0
+                                                        && currentSize >= totalCapacity) {
+                                                    Toast.makeText(context,
+                                                            "Waiting list is full (" + totalCapacity + " entrants)",
+                                                            Toast.LENGTH_SHORT).show();
+                                                    return;
+                                                }
+
+                                                // All checks passed - add user to waiting list
+                                                // US 02.02.02: Capture location if required
+                                                if (needsLocation) {
+                                                    if (resolvedLat == null || resolvedLng == null) {
+                                                        Toast.makeText(context, "Unable to verify event location. Please try again later.", Toast.LENGTH_LONG).show();
+                                                        return;
+                                                    }
+                                                    captureLocationAndAdd(eventId, userId, totalCapacity, resolvedLat, resolvedLng);
+                                                } else {
+                                                    addUserToWaitingList(eventId, userId, totalCapacity, null, null);
+                                                }
+                                            })
+                                            .addOnFailureListener(e -> {
+                                                Toast.makeText(context, "Error checking waiting list: " + e.getMessage(),
                                                         Toast.LENGTH_SHORT).show();
-                                                return;
-                                            }
-
-                                            // Count ALL entrants for capacity check
-                                            db.collection("waiting_lists")
-                                                    .document(eventId)
-                                                    .collection("entrants")
-                                                    .get()
-                                                    .addOnSuccessListener(querySnapshot -> {
-                                                        int currentSize = querySnapshot.size();
-
-                                                        // Only check limit if total_capacity is set and > 0
-                                                        // null or 0 = unlimited waiting list
-                                                        if (totalCapacity != null && totalCapacity > 0
-                                                                && currentSize >= totalCapacity) {
-                                                            Toast.makeText(context,
-                                                                    "Waiting list is full (" + totalCapacity + " entrants)",
-                                                                    Toast.LENGTH_SHORT).show();
-                                                            return;
-                                                        }
-
-                                                        // All checks passed - add user to waiting list
-                                                        // US 02.02.02: Capture location if required
-                                                        if (needsLocation) {
-                                                            captureLocationAndAdd(eventId, userId, totalCapacity);
-                                                        } else {
-                                                            addUserToWaitingList(eventId, userId, totalCapacity, null, null);
-                                                        }
-                                                    })
-                                                    .addOnFailureListener(e -> {
-                                                        Toast.makeText(context, "Error checking waiting list: " + e.getMessage(),
-                                                                Toast.LENGTH_SHORT).show();
-                                                    });
-                                        })
-                                        .addOnFailureListener(e -> {
-                                            Toast.makeText(context, "Error checking your status: " + e.getMessage(),
-                                                    Toast.LENGTH_SHORT).show();
-                                        });
-                            })
-                            .addOnFailureListener(e -> {
-                                Toast.makeText(context, "Error accessing waiting list: " + e.getMessage(),
-                                        Toast.LENGTH_SHORT).show();
-                            });
+                                            });
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(context, "Error checking your status: " + e.getMessage(),
+                                            Toast.LENGTH_SHORT).show();
+                                });
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(context, "Error accessing waiting list: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    });
+        });
                 })
                 .addOnFailureListener(e -> {
                     Toast.makeText(context, "Error accessing event: " + e.getMessage(),
@@ -337,8 +354,12 @@ public class EventAdapter extends ArrayAdapter<Event> {
     /**
      * Captures location and then adds user to waiting list
      */
-    private void captureLocationAndAdd(String eventId, String userId, Long totalCapacity) {
+    private void captureLocationAndAdd(String eventId, String userId, Long totalCapacity, Double eventLatitude, Double eventLongitude) {
         LocationHelper locationHelper = new LocationHelper(context);
+        if (eventLatitude == null || eventLongitude == null) {
+            Toast.makeText(context, "Event coordinates unavailable. Unable to verify location.", Toast.LENGTH_LONG).show();
+            return;
+        }
         
         // Check if permission is already granted
         if (locationHelper.hasLocationPermission()) {
@@ -346,7 +367,11 @@ public class EventAdapter extends ArrayAdapter<Event> {
             locationHelper.getLastLocation((latitude, longitude) -> {
                 if (latitude != null && longitude != null) {
                     Log.d("EventAdapter", "Location captured: " + latitude + ", " + longitude);
-                    addUserToWaitingList(eventId, userId, totalCapacity, latitude, longitude);
+                    if (isWithinGeoRadius(eventLatitude, eventLongitude, latitude, longitude)) {
+                        addUserToWaitingList(eventId, userId, totalCapacity, latitude, longitude);
+                    } else {
+                        Toast.makeText(context, "You must be within 5 km of the event to join.", Toast.LENGTH_LONG).show();
+                    }
                 } else {
                     Toast.makeText(context, "Unable to get location. Please enable location services.", Toast.LENGTH_LONG).show();
                 }
@@ -408,5 +433,56 @@ public class EventAdapter extends ArrayAdapter<Event> {
                     Toast.makeText(context, "Error creating waiting list: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    /**
+     * Checks whether the user's coordinates are within the required radius of the event.
+     */
+    private boolean isWithinGeoRadius(Double eventLat, Double eventLng, Double userLat, Double userLng) {
+        if (eventLat == null || eventLng == null || userLat == null || userLng == null) {
+            return false;
+        }
+        float[] results = new float[1];
+        Location.distanceBetween(eventLat, eventLng, userLat, userLng, results);
+        return results[0] <= GEO_RADIUS_METERS;
+    }
+
+    /**
+     * Attempts to resolve event coordinates from stored lat/lng or by geocoding the location text.
+     */
+    private void resolveEventCoordinates(Double storedLat, Double storedLng, String locationText, CoordinatesCallback callback) {
+        if (storedLat != null && storedLng != null) {
+            callback.onResult(storedLat, storedLng);
+            return;
+        }
+
+        if (locationText == null || locationText.trim().isEmpty() || !Geocoder.isPresent()) {
+            callback.onResult(null, null);
+            return;
+        }
+
+        new Thread(() -> {
+            Double lat = null;
+            Double lng = null;
+            try {
+                Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+                List<Address> results = geocoder.getFromLocationName(locationText, 1);
+                if (results != null && !results.isEmpty()) {
+                    Address address = results.get(0);
+                    lat = address.getLatitude();
+                    lng = address.getLongitude();
+                }
+            } catch (Exception e) {
+                Log.e("EventAdapter", "Failed to geocode event location", e);
+            }
+
+            Double finalLat = lat;
+            Double finalLng = lng;
+            new Handler(Looper.getMainLooper()).post(() -> callback.onResult(finalLat, finalLng));
+        }).start();
+    }
+
+    private interface CoordinatesCallback {
+        void onResult(Double latitude, Double longitude);
     }
 }
