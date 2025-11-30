@@ -5,7 +5,12 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -70,7 +75,10 @@ public class EventDetails extends AppCompatActivity {
     
     // Location permission request (US 02.02.02)
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+    private static final float GEO_RADIUS_METERS = 5_000f;
     private String pendingUserIdForLocation = null; // Store userId when waiting for permission
+    private Double pendingEventLatitude = null;
+    private Double pendingEventLongitude = null;
 
     /**
      * Called when the activity is first created.
@@ -523,18 +531,34 @@ public class EventDetails extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(eventDoc -> {
                     boolean requireGeo = false;
+                    Double storedLat = null;
+                    Double storedLng = null;
+                    String locationText = null;
                     if (eventDoc.exists()) {
                         Boolean requireGeoObj = eventDoc.getBoolean("require_geolocation");
                         requireGeo = requireGeoObj != null && requireGeoObj;
+                        storedLat = eventDoc.getDouble("location_latitude");
+                        storedLng = eventDoc.getDouble("location_longitude");
+                        locationText = eventDoc.getString("location");
                     }
-                    
-                    // If geolocation required, capture location first
-                    if (requireGeo) {
-                        captureLocationAndAddToWaitingList(userId);
-                    } else {
-                        // No geolocation required, proceed normally
-                        addToWaitingList(userId, null, null);
-                    }
+
+                    final boolean finalRequireGeo = requireGeo;
+                    resolveEventCoordinates(storedLat, storedLng, locationText, (resolvedLat, resolvedLng) -> {
+                        pendingEventLatitude = resolvedLat;
+                        pendingEventLongitude = resolvedLng;
+
+                        if (finalRequireGeo) {
+                            if (resolvedLat == null || resolvedLng == null) {
+                                Toast.makeText(this, "Unable to verify event location. Please try again later.", Toast.LENGTH_LONG).show();
+                                return;
+                            }
+                            captureLocationAndAddToWaitingList(userId, resolvedLat, resolvedLng);
+                        } else {
+                            pendingEventLatitude = null;
+                            pendingEventLongitude = null;
+                            addToWaitingList(userId, null, null);
+                        }
+                    });
                 })
                 .addOnFailureListener(e -> {
                     Log.e("EventDetails", "Error checking event geolocation requirement", e);
@@ -546,8 +570,12 @@ public class EventDetails extends AppCompatActivity {
     /**
      * Captures location and then adds user to waiting list
      */
-    private void captureLocationAndAddToWaitingList(String userId) {
+    private void captureLocationAndAddToWaitingList(String userId, Double eventLat, Double eventLng) {
         LocationHelper locationHelper = new LocationHelper(this);
+        if (eventLat == null || eventLng == null) {
+            Toast.makeText(this, "Event coordinates unavailable. Cannot verify location.", Toast.LENGTH_LONG).show();
+            return;
+        }
         
         // Check if permission is already granted
         if (locationHelper.hasLocationPermission()) {
@@ -555,7 +583,11 @@ public class EventDetails extends AppCompatActivity {
             locationHelper.getLastLocation((latitude, longitude) -> {
                 if (latitude != null && longitude != null) {
                     Log.d("EventDetails", "Location captured: " + latitude + ", " + longitude);
-                    addToWaitingList(userId, latitude, longitude);
+                    if (isWithinGeoRadius(eventLat, eventLng, latitude, longitude)) {
+                        addToWaitingList(userId, latitude, longitude);
+                    } else {
+                        Toast.makeText(this, "You must be within 5 km of the event to join.", Toast.LENGTH_LONG).show();
+                    }
                 } else {
                     Toast.makeText(this, "Unable to get location. Please enable location services.", Toast.LENGTH_LONG).show();
                 }
@@ -563,8 +595,61 @@ public class EventDetails extends AppCompatActivity {
         } else {
             // Permission not granted, request it
             pendingUserIdForLocation = userId;
+            pendingEventLatitude = eventLat;
+            pendingEventLongitude = eventLng;
             requestLocationPermission();
         }
+    }
+
+    /**
+     * Validates whether the user's current coordinates are within the allowed radius of the event.
+     */
+    private boolean isWithinGeoRadius(Double eventLat, Double eventLng, Double userLat, Double userLng) {
+        if (eventLat == null || eventLng == null || userLat == null || userLng == null) {
+            return false;
+        }
+        float[] results = new float[1];
+        Location.distanceBetween(eventLat, eventLng, userLat, userLng, results);
+        return results[0] <= GEO_RADIUS_METERS;
+    }
+
+    /**
+     * Attempts to resolve event coordinates using stored values or by geocoding the location text.
+     */
+    private void resolveEventCoordinates(Double storedLat, Double storedLng, String locationText, CoordinatesCallback callback) {
+        if (storedLat != null && storedLng != null) {
+            callback.onResult(storedLat, storedLng);
+            return;
+        }
+
+        if (locationText == null || locationText.trim().isEmpty() || !Geocoder.isPresent()) {
+            callback.onResult(null, null);
+            return;
+        }
+
+        new Thread(() -> {
+            Double lat = null;
+            Double lng = null;
+            try {
+                Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                List<Address> results = geocoder.getFromLocationName(locationText, 1);
+                if (results != null && !results.isEmpty()) {
+                    Address address = results.get(0);
+                    lat = address.getLatitude();
+                    lng = address.getLongitude();
+                }
+            } catch (Exception e) {
+                Log.e("EventDetails", "Failed to geocode event location", e);
+            }
+
+            Double finalLat = lat;
+            Double finalLng = lng;
+            new Handler(Looper.getMainLooper()).post(() -> callback.onResult(finalLat, finalLng));
+        }).start();
+    }
+
+    private interface CoordinatesCallback {
+        void onResult(Double latitude, Double longitude);
     }
     
     /**
@@ -607,13 +692,17 @@ public class EventDetails extends AppCompatActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permission granted, proceed with location capture
                 if (pendingUserIdForLocation != null) {
-                    captureLocationAndAddToWaitingList(pendingUserIdForLocation);
+                    captureLocationAndAddToWaitingList(pendingUserIdForLocation, pendingEventLatitude, pendingEventLongitude);
                     pendingUserIdForLocation = null;
+                    pendingEventLatitude = null;
+                    pendingEventLongitude = null;
                 }
             } else {
                 // Permission denied
                 Toast.makeText(this, "Location permission denied. Cannot join waiting list without location.", Toast.LENGTH_LONG).show();
                 pendingUserIdForLocation = null;
+                pendingEventLatitude = null;
+                pendingEventLongitude = null;
             }
         }
     }

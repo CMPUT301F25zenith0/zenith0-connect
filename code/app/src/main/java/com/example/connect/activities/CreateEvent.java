@@ -13,6 +13,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -46,6 +47,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Activity for creating and publishing events created in the app.
@@ -88,7 +91,7 @@ public class CreateEvent extends AppCompatActivity {
     private String editEventId = null;
 
     // --- UI Components ---
-    private EditText etEventName, etDescription, etDrawCapacity, etWaitingList, etLocation, etPrice;
+    private EditText etEventName, etDescription, etDrawCapacity, etWaitingList, etLocation, etLatitude, etLongitude, etPrice;
     private Button btnBack, btnStartDate, btnStartTime, btnEndDate, btnEndTime;
     private Button btnRegistrationOpens, btnRegistrationCloses, btnSaveDraft, btnPublishQR;
     private ImageView ivEventImage, ivAddImage;
@@ -208,6 +211,8 @@ public class CreateEvent extends AppCompatActivity {
         etDrawCapacity = findViewById(R.id.etDrawCapacity);
         etWaitingList = findViewById(R.id.etWaitingList);
         etLocation = findViewById(R.id.etLocation);
+        etLatitude = findViewById(R.id.etLatitude);
+        etLongitude = findViewById(R.id.etLongitude);
         etPrice = findViewById(R.id.etPrice);
 
         // Buttons
@@ -424,6 +429,15 @@ public class CreateEvent extends AppCompatActivity {
                         etEventName.setText(documentSnapshot.getString("event_title"));
                         etDescription.setText(documentSnapshot.getString("description"));
                         etLocation.setText(documentSnapshot.getString("location"));
+
+                        Double lat = documentSnapshot.getDouble("location_latitude");
+                        if (etLatitude != null) {
+                            etLatitude.setText(lat != null ? String.valueOf(lat) : "");
+                        }
+                        Double lng = documentSnapshot.getDouble("location_longitude");
+                        if (etLongitude != null) {
+                            etLongitude.setText(lng != null ? String.valueOf(lng) : "");
+                        }
 
                         String price = documentSnapshot.getString("price");
                         etPrice.setText(price != null && !price.equals("0") ? price : "");
@@ -764,6 +778,10 @@ public class CreateEvent extends AppCompatActivity {
             return false;
         }
 
+        if (!validateCoordinateInputs()) {
+            return false;
+        }
+
         // Strict Date Validation (Block 1)
         Calendar now = Calendar.getInstance();
         if (startDateTime.before(now)) {
@@ -789,6 +807,54 @@ public class CreateEvent extends AppCompatActivity {
                 Toast.makeText(this, "Registration closing must be after opening", Toast.LENGTH_SHORT).show();
                 return false;
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Validates optional coordinate inputs.
+     * Requires both latitude and longitude when either is provided, and enforces valid ranges.
+     */
+    private boolean validateCoordinateInputs() {
+        if (etLatitude == null || etLongitude == null) {
+            return true;
+        }
+
+        String latText = etLatitude.getText().toString().trim();
+        String lngText = etLongitude.getText().toString().trim();
+
+        boolean latEmpty = latText.isEmpty();
+        boolean lngEmpty = lngText.isEmpty();
+
+        if (latEmpty && lngEmpty) {
+            return true;
+        }
+
+        if (latEmpty) {
+            etLatitude.setError("Latitude required when longitude is set");
+            etLatitude.requestFocus();
+            return false;
+        }
+
+        if (lngEmpty) {
+            etLongitude.setError("Longitude required when latitude is set");
+            etLongitude.requestFocus();
+            return false;
+        }
+
+        Double latValue = parseCoordinateValue(latText, -90, 90);
+        if (latValue == null) {
+            etLatitude.setError("Latitude must be between -90 and 90");
+            etLatitude.requestFocus();
+            return false;
+        }
+
+        Double lngValue = parseCoordinateValue(lngText, -180, 180);
+        if (lngValue == null) {
+            etLongitude.setError("Longitude must be between -180 and 180");
+            etLongitude.requestFocus();
+            return false;
         }
 
         return true;
@@ -959,7 +1025,22 @@ public class CreateEvent extends AppCompatActivity {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("event_title", etEventName.getText().toString().trim());
         eventData.put("description", etDescription.getText().toString().trim());
-        eventData.put("location", etLocation.getText().toString().trim());
+        String locationText = etLocation.getText().toString().trim();
+        eventData.put("location", locationText);
+
+        Double manualLat = parseCoordinateValue(etLatitude != null ? etLatitude.getText().toString().trim() : "", -90, 90);
+        Double manualLng = parseCoordinateValue(etLongitude != null ? etLongitude.getText().toString().trim() : "", -180, 180);
+
+        if (manualLat != null && manualLng != null) {
+            eventData.put("location_latitude", manualLat);
+            eventData.put("location_longitude", manualLng);
+        } else {
+            Double[] coordinates = extractCoordinates(locationText);
+            if (coordinates != null) {
+                eventData.put("location_latitude", coordinates[0]);
+                eventData.put("location_longitude", coordinates[1]);
+            }
+        }
         eventData.put("date_time", dateTimeFormat.format(startDateTime.getTime()));
         eventData.put("end_time", dateTimeFormat.format(endDateTime.getTime()));
 
@@ -997,6 +1078,57 @@ public class CreateEvent extends AppCompatActivity {
         eventData.put("labels", selectedLabels);
 
         return eventData;
+    }
+
+    /**
+     * Attempts to extract latitude/longitude pairs from the free-form location text.
+     * Accepts inputs like "53.5461, -113.4938" or "Lat: 40.7 Lon: -74.0".
+     *
+     * @param locationText Raw text entered by the organizer.
+     * @return Double array [lat, lng] when a pair is found, otherwise null.
+     */
+    private Double[] extractCoordinates(String locationText) {
+        if (locationText == null || locationText.isEmpty()) {
+            return null;
+        }
+
+        Pattern pattern = Pattern.compile("(-?\\d+(?:\\.\\d+)?)\\s*[,\\s]\\s*(-?\\d+(?:\\.\\d+)?)");
+        Matcher matcher = pattern.matcher(locationText);
+        if (matcher.find()) {
+            try {
+                Double lat = Double.parseDouble(matcher.group(1));
+                Double lng = Double.parseDouble(matcher.group(2));
+                if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                    return new Double[]{lat, lng};
+                }
+            } catch (NumberFormatException ignored) {
+                // Fall through to null return
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Parses a coordinate string into a double within the specified bounds.
+     *
+     * @param value Raw text input.
+     * @param min   Minimum allowed value.
+     * @param max   Maximum allowed value.
+     * @return Parsed double when valid; null otherwise.
+     */
+    private Double parseCoordinateValue(String value, double min, double max) {
+        if (TextUtils.isEmpty(value)) {
+            return null;
+        }
+        try {
+            double parsed = Double.parseDouble(value);
+            if (parsed < min || parsed > max) {
+                return null;
+            }
+            return parsed;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**

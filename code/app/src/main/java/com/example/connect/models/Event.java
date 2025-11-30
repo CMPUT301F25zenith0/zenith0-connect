@@ -23,6 +23,10 @@ public class Event {
     private String dateTime;
 
     private String location;
+    @PropertyName("location_latitude")
+    private Double locationLatitude;
+    @PropertyName("location_longitude")
+    private Double locationLongitude;
     private String price;
 
     @PropertyName("max_participants")
@@ -108,6 +112,26 @@ public class Event {
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+
+    @PropertyName("location_latitude")
+    public Double getLocationLatitude() {
+        return locationLatitude;
+    }
+
+    @PropertyName("location_latitude")
+    public void setLocationLatitude(Double locationLatitude) {
+        this.locationLatitude = locationLatitude;
+    }
+
+    @PropertyName("location_longitude")
+    public Double getLocationLongitude() {
+        return locationLongitude;
+    }
+
+    @PropertyName("location_longitude")
+    public void setLocationLongitude(Double locationLongitude) {
+        this.locationLongitude = locationLongitude;
+    }
 
     public String getPrice() { return price; }
     public void setPrice(String price) { this.price = price; }
@@ -224,6 +248,8 @@ public class Event {
                 Objects.equals(description, event.description) &&
                 Objects.equals(dateTime, event.dateTime) &&
                 Objects.equals(location, event.location) &&
+                Objects.equals(locationLatitude, event.locationLatitude) &&
+                Objects.equals(locationLongitude, event.locationLongitude) &&
                 Objects.equals(price, event.price) &&
                 Objects.equals(organizerId, event.organizerId) &&
                 Objects.equals(imageUrl, event.imageUrl) &&
@@ -238,7 +264,8 @@ public class Event {
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventId, name, description, dateTime, location, price,
+        return Objects.hash(eventId, name, description, dateTime, location, locationLatitude,
+                locationLongitude, price,
                 maxParticipants, currentParticipants, organizerId, imageUrl, imageBase64,
                 category, regStart, regStop, waitingListCount, drawCapacity, endTime,
                 drawCompleted, drawDate, selectedCount);
