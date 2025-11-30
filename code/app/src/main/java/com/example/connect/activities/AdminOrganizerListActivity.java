@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.connect.R;
 import com.example.connect.adapters.AdminProfileAdapter;
 import com.example.connect.models.User;
+import com.example.connect.utils.NotificationHelper;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -160,7 +161,12 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         User user = document.toObject(User.class);
                         user.setUserId(document.getId());
-                        currentOrganizers.add(user);
+
+                        // Only add non-disabled accounts
+                        Boolean disabled = document.getBoolean("disabled");
+                        if (disabled == null || !disabled) {
+                            currentOrganizers.add(user);
+                        }
                     }
 
                     // Store the full list
@@ -174,12 +180,11 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                     Toast.makeText(this, "Error loading organizers: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     Log.e("AdminOrgList", "Error loading organizers", e);
-                    // Ensure empty state is shown on failure
                     tvEmptyState.setText("Failed to load organizers.");
                     tvEmptyState.setVisibility(View.VISIBLE);
                 });
-
     }
+
     // Slightly modified deleteOrganizer
     private void deleteOrganizer(User user) {
         if (user.getUserId() == null) return;
@@ -187,45 +192,102 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         String userId = user.getUserId();
         progressBar.setVisibility(View.VISIBLE);
 
+        NotificationHelper notificationHelper = new NotificationHelper();
+
         // 1. Find all events created by this organizer
         db.collection("events")
                 .whereEqualTo("organizer_id", userId)
                 .get()
                 .addOnSuccessListener(eventSnapshots -> {
-                    // Create a list to hold all Firestore deletion tasks
                     List<com.google.android.gms.tasks.Task<Void>> tasks = new ArrayList<>();
 
+                    // Notify users for each event before deletion
                     for (QueryDocumentSnapshot eventDoc : eventSnapshots) {
                         String eventId = eventDoc.getId();
+                        String eventTitle = eventDoc.getString("event_title");
+                        if (eventTitle == null) eventTitle = "An event";
 
-                        // Add task to delete the event
+                        // Collect all users to notify
+                        List<String> usersToNotify = new ArrayList<>();
+
+                        // Get waiting list users from the waiting_lists collection
+                        String finalEventTitle = eventTitle;
+                        db.collection("waiting_lists").document(eventId).get()
+                                .addOnSuccessListener(waitingDoc -> {
+                                    if (waitingDoc.exists()) {
+                                        List<String> entries = (List<String>) waitingDoc.get("entries");
+                                        if (entries != null) {
+                                            usersToNotify.addAll(entries);
+                                        }
+                                    }
+
+                                    // Get chosen entrants from event
+                                    List<String> chosenList = (List<String>) eventDoc.get("chosen_entrants");
+                                    if (chosenList != null) {
+                                        usersToNotify.addAll(chosenList);
+                                    }
+
+                                    // Get enrolled users from event
+                                    List<String> enrolledList = (List<String>) eventDoc.get("enrolled_users");
+                                    if (enrolledList != null) {
+                                        usersToNotify.addAll(enrolledList);
+                                    }
+
+                                    // Remove duplicates
+                                    List<String> uniqueUsers = new ArrayList<>(new java.util.HashSet<>(usersToNotify));
+
+                                    // Send notification if there are users
+                                    if (!uniqueUsers.isEmpty()) {
+                                        String notifTitle = "Event Cancelled ❌";
+                                        String notifBody = "Unfortunately, \"" + finalEventTitle +
+                                                "\" has been cancelled by the organizer.";
+
+                                        notificationHelper.notifyCustom(
+                                                eventId,
+                                                uniqueUsers,
+                                                finalEventTitle,
+                                                new NotificationHelper.NotificationCallback() {
+                                                    @Override
+                                                    public void onSuccess(String message) {
+                                                        Log.d("AdminOrgList", "Cancellation notifications sent for " + finalEventTitle);
+                                                    }
+
+                                                    @Override
+                                                    public void onFailure(String error) {
+                                                        Log.e("AdminOrgList", "Failed to send notifications: " + error);
+                                                    }
+                                                },
+                                                notifTitle,
+                                                notifBody
+                                        );
+                                    }
+                                });
+
+                        // Add deletion tasks
                         tasks.add(db.collection("events").document(eventId).delete());
-
-                        // Add task to delete the associated waiting list
                         tasks.add(db.collection("waiting_lists").document(eventId).delete());
                     }
 
                     // Wait for all event and waiting list deletions to complete
                     com.google.android.gms.tasks.Tasks.whenAll(tasks)
                             .addOnSuccessListener(aVoid -> {
-                                // 2. All events/waiting lists deleted. Now delete the user account
+                                // 2. All events/waiting lists deleted. Now disable the user account
                                 db.collection("accounts").document(userId)
-                                        .delete()
+                                        .update("disabled", true)
                                         .addOnSuccessListener(aVoid2 -> {
                                             progressBar.setVisibility(View.GONE);
-                                            Toast.makeText(this, "Organizer and their events successfully removed",
+                                            Toast.makeText(this, "Organizer account disabled and their events removed. Users notified.",
                                                     Toast.LENGTH_SHORT).show();
                                             loadOrganizers(); // Refresh list
                                         })
                                         .addOnFailureListener(e -> {
                                             progressBar.setVisibility(View.GONE);
-                                            Toast.makeText(this, "Error removing organizer account: " + e.getMessage(),
+                                            Toast.makeText(this, "Error disabling organizer account: " + e.getMessage(),
                                                     Toast.LENGTH_SHORT).show();
                                         });
                             })
                             .addOnFailureListener(e -> {
                                 progressBar.setVisibility(View.GONE);
-                                // This usually fails if one of the batched delete operations failed
                                 Toast.makeText(this, "Error removing organizer's events. Event deletion aborted.",
                                         Toast.LENGTH_SHORT).show();
                                 Log.e("AdminOrgList", "Error deleting events in batch", e);

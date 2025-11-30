@@ -100,6 +100,10 @@ public class LotteryScheduler {
         }
     }
 
+
+
+
+
     /**
      * Perform lottery for a specific event
      */
@@ -119,4 +123,31 @@ public class LotteryScheduler {
             }
         });
     }
+
+    /**
+     * Manually trigger a lottery draw for a specific event (DEV ONLY)
+     */
+    public void runLotteryManually(String eventId) {
+        Log.d(TAG, "⚠️ Manual lottery triggered for event: " + eventId);
+
+        db.collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) {
+                        Log.e(TAG, "Manual lottery failed: Event not found");
+                        return;
+                    }
+
+                    Event event = doc.toObject(Event.class);
+                    event.setEventId(doc.getId());
+
+                    // Bypass all checks
+                    performLotteryForEvent(event);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Manual lottery failed to fetch event", e);
+                });
+    }
+
 }

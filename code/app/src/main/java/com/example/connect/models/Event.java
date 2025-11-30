@@ -2,7 +2,6 @@ package com.example.connect.models;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
-import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.PropertyName;
 
 import java.util.Objects;
@@ -67,10 +66,10 @@ public class Event {
 
     @PropertyName("selected_count")
     private int selectedCount = 0;
-    @PropertyName("geo_verification_enabled")
-    private boolean geoVerificationEnabled;
-    @PropertyName("geo_location")
-    private GeoPoint geoLocation;
+
+    // US 02.02.03: Geolocation requirement toggle
+    @PropertyName("require_geolocation")
+    private boolean requireGeolocation = false;
 
     /** Default constructor required for Firestore */
     public Event() {
@@ -192,24 +191,15 @@ public class Event {
     @PropertyName("selected_count")
     public void setSelectedCount(int selectedCount) { this.selectedCount = selectedCount; }
 
-    @PropertyName("geo_verification_enabled")
-    public boolean isGeoVerificationEnabled() {
-        return geoVerificationEnabled;
+    // US 02.02.03: Geolocation requirement getters and setters
+    @PropertyName("require_geolocation")
+    public boolean isRequireGeolocation() {
+        return requireGeolocation;
     }
 
-    @PropertyName("geo_verification_enabled")
-    public void setGeoVerificationEnabled(boolean geoVerificationEnabled) {
-        this.geoVerificationEnabled = geoVerificationEnabled;
-    }
-
-    @PropertyName("geo_location")
-    public GeoPoint getGeoLocation() {
-        return geoLocation;
-    }
-
-    @PropertyName("geo_location")
-    public void setGeoLocation(GeoPoint geoLocation) {
-        this.geoLocation = geoLocation;
+    @PropertyName("require_geolocation")
+    public void setRequireGeolocation(boolean requireGeolocation) {
+        this.requireGeolocation = requireGeolocation;
     }
 
     /**
@@ -229,7 +219,6 @@ public class Event {
                 drawCapacity == event.drawCapacity &&
                 drawCompleted == event.drawCompleted &&
                 selectedCount == event.selectedCount &&
-                geoVerificationEnabled == event.geoVerificationEnabled &&
                 Objects.equals(eventId, event.eventId) &&
                 Objects.equals(name, event.name) &&
                 Objects.equals(description, event.description) &&
@@ -244,8 +233,7 @@ public class Event {
                 Objects.equals(regStop, event.regStop) &&
                 Objects.equals(endTime, event.endTime) &&
                 Objects.equals(drawDate, event.drawDate) &&
-                Objects.equals(waitingListCount, event.waitingListCount) &&
-                Objects.equals(geoLocation, event.geoLocation);
+                Objects.equals(waitingListCount, event.waitingListCount);
     }
 
     @Override
@@ -253,6 +241,6 @@ public class Event {
         return Objects.hash(eventId, name, description, dateTime, location, price,
                 maxParticipants, currentParticipants, organizerId, imageUrl, imageBase64,
                 category, regStart, regStop, waitingListCount, drawCapacity, endTime,
-                drawCompleted, drawDate, selectedCount, geoVerificationEnabled, geoLocation);
+                drawCompleted, drawDate, selectedCount);
     }
 }

@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -86,9 +87,9 @@ public class OrganizerEventAdapter extends ListAdapter<Event, OrganizerEventAdap
         private final TextView tvEventTitle;
         private final TextView tvStatusClip;
         private final TextView tvDescription;
-        private final MaterialButton btnEditEvent;
-        private final MaterialButton btnDetails;
-        private final MaterialButton btnManageDraw;
+        private final Button btnEditEvent;
+        private final Button btnDetails;
+        private final Button btnManageDraw;
         private final MaterialButton btnExportCSV;
 
         public OrganizerEventViewHolder(@NonNull View itemView) {

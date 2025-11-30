@@ -4,58 +4,89 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="@color/background_light">
 
     <!-- Top Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:background="#FFFFFF"
-        android:elevation="4dp"
+        android:layout_height="wrap_content"
+        android:background="@color/card_bg_light"
+        android:elevation="6dp"
+        android:padding="16dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Back button with visible icon -->
-
-        <com.google.android.material.button.MaterialButton
+        <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="4dp"
-            android:backgroundTint="#2C4E4E"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back_arrow"
+            android:tint="@color/dark_blue"
             android:contentDescription="Back"
-            app:cornerRadius="18dp"
-            app:icon="@android:drawable/ic_media_previous"
-            app:iconPadding="0dp"
-            app:iconTint="#FFFFFF"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Entrant Map View"
-            android:textColor="#000000"
-            android:textSize="18sp"
+            android:textColor="@color/text_primary_light"
+            android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
+            android:layout_marginStart="16dp"
             app:layout_constraintStart_toEndOf="@id/btnBack"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Scrollable Content (nudged down a bit) -->
-    <ScrollView
+    <!-- Map Container -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/mapCard"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
-        android:fillViewport="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        app:cardBackgroundColor="@color/card_bg_light"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
         app:layout_constraintTop_toBottomOf="@id/topBar"
+        app:layout_constraintBottom_toTopOf="@id/statisticsCard"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <!-- Map Fragment -->
+            <fragment
+                android:id="@+id/mapFragment"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </FrameLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Statistics Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/statisticsCard"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="@color/card_bg_light"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="4dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -64,249 +95,34 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="12dp">
+            android:padding="16dp">
 
-            <!-- Filter Buttons Row -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center"
-                android:layout_marginBottom="12dp">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnWithin10Km"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Waitlist Status"
-                    android:textColor="#2C4E4E"
-                    android:textSize="9sp"
-                    android:textAllCaps="false"
-                    android:minHeight="36dp"
-                    android:maxLines="1"
-                    android:singleLine="true"
-                    android:ellipsize="none"
-                    android:backgroundTint="#B8E0D8"
-                    android:layout_marginEnd="4dp"
-                    android:paddingStart="2dp"
-                    android:paddingEnd="2dp"
-                    app:cornerRadius="18dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnXDays"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="X days"
-                    android:textColor="#2C4E4E"
-                    android:textSize="9sp"
-                    android:textAllCaps="false"
-                    android:minHeight="36dp"
-                    android:maxLines="1"
-                    android:singleLine="true"
-                    android:ellipsize="none"
-                    android:backgroundTint="#B8E0D8"
-                    android:layout_marginEnd="4dp"
-                    android:paddingStart="2dp"
-                    android:paddingEnd="2dp"
-                    app:cornerRadius="18dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnLegend"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Legend"
-                    android:textColor="#2C4E4E"
-                    android:textSize="9sp"
-                    android:textAllCaps="false"
-                    android:minHeight="36dp"
-                    android:maxLines="1"
-                    android:singleLine="true"
-                    android:ellipsize="none"
-                    android:backgroundTint="#B8E0D8"
-                    android:layout_marginEnd="4dp"
-                    android:paddingStart="2dp"
-                    android:paddingEnd="2dp"
-                    app:cornerRadius="18dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnFilter"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="filter"
-                    android:textColor="#2C4E4E"
-                    android:textSize="9sp"
-                    android:textAllCaps="false"
-                    android:minHeight="36dp"
-                    android:maxLines="1"
-                    android:singleLine="true"
-                    android:ellipsize="none"
-                    android:backgroundTint="#B8E0D8"
-                    android:paddingStart="2dp"
-                    android:paddingEnd="2dp"
-                    app:cornerRadius="18dp" />
-            </LinearLayout>
-
-            <!-- Event Selector -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Event:"
-                    android:textColor="#000000"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginEnd="8dp" />
-
-                <Spinner
-                    android:id="@+id/spinnerEvent"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:background="@android:drawable/btn_dropdown"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp" />
-            </LinearLayout>
-
-            <!-- Map Container (taller to eat bottom whitespace) -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="380dp"
-                android:layout_marginBottom="12dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
-                app:cardBackgroundColor="#A5C9C9">
-
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent">
-
-                    <!-- Map Fragment Placeholder -->
-                    <fragment
-                        android:id="@+id/mapFragment"
-                        android:name="com.google.android.gms.maps.SupportMapFragment"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
-
-                    <!-- Map View Text (fallback if map not loaded) -->
-                    <TextView
-                        android:id="@+id/tvMapPlaceholder"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Map View"
-                        android:textColor="#FFFFFF"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:layout_gravity="center"
-                        android:visibility="gone" />
-
-                    <!-- Zoom Controls -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_gravity="end|center_vertical"
-                        android:layout_marginEnd="12dp">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnZoomIn"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:text="+"
-                            android:textSize="18sp"
-                            android:textColor="#2C4E4E"
-                            android:backgroundTint="#FFFFFF"
-                            android:layout_marginBottom="8dp"
-                            android:minWidth="36dp"
-                            android:minHeight="36dp"
-                            android:padding="0dp"
-                            app:cornerRadius="4dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnZoomOut"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:text="−"
-                            android:textSize="18sp"
-                            android:textColor="#2C4E4E"
-                            android:backgroundTint="#FFFFFF"
-                            android:minWidth="36dp"
-                            android:minHeight="36dp"
-                            android:padding="0dp"
-                            app:cornerRadius="4dp" />
-                    </LinearLayout>
-                </FrameLayout>
-            </androidx.cardview.widget.CardView>
-
-            <!-- Statistics -->
             <TextView
                 android:id="@+id/tvEntrantsInView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Entrants In View:  **"
-                android:textColor="#000000"
-                android:textSize="13sp"
-                android:layout_marginBottom="6dp" />
+                android:text="Entrants In View: 0"
+                android:textColor="@color/text_primary_light"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:id="@+id/tvWithinZone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Within Allowed Zone:  **"
-                android:textColor="#000000"
-                android:textSize="13sp"
-                android:layout_marginBottom="6dp" />
+                android:text="With Location: 0"
+                android:textColor="@color/text_primary_light"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp" />
 
             <TextView
                 android:id="@+id/tvOutsideZone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Outside Zone:  **"
-                android:textColor="#000000"
-                android:textSize="13sp"
-                android:layout_marginBottom="16dp" />
-
-            <!-- Bottom Buttons -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnViewList"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:text="View List"
-                    android:textColor="#2C4E4E"
-                    android:textSize="13sp"
-                    android:backgroundTint="#A5D8D8"
-                    android:layout_marginEnd="12dp"
-                    app:cornerRadius="22dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnDownloadCSV"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:text="Download CSV"
-                    android:textColor="#2C4E4E"
-                    android:textSize="13sp"
-                    android:backgroundTint="#A5D8D8"
-                    app:cornerRadius="22dp" />
-            </LinearLayout>
-
+                android:text="Without Location: 0"
+                android:textColor="@color/text_primary_light"
+                android:textSize="14sp" />
         </LinearLayout>
-    </ScrollView>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

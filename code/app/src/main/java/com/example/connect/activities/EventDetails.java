@@ -1,11 +1,12 @@
 package com.example.connect.activities;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -15,18 +16,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.connect.R;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.Priority;
+import com.bumptech.glide.Glide;
+import com.example.connect.models.Event;
+import com.example.connect.utils.LocationHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.GeoPoint;
+import android.util.Base64;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -55,7 +57,7 @@ public class EventDetails extends AppCompatActivity {
     // UI Components
     private ProgressBar loadingSpinner;
     private ScrollView scrollContent;
-    private ImageView btnBack, eventImage;
+    private ImageView btnBack, eventImage, btnReport;
     private TextView eventTitle, tvOrgName, tvDateTime, tvLocation, tvPrice, tvRegWindow, tvWaitingList;
     private com.google.firebase.firestore.ListenerRegistration waitlistRegistration;
     private String description;
@@ -65,18 +67,10 @@ public class EventDetails extends AppCompatActivity {
     // Initialize Firebase
     private FirebaseFirestore db;
     private String eventId;
-    private FusedLocationProviderClient fusedLocationClient;
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 2010;
-    private static final String[] LOCATION_PERMISSIONS = new String[] {
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-    };
-    private static final double GEO_ALLOWED_RADIUS_KM = 60.0;
-    private static final String FIELD_GEO_VERIFICATION_ENABLED = "geo_verification_enabled";
-    private static final String FIELD_GEO_LOCATION = "geo_location";
-    private GeoPoint pendingDeviceLocation;
-    private boolean geolocationVerificationEnabled;
-    private GeoPoint eventGeoPoint;
+    
+    // Location permission request (US 02.02.02)
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
+    private String pendingUserIdForLocation = null; // Store userId when waiting for permission
 
     /**
      * Called when the activity is first created.
@@ -94,7 +88,6 @@ public class EventDetails extends AppCompatActivity {
 
         // Initialize Firestore
         db = FirebaseFirestore.getInstance();
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         // Get the event ID from the Intent
         Intent intent = getIntent();
@@ -125,6 +118,7 @@ public class EventDetails extends AppCompatActivity {
         loadingSpinner = findViewById(R.id.spinner);
         btnBack = findViewById(R.id.back_btn);
         eventImage = findViewById(R.id.event_image);
+        btnReport = findViewById(R.id.btn_report);
         eventTitle = findViewById(R.id.event_title);
         tvOrgName = findViewById(R.id.tv_org_name);
         tvDateTime = findViewById(R.id.tv_date_time);
@@ -153,106 +147,26 @@ public class EventDetails extends AppCompatActivity {
             showEventInfo();
         });
 
-        // Join waiting list button with geolocation verification
-        btnJoinList.setOnClickListener(v -> initiateJoinFlow());
+        // ------TO BE IMPLEMENTED-----
+        // Join waiting list button
+        btnJoinList.setOnClickListener(v -> joinWaitingList());
 
         // Leave waiting list button
         btnLeaveList.setOnClickListener(v -> leaveWaitingList());
 
+        // Report Dialog pop up
+        btnReport.setOnClickListener(v -> showReportDialog());
+
     }
 
-    private void initiateJoinFlow() {
-        if (eventId == null) {
-            return;
-        }
-
-        if (!geolocationVerificationEnabled) {
-            pendingDeviceLocation = null;
-            joinWaitingList();
-            return;
-        }
-
-        if (eventGeoPoint == null) {
-            Toast.makeText(this, "Event location not configured for geolocation verification", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (hasLocationPermission()) {
-            captureLocationAndJoin();
+    // Pop up dialog for report
+    private void showReportDialog() {
+        // Ensure eventId is available before opening the dialog
+        if (eventId != null) {
+            com.example.connect.fragments.ReportDialogFragment dialog = com.example.connect.fragments.ReportDialogFragment.newInstance(eventId);
+            dialog.show(getSupportFragmentManager(), "ReportEventDialogTag");
         } else {
-            ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
-        }
-    }
-
-    private boolean hasLocationPermission() {
-        return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    @SuppressLint("MissingPermission")
-    private void captureLocationAndJoin() {
-        if (!hasLocationPermission()) {
-            ActivityCompat.requestPermissions(this, LOCATION_PERMISSIONS, LOCATION_PERMISSION_REQUEST_CODE);
-            return;
-        }
-
-        if (fusedLocationClient == null) {
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        }
-
-        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null)
-                .addOnSuccessListener(location -> {
-                    if (location != null) {
-                        verifyDistanceAndJoin(new GeoPoint(location.getLatitude(), location.getLongitude()));
-                    } else {
-                        fetchLastKnownLocationFallback();
-                    }
-                })
-                .addOnFailureListener(e -> fetchLastKnownLocationFallback());
-    }
-
-    @SuppressLint("MissingPermission")
-    private void fetchLastKnownLocationFallback() {
-        if (!hasLocationPermission()) {
-            Toast.makeText(this, "Location permission required to join the waiting list", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        fusedLocationClient.getLastLocation()
-                .addOnSuccessListener(location -> {
-                    if (location != null) {
-                        verifyDistanceAndJoin(new GeoPoint(location.getLatitude(), location.getLongitude()));
-                    } else {
-                        Toast.makeText(this, "Unable to capture device location. Please try again.", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> Toast.makeText(this, "Unable to capture device location. Please try again.", Toast.LENGTH_SHORT).show());
-    }
-
-    private void verifyDistanceAndJoin(GeoPoint deviceLocationPoint) {
-        if (eventGeoPoint == null) {
-            Toast.makeText(this, "Event location is missing. Unable to verify geolocation.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        float[] results = new float[1];
-        Location.distanceBetween(
-                deviceLocationPoint.getLatitude(), deviceLocationPoint.getLongitude(),
-                eventGeoPoint.getLatitude(), eventGeoPoint.getLongitude(),
-                results
-        );
-
-        double distanceKm = results[0] / 1000.0;
-        if (Double.isNaN(distanceKm)) {
-            Toast.makeText(this, "Unable to calculate distance for geolocation verification", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        if (distanceKm <= GEO_ALLOWED_RADIUS_KM) {
-            pendingDeviceLocation = deviceLocationPoint;
-            joinWaitingList();
-        } else {
-            Toast.makeText(this, "You must be within 60 km of the event location to join", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Cannot report, event ID not found.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -276,10 +190,6 @@ public class EventDetails extends AppCompatActivity {
                         String organizationName = documentSnapshot.getString("org_name");
                         String location = documentSnapshot.getString("location");
                         description = documentSnapshot.getString("description"); // gets used for the pop later
-                        Boolean geoEnabled = documentSnapshot.getBoolean(FIELD_GEO_VERIFICATION_ENABLED);
-                        geolocationVerificationEnabled = geoEnabled != null && geoEnabled;
-                        eventGeoPoint = documentSnapshot.getGeoPoint(FIELD_GEO_LOCATION);
-                        pendingDeviceLocation = null;
 
                         // Get and save date/time
                         Object dateTimeObj = documentSnapshot.get("date_time");
@@ -305,11 +215,9 @@ public class EventDetails extends AppCompatActivity {
                         displayEventDetails(eventName, organizationName, dateTime, location, price, registrationWindow);
                         listenForWaitlist(eventId);
 
-                        // TODO: Load event image --> need to figure out where to store images Firestore
-                        // cannot for us
-                        // You can use Glide or Picasso to load images:
-                        // String imageUrl = documentSnapshot.getString("imageUrl");
-                        // Glide.with(this).load(imageUrl).into(eventImage);
+                        String imageUrl = documentSnapshot.getString("imageUrl");
+                        String imageBase64 = documentSnapshot.getString("image_base64");
+                        loadEventImage(imageUrl, imageBase64);
                     } else {
                         Toast.makeText(EventDetails.this, "Event not found", Toast.LENGTH_SHORT).show();
                         finish();
@@ -340,7 +248,7 @@ public class EventDetails extends AppCompatActivity {
             String dateTime, String location, String price,
             String registrationWindow) {
         eventTitle.setText(eventName != null ? eventName : "Event Title");
-        tvOrgName.setText(organizationName != null ? organizationName : "Organization Name");
+        tvOrgName.setText(organizationName != null ? "By " + organizationName : "Organization Name");
         tvDateTime.setText(dateTime != null ? dateTime : "Date & Time");
         tvLocation.setText(location != null ? location : "Location");
         tvPrice.setText(price != null ? price : "Price");
@@ -353,24 +261,69 @@ public class EventDetails extends AppCompatActivity {
         showContent();
     }
 
+    /**
+     * Loads the event poster into the header ImageView using either the hosted URL
+     * or a base64 encoded fallback.
+     */
+    private void loadEventImage(String imageUrl, String imageBase64) {
+        if (eventImage == null) {
+            return;
+        }
+
+        if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .placeholder(android.R.drawable.ic_menu_gallery)
+                    .error(android.R.drawable.ic_menu_report_image)
+                    .into(eventImage);
+            eventImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            return;
+        }
+
+        if (imageBase64 != null && !imageBase64.trim().isEmpty()) {
+            try {
+                byte[] decoded = Base64.decode(imageBase64, Base64.DEFAULT);
+                Bitmap bitmap = BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+                if (bitmap != null) {
+                    eventImage.setImageBitmap(bitmap);
+                    eventImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                    return;
+                }
+            } catch (IllegalArgumentException ignored) {
+                // malformed base64, fall through to placeholder
+            }
+        }
+
+        eventImage.setImageResource(android.R.drawable.ic_menu_gallery);
+    }
+
+    /**
+     * Sets up a real-time listener for the waiting list count.
+     * Counts entrants from the subcollection and updates the UI.
+     *
+     * @param eventId The unique identifier of the event
+     */
     private void listenForWaitlist(String eventId) {
         if (waitlistRegistration != null) {
             waitlistRegistration.remove();
         }
 
+        // ✅ Listen to the entrants subcollection instead of the document
         waitlistRegistration = db.collection("waiting_lists")
                 .document(eventId)
-                .addSnapshotListener((snapshot, error) -> {
+                .collection("entrants")  // ✅ Count from subcollection
+                .addSnapshotListener((querySnapshot, error) -> {
                     if (error != null) {
+                        Log.e("EventDetails", "Error listening to waitlist", error);
                         return;
                     }
 
                     int count = 0;
-                    if (snapshot != null && snapshot.exists()) {
-                        java.util.List<String> entries = (java.util.List<String>) snapshot.get("entries");
-                        count = entries != null ? entries.size() : 0;
+                    if (querySnapshot != null) {
+                        count = querySnapshot.size();  // ✅ Count all entrants
                     }
 
+                    Log.d("EventDetails", "Waitlist count: " + count);
                     tvWaitingList.setText("Live Waitlist: " + count + " entrant" + (count == 1 ? "" : "s"));
                 });
     }
@@ -381,30 +334,6 @@ public class EventDetails extends AppCompatActivity {
         if (waitlistRegistration != null) {
             waitlistRegistration.remove();
             waitlistRegistration = null;
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            boolean granted = false;
-            for (int result : grantResults) {
-                if (result == PackageManager.PERMISSION_GRANTED) {
-                    granted = true;
-                    break;
-                }
-            }
-
-            if (granted) {
-                if (geolocationVerificationEnabled) {
-                    captureLocationAndJoin();
-                } else {
-                    joinWaitingList();
-                }
-            } else {
-                Toast.makeText(this, "Location permission is required to join the waiting list", Toast.LENGTH_SHORT).show();
-            }
         }
     }
 
@@ -471,91 +400,105 @@ public class EventDetails extends AppCompatActivity {
      * - Adding user ID to waiting list collection
      * - Handling errors and edge cases
      */
+    /**
+     * Adds the current (logged in) user to the event's waiting list in Firestore.
+     * Checks total_capacity (waiting list limit) before adding to prevent exceeding the limit.
+     * If total_capacity is null or 0, allows unlimited entries.
+     * Updates the waiting list count and displays a success message.
+     */
+    /**
+     * Adds the current (logged in) user to the event's waiting list in Firestore.
+     * Checks total_capacity (waiting list limit) before adding to prevent exceeding the limit.
+     * If total_capacity is null or 0, allows unlimited entries.
+     * Updates the waiting list count and displays a success message.
+     */
     private void joinWaitingList() {
         if (eventId == null)
             return;
-
-        if (geolocationVerificationEnabled && pendingDeviceLocation == null) {
-            Toast.makeText(this, "Location verification required before joining", Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         // Get current user ID from Firebase Auth
         String userId = FirebaseAuth.getInstance().getCurrentUser() != null
                 ? FirebaseAuth.getInstance().getCurrentUser().getUid()
                 : null;
 
-        // Edge case should never occur --> If it does, it tells us there is a mix up in
-        // the database
         if (userId == null) {
             Toast.makeText(this, "Please sign in to join the waiting list", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Get the event's draw_capacity
+        // Check if user is the organizer first
         db.collection("events")
                 .document(eventId)
                 .get()
                 .addOnSuccessListener(eventDoc -> {
-                    // Checks if the event actually exists --> edge case, if the user was able to
-                    // open this detail page, the event exits
                     if (!eventDoc.exists()) {
                         Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Check if user is the organizer --> organizer cannot join their own event as a
-                    // user
+                    // Check if user is the organizer
                     String organizerId = eventDoc.getString("organizer_id");
                     if (organizerId != null && organizerId.equals(userId)) {
                         Toast.makeText(this, "Organizers cannot join their own event", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
-                    // Get draw_capacity from event document
-                    Long drawCapacity = eventDoc.getLong("draw_capacity");
-                    if (drawCapacity == null || drawCapacity == 0) {
-                        Toast.makeText(this, "Draw capacity not set for this event", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    // Check if user already in waiting list
+                    // ✅ Check waiting list capacity (not draw_capacity)
                     db.collection("waiting_lists")
                             .document(eventId)
-                            .collection("entrants")
-                            .document(userId)
                             .get()
-                            .addOnSuccessListener(entrantDoc -> {
-                                if (entrantDoc.exists()) {
-                                    Toast.makeText(this, "You're already on the waiting list", Toast.LENGTH_SHORT).show();
-                                    return;
-                                }
+                            .addOnSuccessListener(waitingListDoc -> {
+                                // ✅ Get total_capacity from waiting_lists collection (not events)
+                                final Long totalCapacity = waitingListDoc.exists()
+                                        ? waitingListDoc.getLong("total_capacity")
+                                        : null;
 
-                                // Check current waiting list size
+                                // Check if user already in waiting list
                                 db.collection("waiting_lists")
                                         .document(eventId)
                                         .collection("entrants")
-                                        .whereEqualTo("status", "waiting")
+                                        .document(userId)
                                         .get()
-                                        .addOnSuccessListener(querySnapshot -> {
-                                            int currentSize = querySnapshot.size();
-
-                                            // Check if capacity is reached
-                                            if (currentSize >= drawCapacity) {
-                                                Toast.makeText(this, "Waiting list is full", Toast.LENGTH_SHORT).show();
+                                        .addOnSuccessListener(entrantDoc -> {
+                                            if (entrantDoc.exists()) {
+                                                Toast.makeText(this, "You're already on the waiting list",
+                                                        Toast.LENGTH_SHORT).show();
                                                 return;
                                             }
 
-                                            // Add user to waiting list
-                                            addUserToWaitingList(userId);
+                                            // ✅ Count ALL entrants (regardless of status) for capacity check
+                                            db.collection("waiting_lists")
+                                                    .document(eventId)
+                                                    .collection("entrants")
+                                                    .get()
+                                                    .addOnSuccessListener(querySnapshot -> {
+                                                        int currentSize = querySnapshot.size();
+
+                                                        // ✅ ENFORCE: Only check limit if total_capacity is set and > 0
+                                                        // null or 0 = unlimited waiting list
+                                                        if (totalCapacity != null && totalCapacity > 0
+                                                                && currentSize >= totalCapacity) {
+                                                            Toast.makeText(this,
+                                                                    "Waiting list is full (" + totalCapacity + " entrants)",
+                                                                    Toast.LENGTH_SHORT).show();
+                                                            return;
+                                                        }
+
+                                                        // All checks passed - add user to waiting list
+                                                        addUserToWaitingList(userId);
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        Toast.makeText(this, "Error checking waiting list: " + e.getMessage(),
+                                                                Toast.LENGTH_SHORT).show();
+                                                    });
                                         })
                                         .addOnFailureListener(e -> {
-                                            Toast.makeText(this, "Error checking waiting list: " + e.getMessage(),
+                                            Toast.makeText(this, "Error checking your status: " + e.getMessage(),
                                                     Toast.LENGTH_SHORT).show();
                                         });
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error checking your status: " + e.getMessage(),
+                                Toast.makeText(this, "Error accessing waiting list: " + e.getMessage(),
                                         Toast.LENGTH_SHORT).show();
                             });
                 })
@@ -568,45 +511,172 @@ public class EventDetails extends AppCompatActivity {
     /**
      * Helper method to add user to waiting list subcollection
      */
+    /**
+     * Helper method to add user to waiting list subcollection.
+     * Ensures waiting list document exists before adding entrant.
+     * US 02.02.02: Captures location if event requires geolocation.
+     */
     private void addUserToWaitingList(String userId) {
-        final GeoPoint locationToPersist = pendingDeviceLocation;
-        pendingDeviceLocation = null;
-
-        // First, ensure the waiting list document exists
-        Map<String, Object> waitingListDoc = new HashMap<>();
-        waitingListDoc.put("event_id", eventId);
-        waitingListDoc.put("created_at", FieldValue.serverTimestamp());
-        waitingListDoc.put("total_capacity", 0);
-
+        // First check if event requires geolocation and get event data
+        db.collection("events")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener(eventDoc -> {
+                    boolean requireGeo = false;
+                    if (eventDoc.exists()) {
+                        Boolean requireGeoObj = eventDoc.getBoolean("require_geolocation");
+                        requireGeo = requireGeoObj != null && requireGeoObj;
+                    }
+                    
+                    // If geolocation required, capture location first
+                    if (requireGeo) {
+                        captureLocationAndAddToWaitingList(userId);
+                    } else {
+                        // No geolocation required, proceed normally
+                        addToWaitingList(userId, null, null);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("EventDetails", "Error checking event geolocation requirement", e);
+                    // don't; continue, should fail
+                    Toast.makeText(this, "Error accessing event: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+    
+    /**
+     * Captures location and then adds user to waiting list
+     */
+    private void captureLocationAndAddToWaitingList(String userId) {
+        LocationHelper locationHelper = new LocationHelper(this);
+        
+        // Check if permission is already granted
+        if (locationHelper.hasLocationPermission()) {
+            // Permission already granted, get location
+            locationHelper.getLastLocation((latitude, longitude) -> {
+                if (latitude != null && longitude != null) {
+                    Log.d("EventDetails", "Location captured: " + latitude + ", " + longitude);
+                    addToWaitingList(userId, latitude, longitude);
+                } else {
+                    Toast.makeText(this, "Unable to get location. Please enable location services.", Toast.LENGTH_LONG).show();
+                }
+            });
+        } else {
+            // Permission not granted, request it
+            pendingUserIdForLocation = userId;
+            requestLocationPermission();
+        }
+    }
+    
+    /**
+     * Request location permission from user
+     */
+    private void requestLocationPermission() {
+        // Check if we should show explanation
+        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+            // Show explanation dialog
+            new AlertDialog.Builder(this)
+                    .setTitle("Location Permission Required")
+                    .setMessage("This event requires location verification. Please allow location access to join the waiting list.")
+                    .setPositiveButton("Allow", (dialog, which) -> {
+                        // Request permission
+                        ActivityCompat.requestPermissions(this,
+                                new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                                LOCATION_PERMISSION_REQUEST_CODE);
+                    })
+                    .setNegativeButton("Deny", (dialog, which) -> {
+                        Toast.makeText(this, "Location permission is required to join this event's waiting list", Toast.LENGTH_LONG).show();
+                        pendingUserIdForLocation = null;
+                    })
+                    .show();
+        } else {
+            // Request permission directly
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    LOCATION_PERMISSION_REQUEST_CODE);
+        }
+    }
+    
+    /**
+     * Handle permission request result
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, proceed with location capture
+                if (pendingUserIdForLocation != null) {
+                    captureLocationAndAddToWaitingList(pendingUserIdForLocation);
+                    pendingUserIdForLocation = null;
+                }
+            } else {
+                // Permission denied
+                Toast.makeText(this, "Location permission denied. Cannot join waiting list without location.", Toast.LENGTH_LONG).show();
+                pendingUserIdForLocation = null;
+            }
+        }
+    }
+    
+    /**
+     * Adds user to waiting list with optional location data
+     */
+    private void addToWaitingList(String userId, Double latitude, Double longitude) {
+        // First, get the current waiting list to preserve total_capacity
         db.collection("waiting_lists")
                 .document(eventId)
-                .set(waitingListDoc, com.google.firebase.firestore.SetOptions.merge())
-                .addOnSuccessListener(aVoid -> {
-                    // Now add user to entrants subcollection
-                    Map<String, Object> entrantData = new HashMap<>();
-                    entrantData.put("user_id", userId);
-                    entrantData.put("status", "waiting");
-                    entrantData.put("joined_date", FieldValue.serverTimestamp());
-                    if (locationToPersist != null) {
-                        entrantData.put("device_location", locationToPersist);
+                .get()
+                .addOnSuccessListener(waitingListDoc -> {
+                    // Preserve existing total_capacity or set to null (unlimited)
+                    Object totalCapacity = null;
+                    if (waitingListDoc.exists()) {
+                        totalCapacity = waitingListDoc.get("total_capacity");
                     }
+
+                    // Ensure the waiting list document exists
+                    Map<String, Object> waitingListData = new HashMap<>();
+                    waitingListData.put("event_id", eventId);
+                    waitingListData.put("created_at", FieldValue.serverTimestamp());
+                    waitingListData.put("total_capacity", totalCapacity); // ✅ Preserve capacity
 
                     db.collection("waiting_lists")
                             .document(eventId)
-                            .collection("entrants")
-                            .document(userId)
-                            .set(entrantData)
-                            .addOnSuccessListener(aVoid2 -> {
-                                Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
-                                loadEventDetails(eventId);
+                            .set(waitingListData, com.google.firebase.firestore.SetOptions.merge())
+                            .addOnSuccessListener(aVoid -> {
+                                // Now add user to entrants subcollection
+                                Map<String, Object> entrantData = new HashMap<>();
+                                entrantData.put("user_id", userId);
+                                entrantData.put("status", "waiting");
+                                entrantData.put("joined_date", FieldValue.serverTimestamp());
+                                
+                                // US 02.02.02: Add location data if available
+                                if (latitude != null && longitude != null) {
+                                    entrantData.put("latitude", latitude);
+                                    entrantData.put("longitude", longitude);
+                                    entrantData.put("location_captured_at", FieldValue.serverTimestamp());
+                                }
+
+                                db.collection("waiting_lists")
+                                        .document(eventId)
+                                        .collection("entrants")
+                                        .document(userId)
+                                        .set(entrantData)
+                                        .addOnSuccessListener(aVoid2 -> {
+                                            Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
+                                            loadEventDetails(eventId);
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Toast.makeText(this, "Error joining: " + e.getMessage(),
+                                                    Toast.LENGTH_SHORT).show();
+                                        });
                             })
                             .addOnFailureListener(e -> {
-                                Toast.makeText(this, "Error joining: " + e.getMessage(),
+                                Toast.makeText(this, "Error creating waiting list: " + e.getMessage(),
                                         Toast.LENGTH_SHORT).show();
                             });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Error creating waiting list: " + e.getMessage(),
+                    Toast.makeText(this, "Error accessing waiting list: " + e.getMessage(),
                             Toast.LENGTH_SHORT).show();
                 });
     }

@@ -2,6 +2,8 @@ package com.example.connect.models;
 
 import com.google.firebase.firestore.PropertyName;
 
+import java.util.List;
+
 /**
  * Represents a user/entrant in the Event Planner system.
  * This model corresponds to user data stored in Firebase Firestore.
@@ -40,6 +42,8 @@ public class User {
     /** Last active timestamp */
     @PropertyName("last_active_timestamp")
     private Long lastActiveTimestamp;
+
+
 
     /**
      * Default constructor required for Firebase Firestore deserialization.
@@ -119,6 +123,17 @@ public class User {
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }
+    // Inside User.java
+    private List<String> interests;
+
+    public List<String> getInterests() {
+        return interests;
+    }
+
+    public void setInterests(List<String> interests) {
+        this.interests = interests;
+    }
+
 
     public boolean isRememberMe() {
         return rememberMe;

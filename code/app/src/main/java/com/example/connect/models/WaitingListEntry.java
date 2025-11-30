@@ -1,9 +1,8 @@
 package com.example.connect.models;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentId;
-import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.PropertyName;
+import com.google.firebase.firestore.DocumentId;
 
 
 /**
@@ -24,8 +23,14 @@ public class WaitingListEntry {
     private Timestamp selectedDate;
     private Timestamp enrolledDate;
     private Timestamp canceledDate;
-    private GeoPoint deviceLocation;
 
+    // Location fields for map view (US 02.02.02)
+    @PropertyName("latitude")
+    private Double latitude;
+    @PropertyName("longitude")
+    private Double longitude;
+    @PropertyName("location_captured_at")
+    private Timestamp locationCapturedAt;
 
     // User data (fetched separately)
     private User user;
@@ -113,14 +118,35 @@ public class WaitingListEntry {
         this.canceledDate = canceledDate;
     }
 
-    @PropertyName("device_location")
-    public GeoPoint getDeviceLocation() {
-        return deviceLocation;
+    // Location getters and setters (US 02.02.02)
+    @PropertyName("latitude")
+    public Double getLatitude() {
+        return latitude;
     }
 
-    @PropertyName("device_location")
-    public void setDeviceLocation(GeoPoint deviceLocation) {
-        this.deviceLocation = deviceLocation;
+    @PropertyName("latitude")
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+    }
+
+    @PropertyName("longitude")
+    public Double getLongitude() {
+        return longitude;
+    }
+
+    @PropertyName("longitude")
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+    }
+
+    @PropertyName("location_captured_at")
+    public Timestamp getLocationCapturedAt() {
+        return locationCapturedAt;
+    }
+
+    @PropertyName("location_captured_at")
+    public void setLocationCapturedAt(Timestamp locationCapturedAt) {
+        this.locationCapturedAt = locationCapturedAt;
     }
 
     // User object (not stored in Firestore, fetched separately)

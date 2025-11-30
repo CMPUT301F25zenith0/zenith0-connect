@@ -43,6 +43,12 @@ public class NotificationHelper {
         sendNotificationsToUsers(chosenEntrantIds, title, body, type, eventId, eventName, callback);
     }
 
+    public void notifyCustom(String eventId, List<String> chosenEntrantIds,
+                             String eventName, NotificationCallback callback, String customTitle, String customBody){
+
+        sendNotificationsToUsers(chosenEntrantIds, customTitle, customBody, "custom", eventId, eventName, callback);
+    }
+
     /**
      * Notify users who were NOT chosen for an event
      */
@@ -66,6 +72,28 @@ public class NotificationHelper {
     }
 
     /**
+     * Notify users who were NOT chosen for an event
+     */
+    public void notifyCanceledEntrants(String eventId, List<String> notifyCanceledEntrantsIds,
+                                        String eventName, NotificationCallback callback) {
+        Log.d(TAG, "notifyCanceledEntrants called | eventId=" + eventId +
+                " | entrants=" + notifyCanceledEntrantsIds.size() + " | eventName=" + eventName);
+
+        if (notifyCanceledEntrantsIds.isEmpty()) {
+            Log.w(TAG, "No entrants provided for not-chosen notification");
+            callback.onFailure("No entrants to notify");
+            return;
+        }
+
+        String title = "Event Update";
+        String body = "Thank you for your interest in " + eventName +
+                ". The event organizer would like to notify you since you canceled the event invitation.";
+        String type = "canceled";
+
+        sendNotificationsToUsers(notifyCanceledEntrantsIds, title, body, type, eventId, eventName, callback);
+    }
+
+    /**
      * Notify all users in the waiting list for an event
      */
     public void notifyAllWaitingListEntrants(String eventId, List<String> waitingListIds,
@@ -86,6 +114,7 @@ public class NotificationHelper {
 
         sendNotificationsToUsers(waitingListIds, title, body, type, eventId, eventName, callback);
     }
+
 
     /**
      * Send notifications to a list of users, respecting their notification

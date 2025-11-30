@@ -1,10 +1,16 @@
 package com.example.connect.utils;
 
 import android.util.Log;
+import android.widget.Toast;
 
+import com.example.connect.activities.ManageDrawActivity;
 import com.example.connect.models.Event;
 import com.example.connect.models.WaitingListEntry;
+import com.example.connect.utils.NotificationHelper; // 🔹 NEW IMPORT
+
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.WriteBatch;
@@ -36,8 +42,11 @@ public class LotteryManager {
     private static final String TAG = "LotteryManager";
     private final FirebaseFirestore db;
 
+    private NotificationHelper notificationHelper;
+
     public LotteryManager() {
         this.db = FirebaseFirestore.getInstance();
+        this.notificationHelper = new NotificationHelper();
     }
 
     /**
@@ -112,6 +121,50 @@ public class LotteryManager {
                     if (callback != null) {
                         callback.onFailure("Error loading event: " + e.getMessage());
                     }
+                });
+    }
+
+
+    /**
+     * US 02.05.03 – Draw replacement entrants for declined spots
+     */
+    public void performReplacementLottery(String eventId,String eventName,int replacementCount, LotteryCallback callback) {
+        if (replacementCount <= 0) {
+            if (callback != null) callback.onFailure("No replacements needed");
+            return;
+        }
+
+        db.collection("waiting_lists")
+                .document(eventId)
+                .collection("entrants")
+                .whereEqualTo("status", "waiting")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<String> waitingDocIds = new ArrayList<>();
+                    Map<String, String> docIdToUserId = new HashMap<>();
+
+                    for (DocumentSnapshot doc : querySnapshot) {
+                        WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                        if (entry != null) {
+                            waitingDocIds.add(doc.getId());
+                            docIdToUserId.put(doc.getId(), entry.getUserId());
+                        }
+                    }
+
+                    if (waitingDocIds.isEmpty()) {
+                        if (callback != null) callback.onFailure("No waiting entrants available for replacement");
+                        return;
+                    }
+
+                    // Pick random entrants
+                    java.util.Collections.shuffle(waitingDocIds);
+                    List<String> selectedDocIds = waitingDocIds.subList(0, Math.min(replacementCount, waitingDocIds.size()));
+
+                    // Update selected entrants
+                    updateSelectedEntrants(eventId, eventName, selectedDocIds, docIdToUserId, waitingDocIds.size(), callback);
+                })
+                .addOnFailureListener(e -> {
+                    if (callback != null) callback.onFailure("Failed to load waiting list: " + e.getMessage());
                 });
     }
 
@@ -266,6 +319,7 @@ public class LotteryManager {
         Timestamp selectedTime = Timestamp.now();
         List<String> selectedUserIds = new ArrayList<>();
 
+
         // Update each selected entrant
         for (String docId : selectedDocIds) {
             String userId = docIdToUserId.get(docId);
@@ -294,17 +348,67 @@ public class LotteryManager {
 
         batch.update(db.collection("events").document(eventId), eventUpdates);
 
-        // Commit the batch
+        // Commit the batch first
         batch.commit()
                 .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "========================================");
                     Log.d(TAG, "✓✓✓ LOTTERY COMPLETED SUCCESSFULLY ✓✓✓");
-                    Log.d(TAG, "Event: " + eventName);
-                    Log.d(TAG, "Selected: " + selectedDocIds.size() + " / " + totalWaiting);
-                    Log.d(TAG, "========================================");
 
-                    // Send notifications to selected entrants
-                    sendSelectionNotifications(eventId, eventName, selectedUserIds);
+                    // 1️⃣ Notify selected entrants
+                    notificationHelper.notifyChosenEntrants(
+                            eventId,
+                            selectedUserIds,
+                            eventName,
+                            new NotificationHelper.NotificationCallback() {
+                                @Override
+                                public void onSuccess(String message) {
+                                    Log.d(TAG, "Selected entrants notified: " + message);
+                                }
+
+                                @Override
+                                public void onFailure(String error) {
+                                    Log.e(TAG, "Failed to notify selected entrants: " + error);
+                                }
+                            }
+                    );
+
+                    // 2️⃣ Now notify remaining waiting-list entrants
+                    db.collection("waiting_lists")
+                            .document(eventId)
+                            .collection("entrants")
+                            .whereEqualTo("status", "waiting")
+                            .get()
+                            .addOnSuccessListener(querySnapshot -> {
+                                List<String> waitingIds = new ArrayList<>();
+                                for (DocumentSnapshot doc : querySnapshot) {
+                                    WaitingListEntry entry = doc.toObject(WaitingListEntry.class);
+                                    if (entry != null) {
+                                        waitingIds.add(entry.getUserId());
+                                    }
+                                }
+
+                                if (!waitingIds.isEmpty()) {
+                                    notificationHelper.notifyAllWaitingListEntrants(
+                                            eventId,
+                                            waitingIds,
+                                            eventName,
+                                            new NotificationHelper.NotificationCallback() {
+                                                @Override
+                                                public void onSuccess(String message) {
+                                                    Log.d(TAG, "Waiting-list entrants notified: " + message);
+                                                }
+
+                                                @Override
+                                                public void onFailure(String error) {
+                                                    Log.e(TAG, "Failed to notify waiting-list entrants: " + error);
+                                                }
+                                            }
+                                    );
+                                } else {
+                                    Log.d(TAG, "No waiting-list entrants to notify.");
+                                }
+
+                            })
+                            .addOnFailureListener(e -> Log.e(TAG, "Failed to get waiting-list entrants", e));
 
                     if (callback != null) {
                         callback.onSuccess(selectedDocIds.size(), totalWaiting);
@@ -316,7 +420,7 @@ public class LotteryManager {
                         callback.onFailure("Error updating entrants: " + e.getMessage());
                     }
                 });
-    }
+    };
 
     /**
      * Mark draw as complete even when no selections made
@@ -349,7 +453,7 @@ public class LotteryManager {
     }
 
     /**
-     * Send notifications to selected entrants
+     * Send notifications to selected entrants (deprecated)
      */
     private void sendSelectionNotifications(String eventId, String eventName,
                                             List<String> selectedUserIds) {

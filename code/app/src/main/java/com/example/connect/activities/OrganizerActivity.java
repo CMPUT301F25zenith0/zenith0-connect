@@ -3,8 +3,10 @@ package com.example.connect.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,6 +33,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -60,6 +63,8 @@ import java.util.Locale;
 public class OrganizerActivity extends AppCompatActivity {
 
     private static final String TAG = "OrganizerActivity";
+    private static final String PRIMARY_DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+    private static final String LEGACY_DATE_PATTERN = "yyyy-MM-dd HH:mm";
 
     // UI Components
     private MaterialButton btnNewEvent;
@@ -158,8 +163,8 @@ public class OrganizerActivity extends AppCompatActivity {
         });
 
         btnNavMap.setOnClickListener(v -> {
-            // TODO: Navigate to Map
-            Toast.makeText(this, "Map - Coming soon", Toast.LENGTH_SHORT).show();
+            // US 02.02.02: Show dialog to select event for map view
+            showEventSelectionDialogForMap();
         });
 
         btnNavProfile.setOnClickListener(v -> {
@@ -256,8 +261,8 @@ public class OrganizerActivity extends AppCompatActivity {
         // Reset all buttons to default state
         resetFilterButtons();
 
-        // Highlight selected button
-        selectedButton.setBackgroundColor(getResources().getColor(R.color.filter_selected, null));
+        // Highlight selected button with dark blue palette
+        selectedButton.setBackgroundColor(getResources().getColor(R.color.dark_blue, null));
         selectedButton.setTextColor(getResources().getColor(android.R.color.white, null));
 
         // Update current filter
@@ -268,19 +273,20 @@ public class OrganizerActivity extends AppCompatActivity {
     }
 
     private void resetFilterButtons() {
-        // Reset all filter buttons to default outlined style
-        int defaultTextColor = getResources().getColor(R.color.filter_text_default, null);
+        // Reset all filter buttons to default pink style
+        int defaultTextColor = getResources().getColor(R.color.interests, null);
+        int defaultBackground = getResources().getColor(R.color.mist_pink, null);
 
-        btnTotalEvents.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnTotalEvents.setBackgroundColor(defaultBackground);
         btnTotalEvents.setTextColor(defaultTextColor);
 
-        btnOpen.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnOpen.setBackgroundColor(defaultBackground);
         btnOpen.setTextColor(defaultTextColor);
 
-        btnClosed.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnClosed.setBackgroundColor(defaultBackground);
         btnClosed.setTextColor(defaultTextColor);
 
-        btnDrawn.setBackgroundColor(android.graphics.Color.TRANSPARENT);
+        btnDrawn.setBackgroundColor(defaultBackground);
         btnDrawn.setTextColor(defaultTextColor);
     }
 
@@ -326,24 +332,50 @@ public class OrganizerActivity extends AppCompatActivity {
     }
 
     private boolean isEventOpen(Event event) {
-        String regStart = event.getRegStart();
-        String regStop = event.getRegStop();
-
-        boolean hasRegWindow = regStart != null && !regStart.isEmpty() &&
-                regStop != null && !regStop.isEmpty();
-
-        // TODO: Add date comparison logic
-        return hasRegWindow;
+        return event != null && !hasEventEnded(event);
     }
 
     private boolean isEventClosed(Event event) {
-        // TODO: Implement proper logic based on registration end date
-        return false;
+        return event != null && hasEventEnded(event);
     }
 
     private boolean isEventDrawn(Event event) {
-        // TODO: Implement proper logic based on draw status field
-        return false;
+        return event != null && event.isDrawCompleted();
+    }
+
+    private boolean hasEventEnded(Event event) {
+        if (event == null) {
+            return false;
+        }
+
+        Date now = new Date();
+
+        Date regStopDate = parseEventDate(event.getRegStop());
+        if (regStopDate != null && !now.before(regStopDate)) {
+            return true;
+        }
+
+        Date eventEndDate = parseEventDate(event.getEndTime());
+        return eventEndDate != null && now.after(eventEndDate);
+    }
+
+    private Date parseEventDate(String dateString) {
+        if (dateString == null || dateString.trim().isEmpty()) {
+            return null;
+        }
+
+        for (String pattern : new String[]{PRIMARY_DATE_PATTERN, LEGACY_DATE_PATTERN}) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat(pattern, Locale.getDefault());
+                sdf.setLenient(false);
+                return sdf.parse(dateString);
+            } catch (ParseException ignored) {
+                // Try the next pattern
+            }
+        }
+
+        Log.w(TAG, "Unable to parse date string: " + dateString);
+        return null;
     }
     /**
      * US 02.06.05
@@ -517,6 +549,39 @@ public class OrganizerActivity extends AppCompatActivity {
         Date date = ts.toDate();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
         return sdf.format(date);
+    }
+
+    /**
+     * Shows a dialog to select an event for viewing the map (US 02.02.02)
+     */
+    private void showEventSelectionDialogForMap() {
+        if (allEvents.isEmpty()) {
+            Toast.makeText(this, "No events available. Create an event first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Create array of event names for the dialog
+        List<String> eventNames = new ArrayList<>();
+        for (Event event : allEvents) {
+            String name = event.getName() != null ? event.getName() : "Unnamed Event";
+            eventNames.add(name);
+        }
+        
+        String[] eventNamesArray = eventNames.toArray(new String[0]);
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Event to View Map");
+        builder.setItems(eventNamesArray, (dialog, which) -> {
+            Event selectedEvent = allEvents.get(which);
+            if (selectedEvent != null && selectedEvent.getEventId() != null) {
+                // Launch map activity for selected event
+                Intent intent = new Intent(OrganizerActivity.this, EntrantMapActivity.class);
+                intent.putExtra("EVENT_ID", selectedEvent.getEventId());
+                startActivity(intent);
+            }
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 
     @Override
