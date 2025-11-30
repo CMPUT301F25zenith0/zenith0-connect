@@ -43,16 +43,14 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Activity for managing event lottery draw and viewing entrants
+ * Activity for managing event lottery draws and viewing entrants.
  *
  * Features:
  * - View event details and statistics
  * - Filter entrants by status (Waiting, Selected, Enrolled, Canceled)
  * - View list of entrants with their details
  * - Navigate between different entrant categories
- *
- * + US 02.07.02 / 02.07.03:
- *   Send notifications to all selected / canceled entrants
+ * - Send notifications to selected or canceled entrants
  */
 public class ManageDrawActivity extends AppCompatActivity {
 
@@ -102,13 +100,14 @@ public class ManageDrawActivity extends AppCompatActivity {
     private String eventId;
     private Event currentEvent;
     private WaitingListAdapter adapter;
-    private List<WaitingListEntry> allEntries = new ArrayList<>();
-    private List<WaitingListEntry> filteredEntries = new ArrayList<>();
-    private String currentFilter = "waiting";
+    List<WaitingListEntry> allEntries = new ArrayList<>();
+    List<WaitingListEntry> filteredEntries = new ArrayList<>();
+    String currentFilter = "waiting";
 
     // Firebase
     private FirebaseFirestore db;
     private FirebaseAuth auth;
+    private boolean isTest = false;
 
     // 🔹 Notifications
     private NotificationHelper notificationHelper;
@@ -116,14 +115,17 @@ public class ManageDrawActivity extends AppCompatActivity {
 
     private boolean isFirstLoad = true;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_manage_draw);
 
         // Initialize Firebase
-        db = FirebaseFirestore.getInstance();
-        auth = FirebaseAuth.getInstance();
+        if (!isTest) {
+            db = FirebaseFirestore.getInstance();
+            auth = FirebaseAuth.getInstance();
+        }
 
         // 🔹 Initialize helper
         notificationHelper = new NotificationHelper();
@@ -147,6 +149,10 @@ public class ManageDrawActivity extends AppCompatActivity {
         // Set default filter to Waiting
         selectTab(btnTabWaiting, "waiting");
     }
+
+    public void setIsTest(boolean isTest) { this.isTest = isTest; }
+    public void setFirestore(com.google.firebase.firestore.FirebaseFirestore db) { this.db = db; }
+    public void setAuth(com.google.firebase.auth.FirebaseAuth auth) { this.auth = auth; }
 
     /**
      * Initialize all view components
@@ -217,8 +223,7 @@ public class ManageDrawActivity extends AppCompatActivity {
         btnNotifyCanceled.setOnClickListener(v -> handleNotifyCanceled());
 
         // 🔹 US 02.06.04 - Cancel entrants that did not sign up (still "selected")
-//        btnCancelUnconfirmed.setOnClickListener(v -> handleCancelUnconfirmed());
-
+        //  btnCancelUnconfirmed.setOnClickListener(v -> handleCancelUnconfirmed());
 
 
         btnNotifyWaiting.setOnClickListener(v -> handleNotifyWaitlist());
@@ -250,11 +255,18 @@ public class ManageDrawActivity extends AppCompatActivity {
 
         btnCancelUnresponsive.setOnClickListener(v -> {
 
-            // 1 day = 24h * 60m * 60s * 1000ms
-            long oneDayMillis = 24L * 60L * 60L * 1000L;
-            long cutoffMillis = System.currentTimeMillis() - oneDayMillis;
+            // Get unresponsive duration from the event (in hours, for example)
+            long durationHours = currentEvent.getUnresponsiveDurationHours(); // default fallback if null
+            if (durationHours <= 0) durationHours = 24; // fallback to 24h if not set
+
+            // Convert hours to milliseconds
+            long unresponsiveDurationMillis = durationHours * 60L * 60L * 1000L;
+
+            // Cutoff timestamp
+            long cutoffMillis = System.currentTimeMillis() - unresponsiveDurationMillis;
             Timestamp cutoffTimestamp = new Timestamp(new Date(cutoffMillis));
 
+            long finalDurationHours = durationHours;
             db.collection("waiting_lists")
                     .document(eventId)
                     .collection("entrants")
@@ -264,8 +276,7 @@ public class ManageDrawActivity extends AppCompatActivity {
                     .addOnSuccessListener(query -> {
 
                         if (query.isEmpty()) {
-                            Toast.makeText(this, "No unresponsive entrants (entrants selected >1 day ago)", Toast.LENGTH_SHORT).show();
-
+                            Toast.makeText(this, "No unresponsive entrants (selected >" + finalDurationHours + "h ago)", Toast.LENGTH_SHORT).show();
                             Log.d(TAG, "No unresponsive selected entrants.");
                             return;
                         }
@@ -290,7 +301,7 @@ public class ManageDrawActivity extends AppCompatActivity {
                             lotteryManager.performReplacementLottery(
                                     eventId,
                                     eventName,
-                                    numCancelled, // number of people we just cancelled and should replace
+                                    numCancelled,
                                     new LotteryManager.LotteryCallback() {
                                         @Override
                                         public void onSuccess(int selectedCount, int waitingListCount) {
@@ -309,10 +320,16 @@ public class ManageDrawActivity extends AppCompatActivity {
                     .addOnFailureListener(e -> Log.e(TAG, "Failed to fetch entrants", e));
         });
 
-
         adapter.setOnSendNotificationClickListener(entry -> {
-            // Your custom logic here, Aalpesh
             handleNotifyCustom(entry);
+        });
+        adapter.setOnCancelEntrantClickListener(entry -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Cancel Entrant")
+                    .setMessage("Are you sure you want to cancel " + entry.getUser().getName() + "?")
+                    .setPositiveButton("Yes", (dialog, which) -> cancelSingleEntrant(entry))
+                    .setNegativeButton("No", null)
+                    .show();
         });
 
         btnNavDashboard.setOnClickListener(v -> {
@@ -342,6 +359,30 @@ public class ManageDrawActivity extends AppCompatActivity {
         });
     }
 
+    private void cancelSingleEntrant(WaitingListEntry entry) {
+        if (entry.getDocumentId() == null || entry.getDocumentId().isEmpty()) {
+            Toast.makeText(this, "Error: Entry has no document ID", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", "canceled");
+        updates.put("canceled_date", Timestamp.now());
+
+        db.collection("waiting_lists")
+                .document(eventId)
+                .collection("entrants")
+                .document(entry.getDocumentId())
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, entry.getUser().getName() + " canceled", Toast.LENGTH_SHORT).show();
+                    loadWaitingListEntries(); // refresh the list and counts
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to cancel " + entry.getUser().getName(), Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Failed to cancel entrant", e);
+                });
+    }
 
 
     /**
@@ -368,7 +409,7 @@ public class ManageDrawActivity extends AppCompatActivity {
     /**
      * Setup RecyclerView with adapter
      */
-    private void setupRecyclerView() {
+    void setupRecyclerView() {
         // Find the content container and add RecyclerView dynamically
         View contentContainer = findViewById(R.id.contentContainer);
 
@@ -579,7 +620,7 @@ public class ManageDrawActivity extends AppCompatActivity {
     /**
      * Called when all waiting list entries and user data have been loaded
      */
-    private void onAllEntriesLoaded() {
+    void onAllEntriesLoaded() {
         Log.d(TAG, "Loaded " + allEntries.size() + " entries with user data for event: " + eventId);
 
         int waitingCount = 0;
@@ -669,7 +710,7 @@ public class ManageDrawActivity extends AppCompatActivity {
     /**
      * Filter entries by status
      */
-    private void filterEntries(String status) {
+    void filterEntries(String status) {
         filteredEntries.clear();
 
         for (WaitingListEntry entry : allEntries) {
@@ -744,7 +785,8 @@ public class ManageDrawActivity extends AppCompatActivity {
 
                     },
                     title,
-                    body
+                    body,
+                    "custom"
             );
         });
     }

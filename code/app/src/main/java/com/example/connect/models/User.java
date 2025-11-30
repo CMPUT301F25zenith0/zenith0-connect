@@ -84,6 +84,7 @@ public class User {
         this.profileImageUrl = profileImageUrl;
     }
 
+
     // Getters and setters with @PropertyName annotations
 
     @PropertyName("user_id")

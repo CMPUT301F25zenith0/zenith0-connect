@@ -1,3 +1,5 @@
+import org.gradle.internal.classpath.Instrumented.systemProperty
+
 plugins {
     alias(libs.plugins.android.application)
     // Add the Google services Gradle plugin
@@ -36,6 +38,11 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
+            // THIS LINE KILLS THE FIRESTORE CRASH FOREVER
+            all {
+                systemProperty ("robolectric.enabledSdks", "28")
+                systemProperty ("firebase.firestore.settings.persistenceEnabled", "false")
+            }
         }
     }
 }
@@ -66,16 +73,28 @@ dependencies {
     // ---------- Google Maps and Location Services (US 02.02.02) ----------
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
+    implementation(libs.core)
 
     // ---------- Unit testing ----------
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.mockito:mockito-core:5.12.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
+    testImplementation("org.robolectric:robolectric:4.11.1")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+    testImplementation("androidx.test:core:1.6.0")
+
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 
     // ---------- Android Instrumented testing ----------
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
-    androidTestImplementation("androidx.test:core:1.6.0")
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("org.mockito:mockito-android:5.12.0")
+    androidTestImplementation("org.mockito:mockito-android:5.12.0")
+    androidTestImplementation ("org.mockito:mockito-inline:5.12.0")  // Important for final classes
+
+    testImplementation ("com.google.firebase:firebase-appcheck-safetynet:16.1.2") // any recent version
+    testImplementation("com.google.firebase:firebase-firestore:24.10.0")
+    testImplementation ("org.robolectric:robolectric:4.13")
+    testImplementation ("androidx.test:core:1.5.0")
 }

@@ -258,7 +258,8 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                                                     }
                                                 },
                                                 notifTitle,
-                                                notifBody
+                                                notifBody,
+                                                "event_Cancelled"
                                         );
                                     }
                                 });
