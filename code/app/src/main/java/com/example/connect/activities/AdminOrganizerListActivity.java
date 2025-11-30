@@ -272,6 +272,27 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                         // Add this complex task to the list
                         tasks.add(deleteWaitlistTask);
                     }
+                    // --- Part B: Remove User from OTHER Waiting Lists (Collection Group) ---
+                    // We add this as a separate task to the list
+                    com.google.android.gms.tasks.Task<Void> removeUserFromWaitlistsTask = db.collectionGroup("entrants")
+                            .whereEqualTo("user_id", userId) // IMPORTANT: Must match your Firestore Index field name (snake_case vs camelCase)
+                            .get()
+                            .continueWithTask(task -> {
+                                if (!task.isSuccessful() || task.getResult() == null) {
+                                    // If query fails, we return a successful null task so we don't block the whole process
+                                    Log.e("AdminOrgList", "Failed to query entrants group", task.getException());
+                                    return com.google.android.gms.tasks.Tasks.forResult(null);
+                                }
+
+                                WriteBatch batch = db.batch();
+                                // Add every instance of this user in any waitlist to the delete batch
+                                for (DocumentSnapshot doc : task.getResult()) {
+                                    batch.delete(doc.getReference());
+                                }
+                                return batch.commit();
+                            });
+
+                    tasks.add(removeUserFromWaitlistsTask);
 
                     // Wait for all event and waiting list deletions (including subcollections) to complete
                     com.google.android.gms.tasks.Tasks.whenAll(tasks)
