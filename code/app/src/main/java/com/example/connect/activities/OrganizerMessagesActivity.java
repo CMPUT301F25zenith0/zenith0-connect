@@ -488,7 +488,7 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
 
                     List<String> recipientIds = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
-                        String userId = doc.getString("userId");
+                        String userId = doc.getString("user_id");
                         if (userId != null) {
                             recipientIds.add(userId);
                         }
