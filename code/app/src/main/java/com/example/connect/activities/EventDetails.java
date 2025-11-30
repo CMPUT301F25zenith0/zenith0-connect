@@ -368,7 +368,30 @@ public class EventDetails extends AppCompatActivity {
             return sdf.format(date);
 
         } else if (dateTimeObj instanceof String) {
-            return (String) dateTimeObj;
+            String dateString = ((String) dateTimeObj).trim();
+            if (dateString.isEmpty()) {
+                return "Date & Time";
+            }
+
+            String[] patterns = {
+                    "yyyy-MM-dd'T'HH:mm:ss",
+                    "yyyy-MM-dd"
+            };
+
+            for (String pattern : patterns) {
+                try {
+                    SimpleDateFormat isoFormat = new SimpleDateFormat(pattern, Locale.getDefault());
+                    Date parsedDate = isoFormat.parse(dateString);
+                    if (parsedDate != null) {
+                        SimpleDateFormat displayFormat = new SimpleDateFormat("dd MMMM yyyy", Locale.getDefault());
+                        return displayFormat.format(parsedDate);
+                    }
+                } catch (Exception ignored) {
+                    // Try the next pattern
+                }
+            }
+
+            return dateString;
         }
         return "Date & Time";
     }

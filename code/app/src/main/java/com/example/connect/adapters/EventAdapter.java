@@ -35,6 +35,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -113,7 +115,7 @@ public class EventAdapter extends ArrayAdapter<Event> {
 
         // Set event details
         holder.eventTitle.setText(event.getName() != null ? event.getName() : "Untitled Event");
-        holder.eventDateTime.setText(event.getDateTime() != null ? event.getDateTime() : "TBD");
+        holder.eventDateTime.setText(formatEventDate(event.getDateTime()));
         holder.eventLocation.setText(event.getLocation() != null ? event.getLocation() : "Location TBD");
         String formatterPrice = priceFormat(event.getPrice());
         holder.eventPrice.setText(formatterPrice);
@@ -170,6 +172,40 @@ public class EventAdapter extends ArrayAdapter<Event> {
             // If parsing fails (e.g. text is "Donation only"), return original text
             return priceStr;
         }
+    }
+
+    /**
+     * Formats ISO-ish date strings to "dd MMMM yyyy" for the All Events list.
+     */
+    private String formatEventDate(String dateTime) {
+        if (dateTime == null || dateTime.trim().isEmpty()) {
+            return "TBD";
+        }
+
+        String[] patterns = {
+                "yyyy-MM-dd'T'HH:mm:ss",
+                "yyyy-MM-dd HH:mm:ss",
+                "yyyy-MM-dd",
+                "MMM dd, yyyy",
+                "dd MMM yyyy",
+                "MM/dd/yyyy",
+                "dd/MM/yyyy"
+        };
+
+        for (String pattern : patterns) {
+            try {
+                SimpleDateFormat parser = new SimpleDateFormat(pattern, Locale.getDefault());
+                Date parsed = parser.parse(dateTime);
+                if (parsed != null) {
+                    SimpleDateFormat display = new SimpleDateFormat("dd MMMM yyyy", Locale.getDefault());
+                    return display.format(parsed);
+                }
+            } catch (Exception ignored) {
+                // keep trying patterns
+            }
+        }
+
+        return dateTime;
     }
 
     /**
