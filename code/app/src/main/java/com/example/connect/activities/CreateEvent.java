@@ -214,6 +214,7 @@ public class CreateEvent extends AppCompatActivity {
         etLatitude = findViewById(R.id.etLatitude);
         etLongitude = findViewById(R.id.etLongitude);
         etPrice = findViewById(R.id.etPrice);
+        etUnresponsiveHours = findViewById(R.id.etUnresponsiveHours);
 
         // Buttons
         btnBack = findViewById(R.id.btnBack);
@@ -228,7 +229,7 @@ public class CreateEvent extends AppCompatActivity {
 
         // ImageViews
         ivEventImage = findViewById(R.id.ivEventImage);
-        ivAddImage = findViewById(R.id.ivAddImage);
+        ivAddImage = findViewById(R.id.ivAddImage); // Plus icon
 
         // ChipGroup for labels (Merged from Block 1)
         chipGroupLabels = findViewById(R.id.chipGroupLabels);
@@ -367,10 +368,7 @@ public class CreateEvent extends AppCompatActivity {
             return;
         }
         ivEventImage.setImageBitmap(bitmap);
-        ivAddImage.setImageBitmap(bitmap);
-        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        ivAddImage.setPadding(0, 0, 0, 0);
-        ivAddImage.clearColorFilter();
+
     }
 
     /**
@@ -383,10 +381,6 @@ public class CreateEvent extends AppCompatActivity {
             return;
         }
         ivEventImage.setImageURI(uri);
-        ivAddImage.setImageURI(uri);
-        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        ivAddImage.setPadding(0, 0, 0, 0);
-        ivAddImage.clearColorFilter();
     }
 
     /**
@@ -396,10 +390,6 @@ public class CreateEvent extends AppCompatActivity {
     private void showPlaceholderImage() {
         if (ivEventImage == null || ivAddImage == null) return;
         ivEventImage.setImageResource(R.drawable.placeholder_img);
-        ivAddImage.setImageResource(android.R.drawable.ic_input_add);
-        ivAddImage.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        ivAddImage.setPadding(dpToPx(4), dpToPx(4), dpToPx(4), dpToPx(4));
-        ivAddImage.setColorFilter(ContextCompat.getColor(this, R.color.dark_blue));
     }
 
     /**
@@ -441,6 +431,14 @@ public class CreateEvent extends AppCompatActivity {
 
                         String price = documentSnapshot.getString("price");
                         etPrice.setText(price != null && !price.equals("0") ? price : "");
+
+                        // Load Unresponsive Entrants Duration
+                        Long unresponsiveHours = documentSnapshot.getLong("unresponsive_hours");
+                        if (unresponsiveHours == null || unresponsiveHours <= 0) {
+                            unresponsiveHours = 24L; // default fallback
+                        }
+                        etUnresponsiveHours.setText(String.valueOf(unresponsiveHours));
+
 
                         // Draw capacity
                         Long drawCapacity = documentSnapshot.getLong("draw_capacity");
@@ -1062,6 +1060,19 @@ public class CreateEvent extends AppCompatActivity {
         String price = etPrice.getText().toString().trim();
         eventData.put("price", price.isEmpty() ? "0" : price);
         eventData.put("status", isDraft ? "draft" : "published");
+
+        // Unresponsive Entrants Duration
+        long unresponsiveHours = 24L; // default
+        String hoursStr = etUnresponsiveHours.getText().toString().trim();
+        if (!hoursStr.isEmpty()) {
+            try {
+                unresponsiveHours = Long.parseLong(hoursStr);
+                if (unresponsiveHours <= 0) unresponsiveHours = 24L; // fallback
+            } catch (NumberFormatException e) {
+                unresponsiveHours = 24L; // fallback
+            }
+        }
+        eventData.put("unresponsive_hours", unresponsiveHours);
 
         if (!isEditMode) eventData.put("created_at", System.currentTimeMillis());
         eventData.put("updated_at", System.currentTimeMillis());

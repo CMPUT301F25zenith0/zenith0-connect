@@ -142,12 +142,40 @@ public class LotteryScheduler {
                     Event event = doc.toObject(Event.class);
                     event.setEventId(doc.getId());
 
-                    // Bypass all checks
+                    String regStopStr = event.getRegStop();
+                    if (regStopStr == null) {
+                        Log.e(TAG, "Manual lottery blocked: reg_stop is NULL");
+                        return;
+                    }
+
+                    try {
+                        SimpleDateFormat sdf =
+                                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+                        Date regStopDate = sdf.parse(regStopStr);
+                        Date now = new Date();
+
+                        if (regStopDate == null) {
+                            Log.e(TAG, "Manual lottery blocked: Failed to parse reg_stop");
+                            return;
+                        }
+
+                        if (now.before(regStopDate)) {
+                            Log.e(TAG, "❌ Manual lottery blocked: Registration deadline not passed");
+                            return;
+                        }
+
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Manual lottery blocked: Failed to parse reg_stop", ex);
+                        return;
+                    }
+
+                    // ✅ All checks passed
                     performLotteryForEvent(event);
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Manual lottery failed to fetch event", e);
                 });
     }
+
 
 }

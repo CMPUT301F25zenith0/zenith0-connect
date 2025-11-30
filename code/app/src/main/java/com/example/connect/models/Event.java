@@ -89,6 +89,7 @@ public class Event {
         this.price = "Free";
         this.drawCompleted = false;
         this.selectedCount = 0;
+        this.unresponsiveDurationHours = 24L;
     }
 
     // Getters and setters
@@ -226,6 +227,9 @@ public class Event {
         this.requireGeolocation = requireGeolocation;
     }
 
+    @PropertyName("unresponsive_hours")
+    private Long unresponsiveDurationHours; // nullable, optional
+
     /**
      * Check if event is at capacity
      */
@@ -270,4 +274,15 @@ public class Event {
                 category, regStart, regStop, waitingListCount, drawCapacity, endTime,
                 drawCompleted, drawDate, selectedCount);
     }
+
+    @PropertyName("unresponsive_hours")
+    public Long getUnresponsiveDurationHours() {
+        return unresponsiveDurationHours != null ? unresponsiveDurationHours : 24L; // default 24h
+    }
+
+    @PropertyName("unresponsive_hours")
+    public void setUnresponsiveDurationHours(Long unresponsiveDurationHours) {
+        this.unresponsiveDurationHours = unresponsiveDurationHours;
+    }
+
 }

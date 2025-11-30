@@ -161,7 +161,12 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         User user = document.toObject(User.class);
                         user.setUserId(document.getId());
-                        currentOrganizers.add(user);
+
+                        // Only add non-disabled accounts
+                        Boolean disabled = document.getBoolean("disabled");
+                        if (disabled == null || !disabled) {
+                            currentOrganizers.add(user);
+                        }
                     }
 
                     // Store the full list
@@ -175,12 +180,11 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                     progressBar.setVisibility(View.GONE);
                     Toast.makeText(this, "Error loading organizers: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     Log.e("AdminOrgList", "Error loading organizers", e);
-                    // Ensure empty state is shown on failure
                     tvEmptyState.setText("Failed to load organizers.");
                     tvEmptyState.setVisibility(View.VISIBLE);
                 });
-
     }
+
     // Slightly modified deleteOrganizer
     private void deleteOrganizer(User user) {
         if (user.getUserId() == null) return;
@@ -254,7 +258,8 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                                                     }
                                                 },
                                                 notifTitle,
-                                                notifBody
+                                                notifBody,
+                                                "event_Cancelled"
                                         );
                                     }
                                 });
@@ -267,18 +272,18 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                     // Wait for all event and waiting list deletions to complete
                     com.google.android.gms.tasks.Tasks.whenAll(tasks)
                             .addOnSuccessListener(aVoid -> {
-                                // 2. All events/waiting lists deleted. Now delete the user account
+                                // 2. All events/waiting lists deleted. Now disable the user account
                                 db.collection("accounts").document(userId)
-                                        .delete()
+                                        .update("disabled", true)
                                         .addOnSuccessListener(aVoid2 -> {
                                             progressBar.setVisibility(View.GONE);
-                                            Toast.makeText(this, "Organizer and their events successfully removed. Users notified.",
+                                            Toast.makeText(this, "Organizer account disabled and their events removed. Users notified.",
                                                     Toast.LENGTH_SHORT).show();
                                             loadOrganizers(); // Refresh list
                                         })
                                         .addOnFailureListener(e -> {
                                             progressBar.setVisibility(View.GONE);
-                                            Toast.makeText(this, "Error removing organizer account: " + e.getMessage(),
+                                            Toast.makeText(this, "Error disabling organizer account: " + e.getMessage(),
                                                     Toast.LENGTH_SHORT).show();
                                         });
                             })

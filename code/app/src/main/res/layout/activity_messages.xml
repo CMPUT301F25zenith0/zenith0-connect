@@ -55,7 +55,7 @@
         android:id="@+id/tvSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Manage events and send notifications to entrants"
+        android:text="View and manage all notifications sent to entrants"
         android:textSize="14sp"
         android:textColor="@color/text_secondary_light"
         android:layout_marginStart="16dp"
@@ -83,6 +83,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Messages Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -92,214 +93,214 @@
                 app:strokeColor="@color/mist_pink"
                 app:strokeWidth="1dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="20dp">
-
-            <!-- Event Configuration Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Event Configuration"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary_light"
-                android:layout_marginBottom="12dp"/>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Event ID"
-                android:layout_marginBottom="12dp"
-                app:boxBackgroundColor="@color/card_bg_light"
-                app:boxStrokeColor="@color/mist_pink">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_event_id"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="TEST_EVENT"
-                    android:inputType="text"/>
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Event Name"
-                android:layout_marginBottom="16dp"
-                app:boxBackgroundColor="@color/card_bg_light"
-                app:boxStrokeColor="@color/mist_pink">
+                    <!-- Messages Header -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sent Messages"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary_light"
+                        android:layout_marginBottom="12dp"/>
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_event_name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Community Basketball"
-                    android:inputType="text"/>
-            </com.google.android.material.textfield.TextInputLayout>
+                    <!-- Search Bar -->
+                    <LinearLayout
+                        android:id="@+id/searchBar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/rounded_border"
+                        android:orientation="horizontal"
+                        android:padding="12dp"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
 
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/mist_pink"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔍"
+                            android:textSize="20sp"
+                            android:textColor="@color/dark_blue"
+                            android:paddingEnd="12dp" />
 
-            <!-- Notification Buttons Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Send Notifications"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary_light"
-                android:layout_marginBottom="12dp"/>
+                        <EditText
+                            android:id="@+id/etSearch"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Search messages by title, content, or event"
+                            android:textColorHint="#999999"
+                            android:textSize="14sp"
+                            android:background="@android:color/transparent"
+                            android:paddingStart="0dp"
+                            android:paddingEnd="0dp" />
+                    </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_notify_chosen"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Notify All Entrants"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:backgroundTint="@color/dark_blue"
-                android:padding="16dp"
-                android:layout_marginBottom="12dp"
-                app:cornerRadius="12dp"/>
+                    <!-- Filter and New Message Buttons Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="end"
+                        android:layout_marginBottom="12dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_notify_waiting_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Notify Waiting List"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:backgroundTint="@color/dark_blue"
-                android:padding="16dp"
-                android:layout_marginBottom="16dp"
-                app:cornerRadius="12dp"/>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnFilterByEvent"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:text="Filter By Event"
+                            android:textColor="@color/dark_blue"
+                            android:textSize="13sp"
+                            android:layout_marginEnd="8dp"
+                            app:strokeColor="@color/dark_blue"
+                            app:strokeWidth="1dp"
+                            app:cornerRadius="21dp"
+                            app:icon="@android:drawable/ic_menu_sort_by_size"
+                            app:iconTint="@color/dark_blue"
+                            app:iconSize="18dp"/>
 
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/mist_pink"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"/>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnNewMessage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:text="New Message"
+                            android:textColor="@color/white"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/dark_blue"
+                            app:cornerRadius="21dp"
+                            app:icon="@android:drawable/ic_menu_add"
+                            app:iconTint="@color/white"
+                            app:iconSize="18dp"/>
+                    </LinearLayout>
 
-            <!-- Messages Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Messages"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/text_primary_light"
-                android:layout_marginBottom="12dp"/>
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/mist_pink"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="16dp"/>
 
-            <!-- Search Bar -->
-            <LinearLayout
-                android:id="@+id/searchBar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/rounded_border"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
+                    <!-- Messages RecyclerView Container -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="400dp"
+                        android:background="@android:color/transparent">
 
-                <TextView
-                    android:id="@+id/btnMenu"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="☰"
-                    android:textSize="20sp"
-                    android:textColor="@color/dark_blue"
-                    android:paddingEnd="12dp" />
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerViewMessages"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clipToPadding="false"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"/>
 
-                <EditText
-                    android:id="@+id/etSearch"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="Search messages"
-                    android:textColorHint="#999999"
-                    android:textSize="14sp"
-                    android:background="@android:color/transparent"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp" />
+                        <!-- Empty State for Messages -->
+                        <LinearLayout
+                            android:id="@+id/tvNoMessages"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:visibility="gone">
 
-                <TextView
-                    android:id="@+id/btnSearch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔍"
-                    android:textSize="20sp"
-                    android:textColor="@color/dark_blue"
-                    android:paddingStart="12dp" />
-            </LinearLayout>
-            </LinearLayout>
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📭"
+                                android:textSize="48sp"
+                                android:layout_marginBottom="8dp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="No messages sent yet"
+                                android:textSize="16sp"
+                                android:textColor="@color/text_secondary_light"
+                                android:textStyle="bold"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Send your first notification to entrants"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_secondary_light"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <!-- Message Count Info -->
+                    <TextView
+                        android:id="@+id/tvMessageCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Showing all messages"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary_light"
+                        android:textStyle="italic"
+                        android:layout_marginTop="8dp"
+                        android:layout_gravity="center"/>
+
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Filter By Event Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFilterByEvent"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:text="Filter By Event"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:backgroundTint="@color/dark_blue"
-                android:paddingStart="32dp"
-                android:paddingEnd="32dp"
-                android:layout_marginBottom="12dp"
-                android:layout_gravity="end"
-                app:cornerRadius="24dp" />
-
-            <!-- Messages RecyclerView Container -->
-            <FrameLayout
+            <!-- Help Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
-                android:layout_height="300dp"
-                android:layout_marginBottom="12dp"
-                android:background="@color/card_bg_light"
-                android:elevation="1dp"
-                android:padding="12dp">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerViewMessages"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clipToPadding="false"/>
-
-                <!-- Empty State for Messages -->
-                <TextView
-                    android:id="@+id/tvNoMessages"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="No messages yet"
-                    android:textSize="16sp"
-                    android:textColor="#4A6B6B"
-                    android:visibility="gone"/>
-            </FrameLayout>
-
-            <!-- New Message Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnNewMessage"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:text="New Message"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:backgroundTint="@color/dark_blue"
-                android:paddingStart="32dp"
-                android:paddingEnd="32dp"
-                android:layout_gravity="end"
+                android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                app:cornerRadius="24dp" />
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#E3F2FD"
+                app:strokeColor="@color/dark_blue"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ℹ️"
+                        android:textSize="24sp"
+                        android:layout_marginEnd="12dp"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Quick Tips"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/dark_blue"
+                            android:layout_marginBottom="4dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="• Click any message to view full details\n• Use search to find specific messages\n• Filter by event to see event-specific notifications\n• Send custom messages to entrant groups"
+                            android:textSize="12sp"
+                            android:textColor="@color/dark_blue"
+                            android:lineSpacingExtra="2dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </ScrollView>

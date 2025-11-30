@@ -44,9 +44,9 @@ public class NotificationHelper {
     }
 
     public void notifyCustom(String eventId, List<String> chosenEntrantIds,
-                             String eventName, NotificationCallback callback, String customTitle, String customBody){
+                             String eventName, NotificationCallback callback, String customTitle, String customBody, String type){
 
-        sendNotificationsToUsers(chosenEntrantIds, customTitle, customBody, "custom", eventId, eventName, callback);
+        sendNotificationsToUsers(chosenEntrantIds, customTitle, customBody, type, eventId, eventName, callback);
     }
 
     /**
