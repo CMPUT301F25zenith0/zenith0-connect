@@ -4,6 +4,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.PropertyName;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -45,6 +46,9 @@ public class Event {
     private String imageBase64;
 
     private String category;
+
+    @PropertyName("labels")
+    private List<String> labels;
 
     @PropertyName("reg_start")
     private String regStart;
@@ -167,6 +171,12 @@ public class Event {
     public String getCategory() { return category; }
     public void setCategory(String category) { this.category = category; }
 
+    @PropertyName("labels")
+    public List<String> getLabels() { return labels; }
+
+    @PropertyName("labels")
+    public void setLabels(List<String> labels) { this.labels = labels; }
+
     @PropertyName("reg_start")
     public String getRegStart() { return regStart; }
 
@@ -259,6 +269,7 @@ public class Event {
                 Objects.equals(imageUrl, event.imageUrl) &&
                 Objects.equals(imageBase64, event.imageBase64) &&
                 Objects.equals(category, event.category) &&
+                Objects.equals(labels, event.labels) &&
                 Objects.equals(regStart, event.regStart) &&
                 Objects.equals(regStop, event.regStop) &&
                 Objects.equals(endTime, event.endTime) &&
@@ -271,7 +282,7 @@ public class Event {
         return Objects.hash(eventId, name, description, dateTime, location, locationLatitude,
                 locationLongitude, price,
                 maxParticipants, currentParticipants, organizerId, imageUrl, imageBase64,
-                category, regStart, regStop, waitingListCount, drawCapacity, endTime,
+                category, labels, regStart, regStop, waitingListCount, drawCapacity, endTime,
                 drawCompleted, drawDate, selectedCount);
     }
 
