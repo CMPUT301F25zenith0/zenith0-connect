@@ -66,7 +66,7 @@ public class EventDetails extends AppCompatActivity {
     private TextView eventTitle, tvOrgName, tvDateTime, tvLocation, tvPrice, tvRegWindow, tvWaitingList;
     private com.google.firebase.firestore.ListenerRegistration waitlistRegistration;
     private String description;
-    private Button btnInfo, btnJoinList, btnLeaveList;
+    private Button btnInfo, btnLotteryInfo, btnJoinList, btnLeaveList;
     private boolean isAdminView;
 
     // Initialize Firebase
@@ -135,6 +135,7 @@ public class EventDetails extends AppCompatActivity {
         tvRegWindow = findViewById(R.id.tv_reg_window);
         tvWaitingList = findViewById(R.id.tv_waiting_list);
         btnInfo = findViewById(R.id.btn_info);
+        btnLotteryInfo = findViewById(R.id.btn_lottery_info);
         btnJoinList = findViewById(R.id.btn_join_list);
         btnLeaveList = findViewById(R.id.btn_leave_list);
 
@@ -154,6 +155,10 @@ public class EventDetails extends AppCompatActivity {
         btnInfo.setOnClickListener(v -> {
             showEventInfo();
         });
+
+        if (btnLotteryInfo != null) {
+            btnLotteryInfo.setOnClickListener(v -> showLotteryCriteriaInfo());
+        }
 
         // ------TO BE IMPLEMENTED-----
         // Join waiting list button
@@ -368,7 +373,30 @@ public class EventDetails extends AppCompatActivity {
             return sdf.format(date);
 
         } else if (dateTimeObj instanceof String) {
-            return (String) dateTimeObj;
+            String dateString = ((String) dateTimeObj).trim();
+            if (dateString.isEmpty()) {
+                return "Date & Time";
+            }
+
+            String[] patterns = {
+                    "yyyy-MM-dd'T'HH:mm:ss",
+                    "yyyy-MM-dd"
+            };
+
+            for (String pattern : patterns) {
+                try {
+                    SimpleDateFormat isoFormat = new SimpleDateFormat(pattern, Locale.getDefault());
+                    Date parsedDate = isoFormat.parse(dateString);
+                    if (parsedDate != null) {
+                        SimpleDateFormat displayFormat = new SimpleDateFormat("dd MMMM yyyy", Locale.getDefault());
+                        return displayFormat.format(parsedDate);
+                    }
+                } catch (Exception ignored) {
+                    // Try the next pattern
+                }
+            }
+
+            return dateString;
         }
         return "Date & Time";
     }
@@ -853,6 +881,14 @@ public class EventDetails extends AppCompatActivity {
         btnClose.setOnClickListener(v -> dialog.dismiss());
 
         dialog.show();
+    }
+
+    private void showLotteryCriteriaInfo() {
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Lottery Criteria")
+                .setMessage("TThe draw is conducted by randomly selecting a fixed number of entrants from the waiting list, and every entrant has an equal and fair chance of being selected.")
+                .setPositiveButton("Got it", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     /**

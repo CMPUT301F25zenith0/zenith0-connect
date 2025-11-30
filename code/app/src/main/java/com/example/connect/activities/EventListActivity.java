@@ -35,6 +35,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Event dashboard showing featured events carousel + full list with search.
@@ -431,19 +432,23 @@ public class EventListActivity extends AppCompatActivity {
 
     private List<Event> filterByInterest(List<Event> events, String interest) {
         List<Event> filtered = new ArrayList<>();
-        String lowerInterest = interest.toLowerCase();
+        String lowerInterest = interest.toLowerCase(Locale.getDefault());
 
         for (Event event : events) {
-            boolean matchesCategory = event.getCategory() != null &&
-                    event.getCategory().toLowerCase().contains(lowerInterest);
+            List<String> labels = event.getLabels();
+            if (labels == null || labels.isEmpty()) {
+                continue;
+            }
 
-            boolean matchesTitle = event.getName() != null &&
-                    event.getName().toLowerCase().contains(lowerInterest);
+            boolean matchesLabel = false;
+            for (String label : labels) {
+                if (label != null && label.toLowerCase(Locale.getDefault()).contains(lowerInterest)) {
+                    matchesLabel = true;
+                    break;
+                }
+            }
 
-            boolean matchesDescription = event.getDescription() != null &&
-                    event.getDescription().toLowerCase().contains(lowerInterest);
-
-            if (matchesCategory || matchesTitle || matchesDescription) {
+            if (matchesLabel) {
                 filtered.add(event);
             }
         }
