@@ -75,7 +75,7 @@ public class EventDetails extends AppCompatActivity {
     
     // Location permission request (US 02.02.02)
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
-    private static final float GEO_RADIUS_METERS = 5_000f;
+    private static final float GEO_RADIUS_METERS = 20_000f; // Default 20 km
     private String pendingUserIdForLocation = null; // Store userId when waiting for permission
     private Double pendingEventLatitude = null;
     private Double pendingEventLongitude = null;
