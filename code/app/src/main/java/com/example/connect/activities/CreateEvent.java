@@ -457,6 +457,9 @@ public class CreateEvent extends AppCompatActivity {
                                         }
                                         // If null or 0, leave field empty (unlimited)
                                     }
+                                    // Disable Waitlist modification
+                                    etWaitingList.setEnabled(false);
+                                    etWaitingList.setTextColor(ContextCompat.getColor(this, R.color.charcoal));
                                 })
                                 .addOnFailureListener(e -> {
                                     Log.e(TAG, "Error loading waiting list capacity", e);

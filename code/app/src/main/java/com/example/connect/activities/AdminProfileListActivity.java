@@ -20,8 +20,11 @@ import com.example.connect.adapters.AdminProfileAdapter;
 import com.example.connect.models.User;
 import com.example.connect.utils.NotificationHelper;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -193,112 +196,114 @@ public class AdminProfileListActivity extends AppCompatActivity {
         // Step 1: Mark user as disabled in Firestore
         db.collection("accounts").document(userId)
                 .update("disabled", true)
-                .addOnSuccessListener(aVoid -> {
+                .addOnSuccessListener(aVoidDisabled -> {
                     Log.d("AdminProfileList", "User marked as disabled");
 
                     // Step 2: Delete events organized by this user and notify participants
                     db.collection("events")
                             .whereEqualTo("organizer_id", userId)
                             .get()
-                            .addOnSuccessListener(queryDocumentSnapshots -> {
-                                for (QueryDocumentSnapshot eventDoc : queryDocumentSnapshots) {
+                            .addOnSuccessListener(eventSnapshots -> {
+
+                                // 2a. Handle events organized by this user (Notifications + Deletion)
+                                for (QueryDocumentSnapshot eventDoc : eventSnapshots) {
                                     String eventId = eventDoc.getId();
                                     String eventTitle = eventDoc.getString("event_title");
                                     if (eventTitle == null) eventTitle = "An event";
 
-                                    // Collect users to notify
+                                    // --- Notification Logic Starts ---
                                     List<String> usersToNotify = new ArrayList<>();
-
-                                    // Get waiting list users
                                     String finalEventTitle = eventTitle;
+
                                     db.collection("waiting_lists").document(eventId).get()
                                             .addOnSuccessListener(waitingDoc -> {
                                                 if (waitingDoc.exists()) {
                                                     List<String> entries = (List<String>) waitingDoc.get("entries");
-                                                    if (entries != null) {
-                                                        usersToNotify.addAll(entries);
-                                                    }
+                                                    if (entries != null) usersToNotify.addAll(entries);
                                                 }
-
-                                                // Get chosen entrants
                                                 List<String> chosenList = (List<String>) eventDoc.get("chosen_entrants");
-                                                if (chosenList != null) {
-                                                    usersToNotify.addAll(chosenList);
-                                                }
+                                                if (chosenList != null) usersToNotify.addAll(chosenList);
 
-                                                // Get enrolled users
                                                 List<String> enrolledList = (List<String>) eventDoc.get("enrolled_users");
-                                                if (enrolledList != null) {
-                                                    usersToNotify.addAll(enrolledList);
-                                                }
+                                                if (enrolledList != null) usersToNotify.addAll(enrolledList);
 
-                                                // Remove duplicates
                                                 List<String> uniqueUsers = new ArrayList<>(new java.util.HashSet<>(usersToNotify));
 
-                                                // Send notification
                                                 if (!uniqueUsers.isEmpty()) {
                                                     String notifTitle = "Event Cancelled ❌";
-                                                    String notifBody = "Unfortunately, \"" + finalEventTitle +
-                                                            "\" has been cancelled.";
-
-                                                    notificationHelper.notifyCustom(
-                                                            eventId,
-                                                            uniqueUsers,
-                                                            finalEventTitle,
-                                                            new NotificationHelper.NotificationCallback() {
-                                                                @Override
-                                                                public void onSuccess(String message) {
-                                                                    Log.d("AdminProfileList", "Cancellation notifications sent");
-                                                                }
-
-                                                                @Override
-                                                                public void onFailure(String error) {
-                                                                    Log.e("AdminProfileList", "Failed to send notifications: " + error);
-                                                                }
-                                                            },
-                                                            notifTitle,
-                                                            notifBody,
-                                                            "event_Cancelled"
-                                                    );
+                                                    String notifBody = "Unfortunately, \"" + finalEventTitle + "\" has been cancelled.";
+                                                    notificationHelper.notifyCustom(eventId, uniqueUsers, finalEventTitle, new NotificationHelper.NotificationCallback() {
+                                                        @Override
+                                                        public void onSuccess(String message) { Log.d("AdminProfileList", "Notif sent"); }
+                                                        @Override
+                                                        public void onFailure(String error) { Log.e("AdminProfileList", "Notif failed: " + error); }
+                                                    }, notifTitle, notifBody, "event_Cancelled");
                                                 }
                                             });
+                                    // --- Notification Logic Ends ---
 
-                                    // Delete the event
+                                    // Delete the event document
                                     db.collection("events").document(eventId).delete();
-                                    // Delete the waiting list for this event
-                                    db.collection("waiting_lists").document(eventId).delete();
+
+                                    // Delete the waiting list and its subcollection for this event
+                                    DocumentReference waitListRef = db.collection("waiting_lists").document(eventId);
+                                    waitListRef.collection("entrants").get()
+                                            .addOnSuccessListener(entrantSnapshots -> {
+                                                WriteBatch subBatch = db.batch();
+                                                for (DocumentSnapshot entrantDoc : entrantSnapshots) {
+                                                    subBatch.delete(entrantDoc.getReference());
+                                                }
+                                                subBatch.delete(waitListRef); // Delete parent waiting list doc
+                                                subBatch.commit();
+                                            });
                                 }
 
-                                // Step 3: Remove user from all waiting lists they joined
-                                db.collection("waiting_lists")
-                                        .whereArrayContains("entries", userId)
+                                // Step 3: Remove this user from ANY waiting list they have joined
+                                // STRATEGY: Collection Group Query on "entrants"
+                                db.collectionGroup("entrants")
+                                        .whereEqualTo("user_id", userId) // CHECK: Ensure your field in Firestore is named "userId"
                                         .get()
-                                        .addOnSuccessListener(waitingListSnapshots -> {
-                                            for (QueryDocumentSnapshot doc : waitingListSnapshots) {
-                                                db.collection("waiting_lists").document(doc.getId())
-                                                        .update("entries", com.google.firebase.firestore.FieldValue.arrayRemove(userId));
+                                        .addOnSuccessListener(entrantGroupSnapshots -> {
+
+                                            WriteBatch batch = db.batch();
+
+                                            // Add every entrant doc found to the delete batch
+                                            for (DocumentSnapshot doc : entrantGroupSnapshots) {
+                                                batch.delete(doc.getReference());
+
+                                                // Optional: If you also keep an array on the parent doc, you might need to clean that too.
+                                                // However, deleting the entrant doc fulfills the primary "remove from list" requirement.
                                             }
 
-                                            progressBar.setVisibility(View.GONE);
-                                            Toast.makeText(this, "User account disabled successfully. Event participants notified.", Toast.LENGTH_SHORT).show();
-                                            loadProfiles(); // Refresh list (user will disappear)
+                                            // Commit the batch delete
+                                            batch.commit()
+                                                    .addOnSuccessListener(aVoidBatch -> {
+                                                        progressBar.setVisibility(View.GONE);
+                                                        Toast.makeText(this, "User disabled and removed from all waiting lists.", Toast.LENGTH_SHORT).show();
+                                                        loadProfiles(); // Refresh list
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        progressBar.setVisibility(View.GONE);
+                                                        Toast.makeText(this, "User disabled, but error removing from lists.", Toast.LENGTH_SHORT).show();
+                                                        Log.e("AdminProfileList", "Batch delete failed", e);
+                                                    });
                                         })
                                         .addOnFailureListener(e -> {
                                             progressBar.setVisibility(View.GONE);
-                                            Toast.makeText(this, "Error removing user from waiting lists", Toast.LENGTH_SHORT).show();
-                                            Log.e("AdminProfileList", "Error removing user from waiting lists", e);
+                                            // IMPORTANT: If this fails, check Logcat for a link to create the Index!
+                                            Log.e("AdminProfileList", "Error querying entrants collection group. MISSING INDEX?", e);
+                                            Toast.makeText(this, "Error accessing entrant lists (Check Logs)", Toast.LENGTH_SHORT).show();
                                         });
+
                             })
                             .addOnFailureListener(e -> {
                                 progressBar.setVisibility(View.GONE);
-                                Toast.makeText(this, "Error deleting organized events", Toast.LENGTH_SHORT).show();
-                                Log.e("AdminProfileList", "Error deleting organized events", e);
+                                Log.e("AdminProfileList", "Error finding organized events", e);
                             });
                 })
                 .addOnFailureListener(e -> {
                     progressBar.setVisibility(View.GONE);
-                    Toast.makeText(this, "Error disabling user: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    Log.e("AdminProfileList", "Error disabling user", e);
+                    Toast.makeText(this, "Error disabling user", Toast.LENGTH_SHORT).show();
                 });
     }
 
