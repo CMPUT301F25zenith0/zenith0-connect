@@ -20,8 +20,11 @@ import com.example.connect.adapters.AdminProfileAdapter;
 import com.example.connect.models.User;
 import com.example.connect.utils.NotificationHelper;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -209,7 +212,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
                                     // Collect users to notify
                                     List<String> usersToNotify = new ArrayList<>();
 
-                                    // Get waiting list users
+                                    // Get waiting list users (for notifications)
                                     String finalEventTitle = eventTitle;
                                     db.collection("waiting_lists").document(eventId).get()
                                             .addOnSuccessListener(waitingDoc -> {
@@ -265,8 +268,30 @@ public class AdminProfileListActivity extends AppCompatActivity {
 
                                     // Delete the event
                                     db.collection("events").document(eventId).delete();
-                                    // Delete the waiting list for this event
-                                    db.collection("waiting_lists").document(eventId).delete();
+
+
+                                    DocumentReference waitListRef = db.collection("waiting_lists").document(eventId);
+
+                                    waitListRef.collection("entrants").get()
+                                            .addOnSuccessListener(entrantSnapshots -> {
+                                                WriteBatch batch = db.batch();
+
+                                                // 1. Delete all docs inside the "entrants" sub-collection
+                                                for (DocumentSnapshot entrantDoc : entrantSnapshots) {
+                                                    batch.delete(entrantDoc.getReference());
+                                                }
+
+                                                // 2. Delete the parent waiting list document
+                                                batch.delete(waitListRef);
+
+                                                // 3. Commit the batch delete
+                                                batch.commit().addOnFailureListener(e ->
+                                                        Log.e("AdminProfileList", "Error deleting waiting list subcollection", e)
+                                                );
+                                            })
+                                            .addOnFailureListener(e ->
+                                                    Log.e("AdminProfileList", "Error accessing entrants subcollection", e)
+                                            );
                                 }
 
                                 // Step 3: Remove user from all waiting lists they joined
