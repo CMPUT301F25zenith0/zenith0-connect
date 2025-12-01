@@ -37,6 +37,8 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
     public static final int TAB_WAITLIST = 0;
     public static final int TAB_SELECTED = 1;
     public static final int TAB_CONFIRMED = 2;
+    public static final int TAB_MY_EVENTS = 3;
+
 
     private int currentTabMode;
     private Context context;
@@ -154,6 +156,11 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
             btnCancel.setText("Cancel");
             btnCancel.setTextColor(ContextCompat.getColor(context, R.color.mist_pink));
             btnCancel.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(context, R.color.mist_pink)));
+
+        } else if (currentTabMode == TAB_MY_EVENTS) {
+            btnAccept.setVisibility(View.GONE);
+            btnCancel.setVisibility(View.GONE);
+            btnLeave.setVisibility(View.GONE);
 
         } else { // WAITLIST
             btnLeave.setVisibility(View.VISIBLE);

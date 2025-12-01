@@ -22,23 +22,23 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/pageTitle"
         android:orientation="horizontal"
-        android:paddingHorizontal="16dp"
+        android:paddingHorizontal="4dp"
         android:paddingBottom="8dp"
-        android:weightSum="3">
+        android:weightSum="4">
 
         <Button
             android:id="@+id/btn_tab_waitlist"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="0dp"
             android:layout_weight="1"
-            android:text="Waitlist"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="@color/text_secondary"
             android:backgroundTint="@android:color/transparent"
+            android:text="Waitlist"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
             app:strokeColor="@color/text_secondary"
-            app:strokeWidth="1dp"
-            android:layout_marginEnd="4dp"/>
+            app:strokeWidth="1dp" />
 
         <Button
             android:id="@+id/btn_tab_selected"
@@ -46,27 +46,41 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Selected"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:backgroundTint="@android:color/transparent"
             android:textColor="@color/text_secondary"
             app:strokeColor="@color/text_secondary"
             app:strokeWidth="1dp"
-            android:layout_marginHorizontal="2dp"/>
+            android:layout_marginHorizontal="0dp"/>
 
         <Button
             android:id="@+id/btn_tab_confirmed"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="0dp"
             android:layout_weight="1"
+            android:backgroundTint="@android:color/transparent"
             android:text="Confirmed"
-            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp" />
+
+        <Button
+            android:id="@+id/btn_tab_my_events"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="MyEvents"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:backgroundTint="@android:color/transparent"
             android:textColor="@color/text_secondary"
             app:strokeColor="@color/text_secondary"
             app:strokeWidth="1dp"
-            android:layout_marginStart="4dp"/>
+            android:layout_marginStart="0dp"/>
 
     </LinearLayout>
 

@@ -746,7 +746,7 @@ public class EventDetails extends AppCompatActivity {
 
     /**
      * Adds a user to the waiting list with optional location data.
-     *
+     * Also adds the event to the user's personal "myevents" collection.
      * <p>This method:
      * <ol>
      *   <li>Retrieves the existing waiting list to preserve total_capacity</li>
@@ -761,6 +761,7 @@ public class EventDetails extends AppCompatActivity {
      * @param latitude The latitude of the user's location (nullable)
      * @param longitude The longitude of the user's location (nullable)
      */
+
     private void addToWaitingList(String userId, Double latitude, Double longitude) {
         // First, get the current waiting list to preserve total_capacity
         db.collection("waiting_lists")
@@ -788,7 +789,7 @@ public class EventDetails extends AppCompatActivity {
                                 entrantData.put("user_id", userId);
                                 entrantData.put("status", "waiting");
                                 entrantData.put("joined_date", FieldValue.serverTimestamp());
-                                
+
                                 // US 02.02.02: Add location data if available
                                 if (latitude != null && longitude != null) {
                                     entrantData.put("latitude", latitude);
@@ -802,6 +803,21 @@ public class EventDetails extends AppCompatActivity {
                                         .document(userId)
                                         .set(entrantData)
                                         .addOnSuccessListener(aVoid2 -> {
+
+                                            Map<String, Object> myEventData = new HashMap<>();
+                                            myEventData.put("event_id", eventId);
+                                            myEventData.put("status", "waiting");
+                                            myEventData.put("timestamp", FieldValue.serverTimestamp());
+
+
+                                            db.collection("accounts")
+                                                    .document(userId)
+                                                    .collection("myevents")
+                                                    .document(eventId)
+                                                    .set(myEventData)
+                                                    .addOnFailureListener(e -> Log.e("EventDetails", "Error adding to myevents", e));
+
+
                                             Toast.makeText(this, "Joined waiting list", Toast.LENGTH_SHORT).show();
                                             loadEventDetails(eventId);
                                         })
