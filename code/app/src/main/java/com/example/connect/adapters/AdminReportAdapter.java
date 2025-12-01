@@ -14,6 +14,10 @@ import com.example.connect.models.Report;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * RecyclerView adapter for displaying and managing user reports in the admin panel.
+ * Allows viewing report details and resolving reports.
+ */
 public class AdminReportAdapter extends RecyclerView.Adapter<AdminReportAdapter.ReportViewHolder> {
 
     private List<Report> reports;
@@ -82,6 +86,12 @@ public class AdminReportAdapter extends RecyclerView.Adapter<AdminReportAdapter.
             btnResolve = itemView.findViewById(R.id.btn_report_resolve);
         }
 
+        /**
+         * Binds a Report to this ViewHolder's views.
+         * Displays the report type, item ID, and reason, and sets up button listeners.
+         *
+         * @param report The Report to display
+         */
         public void bind(final Report report) {
             // Display the type of item reported (e.g., "event", "user", "image")
             tvItemType.setText(String.format("TYPE: %s", report.getItemType() != null ? report.getItemType().toUpperCase() : "N/A"));

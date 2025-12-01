@@ -30,6 +30,29 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Activity for administrators to view and manage user profiles in the system.
+ *
+ * <p>This activity displays a searchable list of all user accounts (excluding admins) with the ability to:
+ * <ul>
+ *   <li>View all active user profiles (non-disabled, non-admin accounts)</li>
+ *   <li>Search users by name, email, or user ID in real-time</li>
+ *   <li>View detailed profile information for a specific user</li>
+ *   <li>Disable user accounts (which cascades to handle their events and waitlist entries)</li>
+ * </ul>
+ *
+ * <p><b>Critical Deletion Behavior:</b> When a user profile is deleted, the system:
+ * <ol>
+ *   <li>Marks the user account as disabled (soft delete)</li>
+ *   <li>If the user is an organizer: notifies all participants and deletes their events</li>
+ *   <li>Removes associated waiting lists and entrant subcollections for their events</li>
+ *   <li>Removes the user from any waiting lists they joined as an entrant (using collectionGroup query)</li>
+ * </ol>
+ *
+ * @author Vansh Taneja, Aakansh Chatterjee
+ * @version 2.0
+ */
+
 public class AdminProfileListActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
@@ -91,6 +114,11 @@ public class AdminProfileListActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
+    /**
+     * Opens the profile detail view for a specific user.
+     *
+     * @param user The user whose profile should be viewed
+     */
     private void openProfileDetails(User user) {
         if (user.getUserId() == null)
             return;
@@ -101,7 +129,10 @@ public class AdminProfileListActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    // Setup TextWatcher
+    /**
+     * Sets up the search functionality with a text watcher for real-time filtering.
+     * Triggers filtering on every text change in the search input.
+     */
     private void setupSearch() {
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -118,7 +149,13 @@ public class AdminProfileListActivity extends AppCompatActivity {
         });
     }
 
-    // Filters the list based on search input (Name, ID, Email)
+    /**
+     * Filters the profile list based on a search query.
+     * Searches through user names, user IDs, and email addresses (case-insensitive).
+     * Updates the RecyclerView and empty state message based on results.
+     *
+     * @param searchText The search query to filter by
+     */
     private void filterList(String searchText) {
         String query = searchText.toLowerCase(Locale.getDefault()).trim();
         List<User> filteredList = new ArrayList<>();
@@ -150,6 +187,12 @@ public class AdminProfileListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Loads all active user profiles from Firestore.
+     * Excludes admin accounts and disabled accounts from the list.
+     * Shows a progress indicator while loading and applies the current search filter
+     * to the results.
+     */
     private void loadProfiles() {
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
@@ -184,6 +227,29 @@ public class AdminProfileListActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Disables a user account and removes all associated data.
+     *
+     * <p>This method performs a comprehensive cleanup process:
+     * <ol>
+     *   <li>Marks the user account as disabled (soft delete)</li>
+     *   <li>If the user organized any events:
+     *       <ul>
+     *         <li>Sends cancellation notifications to all participants</li>
+     *         <li>Deletes all event documents</li>
+     *         <li>Removes waiting lists and entrant subcollections</li>
+     *       </ul>
+     *   </li>
+     *   <li>Removes the user from any waiting lists they joined as an entrant
+     *       (uses collectionGroup query on "entrants")</li>
+     * </ol>
+     *
+     * <p><b>Important:</b> The collectionGroup query requires a Firestore composite index
+     * on the entrants collection with the user_id field. If the index is missing, Firestore
+     * will log an error with a link to create it.
+     *
+     * @param user The user profile to delete
+     */
     private void deleteProfile(User user) {
         if (user.getUserId() == null)
             return;
@@ -261,7 +327,7 @@ public class AdminProfileListActivity extends AppCompatActivity {
                                 // Step 3: Remove this user from ANY waiting list they have joined
                                 // STRATEGY: Collection Group Query on "entrants"
                                 db.collectionGroup("entrants")
-                                        .whereEqualTo("user_id", userId) // CHECK: Ensure your field in Firestore is named "userId"
+                                        .whereEqualTo("user_id", userId) //
                                         .get()
                                         .addOnSuccessListener(entrantGroupSnapshots -> {
 
@@ -271,8 +337,6 @@ public class AdminProfileListActivity extends AppCompatActivity {
                                             for (DocumentSnapshot doc : entrantGroupSnapshots) {
                                                 batch.delete(doc.getReference());
 
-                                                // Optional: If you also keep an array on the parent doc, you might need to clean that too.
-                                                // However, deleting the entrant doc fulfills the primary "remove from list" requirement.
                                             }
 
                                             // Commit the batch delete

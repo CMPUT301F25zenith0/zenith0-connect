@@ -27,8 +27,25 @@ import com.google.firebase.firestore.WriteBatch;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Activity for administrators to view and manage all events in the system.
+ *
+ * <p>This activity displays a searchable list of all events with the ability to:
+ * <ul>
+ *   <li>View all events in the system</li>
+ *   <li>Search events by name or organizer ID</li>
+ *   <li>View detailed information about a specific event</li>
+ *   <li>Delete events (including their associated waitlists)</li>
+ * </ul>
+ *
+ * @author Vansh Taneja, Sai Vashnavi Jattu
+ * @version 2.0
+ */
+
 public class AdminEventListActivity extends AppCompatActivity {
 
+    // Ui Components
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView tvEmptyState;
@@ -56,6 +73,10 @@ public class AdminEventListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Initializes all UI components including the toolbar, search bar, and empty state view.
+     * Sets up the search functionality with a text watcher for real-time filtering.
+     */
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -90,18 +111,32 @@ public class AdminEventListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Sets up the RecyclerView with an adapter and layout manager.
+     * Configures click handlers for delete and detail view actions.
+     */
     private void setupRecyclerView() {
         adapter = new AdminEventAdapter(this::deleteEvent, this::openEventDetails);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
     }
 
+    /**
+     * Opens the detail view for a specific event.
+     *
+     * @param event The event to view in detail
+     */
     private void openEventDetails(Event event) {
         Intent intent = new Intent(this, AdminEventDetailActivity.class);
         intent.putExtra(AdminEventDetailActivity.EXTRA_EVENT_ID, event.getEventId());
         startActivity(intent);
     }
 
+    /**
+     * Loads all events from Firestore and displays them in the RecyclerView.
+     * Shows a progress indicator while loading and displays an empty state message
+     * if no events are found.
+     */
     private void loadEvents() {
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
@@ -132,6 +167,10 @@ public class AdminEventListActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Applies the current search filter to the event list.
+     * Used after loading events to maintain the search state.
+     */
     private void applyCurrentFilter() {
         String query = searchInput != null && searchInput.getText() != null
                 ? searchInput.getText().toString()
@@ -139,6 +178,13 @@ public class AdminEventListActivity extends AppCompatActivity {
         filterEvents(query);
     }
 
+    /**
+     * Filters the event list based on a search query.
+     * Searches through event names and organizer IDs (case-insensitive).
+     * Updates the RecyclerView and empty state visibility based on results.
+     *
+     * @param query The search query to filter by
+     */
     private void filterEvents(String query) {
         if (adapter == null) return;
 
@@ -167,8 +213,11 @@ public class AdminEventListActivity extends AppCompatActivity {
     }
 
     /**
-     * Deletes the event, but first deletes all documents in its waitlist subcollection.
-     * @param event The event object to be deleted.
+     * Deletes an event and its associated waitlist from Firestore.
+     * The waitlist is deleted first to maintain data integrity, followed by the event itself.
+     * Refreshes the event list upon successful deletion.
+     *
+     * @param event The event to delete
      */
     private void deleteEvent(Event event) {
         if (event.getEventId() == null) {

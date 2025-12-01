@@ -18,6 +18,13 @@ import com.google.firebase.firestore.ListenerRegistration;
 
 /**
  * Displays detailed information about a single event to administrators.
+ * <p>This activity shows comprehensive event details including title, organizer,
+ * date, location, price, description, and registration window. It also provides
+ * a live-updating waitlist count that refreshes automatically when changes occur
+ * in the Firestore database.
+ *
+ * @author Sai Vashnavi Jattu
+ * @version 2.0
  */
 public class AdminEventDetailActivity extends AppCompatActivity {
 
@@ -57,6 +64,9 @@ public class AdminEventDetailActivity extends AppCompatActivity {
         listenForWaitlist(currentEventId);
     }
 
+    /**
+     * Initializes all UI components and sets up the toolbar navigation.
+     */
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -79,6 +89,12 @@ public class AdminEventDetailActivity extends AppCompatActivity {
         tvWaitingList = findViewById(R.id.tv_waiting_list);
     }
 
+    /**
+     * Loads event data from Firestore for the specified event ID.
+     * Shows a progress indicator while loading and hides content until data is ready.
+     *
+     * @param eventId The unique identifier of the event to load
+     */
     private void loadEvent(String eventId) {
         progressBar.setVisibility(View.VISIBLE);
         contentGroup.setVisibility(View.GONE);
@@ -93,6 +109,12 @@ public class AdminEventDetailActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Binds event data from Firestore to the UI components.
+     * Handles missing or null values by providing appropriate fallback text.
+     *
+     * @param doc The Firestore document snapshot containing event data
+     */
     private void bindEvent(DocumentSnapshot doc) {
         if (!doc.exists()) {
             Toast.makeText(this, "Event not found", Toast.LENGTH_SHORT).show();
@@ -129,10 +151,23 @@ public class AdminEventDetailActivity extends AppCompatActivity {
         contentGroup.setVisibility(View.VISIBLE);
     }
 
+    /**
+     * Returns the provided value if it's not null or empty, otherwise returns the fallback.
+     *
+     * @param value The value to check
+     * @param fallback The fallback text to use if value is null or empty
+     * @return The original value or the fallback text
+     */
     private String valueOrFallback(String value, String fallback) {
         return value == null || value.isEmpty() ? fallback : value;
     }
 
+    /**
+     * Sets up a real-time listener for waitlist updates.
+     * The listener automatically updates the UI when the waitlist count changes.
+     *
+     * @param eventId The event ID to monitor for waitlist changes
+     */
     private void listenForWaitlist(String eventId) {
         if (eventId == null) return;
 
@@ -155,10 +190,21 @@ public class AdminEventDetailActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Formats the waitlist count into a user-friendly string.
+     * Handles singular/plural form correctly.
+     *
+     * @param count The number of entrants on the waitlist
+     * @return Formatted string like "Live Waitlist: 5 entrants"
+     */
     private String formatLiveWaitlist(int count) {
         return "Live Waitlist: " + count + " entrant" + (count == 1 ? "" : "s");
     }
 
+    /**
+     * Cleans up the waitlist listener when the activity is destroyed
+     * to prevent memory leaks.
+     */
     @Override
     protected void onDestroy() {
         super.onDestroy();

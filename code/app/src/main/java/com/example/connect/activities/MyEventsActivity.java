@@ -24,6 +24,26 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Activity displaying events the user has joined, organized into three tabs.
+ *
+ * <p>This activity provides a personalized view of the user's event participation status:
+ * <ul>
+ *   <li><b>Waitlist Tab:</b> Events where the user is on the waiting list (status: waiting, waitlisted, pending)</li>
+ *   <li><b>Selected Tab:</b> Events where the user won the lottery but hasn't confirmed yet (status: selected)</li>
+ *   <li><b>Confirmed Tab:</b> Events the user has accepted/enrolled in (status: confirmed, enrolled, accepted)</li>
+ * </ul>
+ *
+ * <p>For each event, the activity checks the entrants subcollection in the waiting_lists
+ * collection to determine the user's current status and sorts events into the appropriate tab.
+ * Each tab shows relevant actions based on the user's status (e.g., accept/decline for selected events).
+ *
+ * <p>The activity requires user authentication and redirects to login if no user is signed in.
+ *
+ * @author Aakansh Chatterjee, Aalpesh Dayal
+ * @version 3.0
+ */
+
 public class MyEventsActivity extends AppCompatActivity {
 
     private static final String TAG = "MyEventsActivity";
@@ -121,6 +141,12 @@ public class MyEventsActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Switches to a different tab, updating the displayed events list and UI styling.
+     * Updates the adapter's tab state to show appropriate actions for each event status.
+     *
+     * @param tabIndex The tab to switch to (TAB_WAITLIST, TAB_SELECTED, or TAB_CONFIRMED)
+     */
     private void switchTab(int tabIndex) {
         currentTab = tabIndex;
         displayList.clear();
@@ -144,6 +170,12 @@ public class MyEventsActivity extends AppCompatActivity {
         updateTabStyles(currentTab);
     }
 
+    /**
+     * Updates the visual styling of tab buttons to reflect which tab is active.
+     * The active tab is highlighted with gold background, inactive tabs are transparent.
+     *
+     * @param activeTab The tab index that should be styled as active
+     */
     private void updateTabStyles(int activeTab) {
         int goldColor = ContextCompat.getColor(this, R.color.primary_gold);
         int darkColor = ContextCompat.getColor(this, R.color.background_dark);
@@ -172,6 +204,7 @@ public class MyEventsActivity extends AppCompatActivity {
         }
     }
 
+
     private void loadUserEvents() {
         selectedEventsList.clear();
         waitlistedEventsList.clear();
@@ -194,6 +227,13 @@ public class MyEventsActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Checks if the current user is an entrant for a specific event by querying
+     * the entrants subcollection. If the user is found, retrieves their status
+     * and sorts the event into the appropriate list.
+     *
+     * @param event The event to check
+     */
     private void checkIfUserIsEntrant(Event event) {
         if (event.getEventId() == null || currentUserId == null) return;
 
@@ -213,6 +253,20 @@ public class MyEventsActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Sorts an event into the appropriate list based on the user's status.
+     * Thread-safe method that prevents duplicate entries.
+     *
+     * <p>Status:
+     * <ul>
+     *   <li>"selected" → Selected list (won lottery, pending acceptance)</li>
+     *   <li>"confirmed", "enrolled", "accepted" → Confirmed list (accepted invitation)</li>
+     *   <li>"waiting", "waitlisted", "pending" → Waitlist list (still waiting)</li>
+     * </ul>
+     *
+     * @param event The event to sort
+     * @param status The user's status for this event
+     */
     private synchronized void sortEventIntoLists(Event event, String status) {
         String safeStatus = (status != null) ? status.toLowerCase() : "waitlisted";
         boolean listUpdated = false;

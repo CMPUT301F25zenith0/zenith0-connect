@@ -28,6 +28,10 @@ import java.util.List;
 
 import android.widget.ArrayAdapter;
 
+/**
+ * ArrayAdapter for displaying user's events across different tabs.
+ * Manages events in waitlist, selected, and confirmed states with appropriate actions.
+ */
 public class MyEventsAdapter extends ArrayAdapter<Event> {
 
     public static final int TAB_WAITLIST = 0;
@@ -39,6 +43,13 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
     private FirebaseFirestore db;
     private LotteryManager lotteryManager;
 
+    /**
+     * Creates a new MyEventsAdapter.
+     *
+     * @param context The application context
+     * @param events List of events to display
+     * @param tabMode The current tab mode (TAB_WAITLIST, TAB_SELECTED, or TAB_CONFIRMED)
+     */
     public MyEventsAdapter(Context context, List<Event> events, int tabMode) {
         super(context, 0, events);
         this.context = context;
@@ -52,6 +63,13 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
         notifyDataSetChanged();
     }
 
+    /**
+     * Formats a price string for display.
+     * Returns "Free" for null, empty, or zero prices.
+     *
+     * @param priceStr The price string to format
+     * @return Formatted price string (e.g., "$10.00" or "Free")
+     */
     private static String priceFormat(String priceStr) {
         if (priceStr == null || priceStr.trim().isEmpty()) return "Free";
         try {
@@ -71,6 +89,15 @@ public class MyEventsAdapter extends ArrayAdapter<Event> {
         return null;
     }
 
+    /**
+     * Creates and configures the view for an event item.
+     * Displays event details and shows appropriate action buttons based on the current tab mode.
+     *
+     * @param position The position of the item in the adapter
+     * @param convertView The recycled view to populate
+     * @param parent The parent ViewGroup
+     * @return The configured view for the event item
+     */
     @NonNull
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {

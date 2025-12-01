@@ -25,8 +25,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * Activity for administrators to view and manage all images in the system.
+ *
+ * <p>This activity displays a searchable list of images from two sources:
+ * <ul>
+ *   <li>Event posters from the events collection</li>
+ *   <li>Profile pictures from the accounts collection</li>
+ * </ul>
+ *
+ * <p>Administrators can search for images by display name or related ID, view
+ * full-size images, and delete images from the system. Deleting an image removes
+ * it from Firestore leaving event intact
+ *
+ * @author Vansh Taneja, Sai Vashnavi Jattu
+ * @version 2.0
+ */
+
 public class AdminImageListActivity extends AppCompatActivity {
 
+    // UI components
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView tvEmptyState;
@@ -54,6 +73,10 @@ public class AdminImageListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Initializes all UI components including the toolbar, search bar, and empty state view.
+     * Sets up the search functionality with a text watcher for real-time filtering.
+     */
     private void initViews() {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         if (toolbar != null) {
@@ -88,12 +111,23 @@ public class AdminImageListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Initializes all UI components including the toolbar, search bar, and empty state view.
+     * Sets up the search functionality with a text watcher for real-time filtering.
+     */
     private void setupRecyclerView() {
         adapter = new AdminImageAdapter(this::deleteImage, this::openImageDetails);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
     }
 
+
+    /**
+     * Opens the full-size image detail view for a specific image.
+     * Handles both URL-based and base64 encoded images.
+     *
+     * @param image The image item to view in detail
+     */
     private void openImageDetails(AdminImageAdapter.ImageItem image) {
         android.content.Intent intent = new android.content.Intent(this, ImageDetailsActivity.class);
         if (image.url != null && (image.url.startsWith("http") || image.url.startsWith("https"))) {
@@ -104,6 +138,10 @@ public class AdminImageListActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Loads all images from Firestore including event posters and user profile pictures.
+     * Fetches from both the "events" and "accounts" collections and combines the results.
+     */
     private void loadImages() {
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
@@ -177,12 +215,21 @@ public class AdminImageListActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Updates the image list with new data and applies the current search filter.
+     *
+     * @param images The list of images to display
+     */
     private void updateImages(List<AdminImageAdapter.ImageItem> images) {
         allImages.clear();
         allImages.addAll(images);
         applyCurrentFilter();
     }
 
+    /**
+     * Applies the current search filter to the image list.
+     * Used after loading images to maintain the search state.
+     */
     private void applyCurrentFilter() {
         String query = searchInput != null && searchInput.getText() != null
                 ? searchInput.getText().toString()
@@ -190,6 +237,13 @@ public class AdminImageListActivity extends AppCompatActivity {
         filterImages(query);
     }
 
+    /**
+     * Filters the image list based on a search query.
+     * Searches through display names and related IDs (case-insensitive).
+     * Updates the RecyclerView and empty state visibility based on results.
+     *
+     * @param query The search query to filter by
+     */
     private void filterImages(String query) {
         if (adapter == null) return;
 
@@ -215,6 +269,13 @@ public class AdminImageListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Builds a searchable string from an image item's properties.
+     * Combines display name and related ID for comprehensive searching.
+     *
+     * @param image The image item to create a search string for
+     * @return A normalized, searchable string containing the image's metadata
+     */
     private String buildSearchSource(AdminImageAdapter.ImageItem image) {
         StringBuilder builder = new StringBuilder();
         if (image.displayName != null) {
@@ -226,6 +287,13 @@ public class AdminImageListActivity extends AppCompatActivity {
         return normalize(builder.toString());
     }
 
+    /**
+     * Normalizes a string for case-insensitive searching.
+     * Converts to lowercase, collapses whitespace, and trims.
+     *
+     * @param value The string to normalize
+     * @return The normalized string, or empty string if input is null
+     */
     private String normalize(String value) {
         if (value == null) {
             return "";
@@ -233,6 +301,14 @@ public class AdminImageListActivity extends AppCompatActivity {
         return value.toLowerCase().replaceAll("\\s+", " ").trim();
     }
 
+    /**
+     * Deletes an image reference from Firestore.
+     * For event posters, removes both imageUrl and image_base64 fields.
+     * For profile pictures, removes the profile_image_url field.
+     * Refreshes the image list after successful deletion.
+     *
+     * @param image The image item to delete
+     */
     private void deleteImage(AdminImageAdapter.ImageItem image) {
         if (image.type.equals("Event Poster")) {
             // Delete both possible fields for events

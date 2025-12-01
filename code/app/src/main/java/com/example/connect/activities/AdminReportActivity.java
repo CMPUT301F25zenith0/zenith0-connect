@@ -29,7 +29,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-// This activity will display the list of user reports
+/**
+ * Activity for administrators to view and manage user-submitted reports.
+ *
+ * <p>This activity displays a searchable list of all reports submitted by users with the ability to:
+ * <ul>
+ *   <li>View all pending and resolved reports</li>
+ *   <li>Search reports by description or reported item ID in real-time</li>
+ *   <li>View detailed information about a specific report in a dialog</li>
+ *   <li>Mark reports as resolved (which deletes them from the database)</li>
+ * </ul>
+ *
+ * @author Aakansh Chatterjee
+ * @version 1.0
+ */
 public class AdminReportActivity extends AppCompatActivity implements ReportDetailsDialogFragment.ReportResolveListener {
 
     private static final String TAG = "AdminReportActivity";
@@ -94,7 +107,10 @@ public class AdminReportActivity extends AppCompatActivity implements ReportDeta
         recyclerView.setAdapter(adapter);
     }
 
-    // setups search functionality on page
+    /**
+     * Sets up the search functionality with a text watcher for real-time filtering.
+     * Triggers filtering on every text change in the search input.
+     */
     private void setupSearch() {
         if (etSearch == null) return;
 
@@ -113,7 +129,13 @@ public class AdminReportActivity extends AppCompatActivity implements ReportDeta
         });
     }
 
-    // Called with every adjustment to maintain live filtering of list
+    /**
+     * Filters the report list based on a search query.
+     * Searches through report descriptions and reported item IDs (case-insensitive).
+     * Updates the RecyclerView and empty state message based on results.
+     *
+     * @param searchText The search query to filter by
+     */
     private void filterList(String searchText) {
         String query = searchText.toLowerCase(Locale.getDefault()).trim();
         List<Report> filteredList = new ArrayList<>();
@@ -158,12 +180,25 @@ public class AdminReportActivity extends AppCompatActivity implements ReportDeta
         dialog.show(getSupportFragmentManager(), "ReportDetailsDialog");
     }
 
+    /**
+     * Callback method invoked when a report is resolved from the details dialog.
+     * Delegates to resolveReport(Report) to handle the actual resolution.
+     *
+     * @param report The report that was resolved
+     */
     @Override
     public void onReportResolved(Report report) {
         // When the button inside the dialog is pressed, this method is called.
         resolveReport(report);
     }
 
+
+    /**
+     * Marks a report as resolved by deleting it from the database.
+     * Shows a progress indicator during deletion and refreshes the list upon completion.
+     *
+     * @param report The report to resolve
+     */
     public void resolveReport(Report report) {
         if (report.getReportId() == null) return;
 
@@ -183,6 +218,11 @@ public class AdminReportActivity extends AppCompatActivity implements ReportDeta
                 });
     }
 
+    /**
+     * Loads all user reports from Firestore.
+     * Shows a progress indicator while loading and applies the current search filter
+     * to the results. Displays an empty state message if no reports are found.
+     */
     private void loadUserReports() {
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
@@ -225,6 +265,10 @@ public class AdminReportActivity extends AppCompatActivity implements ReportDeta
 
     /**
      * Handles back button press in the toolbar.
+     * Closes the activity and returns to the previous screen.
+     *
+     * @param item The menu item that was selected
+     * @return true if the event was handled, false otherwise
      */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

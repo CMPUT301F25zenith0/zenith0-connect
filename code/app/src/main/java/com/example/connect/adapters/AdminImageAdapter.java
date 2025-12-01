@@ -16,9 +16,15 @@ import com.google.android.material.button.MaterialButton;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * RecyclerView adapter for displaying and managing images in the admin panel.
+ * Supports both event posters and profile pictures with delete functionality.
+ */
 public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.ViewHolder> {
 
-    // Helper class to represent an image item
+    /**
+     * Represents an image item to be displayed in the admin panel.
+     */
     public static class ImageItem {
         public String id;
         public String url;
@@ -26,6 +32,15 @@ public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.Vi
         public String relatedId; // Event ID or User ID
         public String displayName;
 
+        /**
+         * Creates a new ImageItem.
+         *
+         * @param id Unique identifier for the image
+         * @param url Image URL or Base64 string
+         * @param type Type of image
+         * @param relatedId Related entity ID
+         * @param displayName Display name for the image
+         */
         public ImageItem(String id, String url, String type, String relatedId, String displayName) {
             this.id = id;
             this.url = url;
@@ -76,12 +91,20 @@ public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.Vi
         return images.size();
     }
 
+    /**
+     * ViewHolder for displaying individual image items.
+     */
     class ViewHolder extends RecyclerView.ViewHolder {
         private final ImageView ivImage;
         private final TextView tvType;
         private final TextView tvId;
         private final MaterialButton btnDelete;
 
+        /**
+         * Creates a new ViewHolder.
+         *
+         * @param itemView The view for this ViewHolder
+         */
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivImage = itemView.findViewById(R.id.iv_image);
@@ -90,6 +113,12 @@ public class AdminImageAdapter extends RecyclerView.Adapter<AdminImageAdapter.Vi
             btnDelete = itemView.findViewById(R.id.btn_delete);
         }
 
+        /**
+         * Binds an ImageItem to this ViewHolder's views.
+         * Loads the image using Glide from either a URL or Base64 string.
+         *
+         * @param image The ImageItem to display
+         */
         public void bind(ImageItem image) {
             if (image.displayName != null && !image.displayName.isEmpty()) {
                 tvType.setText(image.displayName);

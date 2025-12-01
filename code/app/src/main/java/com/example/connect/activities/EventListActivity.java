@@ -38,7 +38,29 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Event dashboard showing featured events carousel + full list with search.
+ * Main event dashboard activity displaying featured events and a searchable event list.
+ *
+ * <p>This activity serves as the primary event browsing interface with the following features:
+ * <ul>
+ *   <li>Horizontal carousel of popular/upcoming events (events within 5 days)</li>
+ *   <li>Searchable list view of all available events</li>
+ *   <li>Real-time filtering by search query, date, interest, and location</li>
+ *   <li>Bottom navigation bar for app-wide navigation</li>
+ *   <li>User profile image display in the header</li>
+ * </ul>
+ *
+ * <p>Filter functionality:
+ * <ul>
+ *   <li>Search: Searches event names, locations, categories, and descriptions</li>
+ *   <li>Date: Filter events by specific date using a date picker</li>
+ *   <li>Interest: Filter by event labels/categories</li>
+ *   <li>Location: Filter by event location</li>
+ *   <li>Filters can be combined and applied simultaneously</li>
+ *   <li>Long-press individual filter chips to clear that specific filter</li>
+ * </ul>
+ *
+ * @author Zenith Team
+ * @version 5.0
  */
 public class EventListActivity extends AppCompatActivity {
 
@@ -108,6 +130,9 @@ public class EventListActivity extends AppCompatActivity {
         eventsListView.addHeaderView(headerView);
     }
 
+    /**
+     * Sets up adapters for both the main events list and the popular events carousel.
+     */
     private void setupAdapter() {
         eventAdapter = new EventAdapter(this, eventList);
         eventsListView.setAdapter(eventAdapter);
@@ -202,6 +227,10 @@ public class EventListActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Loads all events from the repository and updates both the main list
+     * and the popular events carousel. Applies any active filters after loading.
+     */
     private void loadEvents() {
         eventRepository.getAllEvents(new EventRepository.EventCallback() {
             @Override
@@ -232,6 +261,13 @@ public class EventListActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Filters events to find "popular" ones (events occurring within the next 5 days).
+     * Uses multiple date format parsers to handle different date string formats.
+     *
+     * @param events The list of all events to filter
+     * @return List of events occurring within 5 days
+     */
     private List<Event> getPopularEvents(List<Event> events) {
         List<Event> popularEvents = new ArrayList<>();
         long now = System.currentTimeMillis();
@@ -252,6 +288,13 @@ public class EventListActivity extends AppCompatActivity {
         return popularEvents;
     }
 
+    /**
+     * Attempts to parse a date string using multiple common date formats.
+     *
+     * @param dateString The date string to parse
+     * @return The date as milliseconds since epoch
+     * @throws Exception if none of the formats can parse the date
+     */
     private long parseDateToMillis(String dateString) throws Exception {
         String[] formats = {
                 "dd/MM/yyyy",
@@ -335,6 +378,14 @@ public class EventListActivity extends AppCompatActivity {
                 "Location: \"" + selectedLocation + "\"");
     }
 
+    /**
+     * Filters events by search query (case-insensitive).
+     * Searches through event names, locations, categories, and descriptions.
+     *
+     * @param events The list of events to filter
+     * @param query The search query
+     * @return Filtered list of events matching the query
+     */
     private List<Event> filterBySearch(List<Event> events, String query) {
         List<Event> filtered = new ArrayList<>();
         String lower = query.toLowerCase();
@@ -455,6 +506,13 @@ public class EventListActivity extends AppCompatActivity {
         return filtered;
     }
 
+    /**
+     * Filters events by location (case-insensitive).
+     *
+     * @param events The list of events to filter
+     * @param location The location string to filter by
+     * @return Filtered list of events matching the location
+     */
     private List<Event> filterByLocation(List<Event> events, String location) {
         List<Event> filtered = new ArrayList<>();
         String lowerLocation = location.toLowerCase();
@@ -500,8 +558,9 @@ public class EventListActivity extends AppCompatActivity {
     }
 
     /**
-     * Load the user's profile image from Firestore and display it in the header.
-     * If no profile image exists, the placeholder will remain.
+     * Loads the current user's profile image from Firestore and displays it in the header.
+     * Decodes the base64-encoded image string and sets it as the profile image bitmap.
+     * If no profile image exists, the placeholder remains visible.
      */
     private void loadProfileImage() {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -535,6 +594,10 @@ public class EventListActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Reloads events and profile image when the activity resumes.
+     * Ensures the displayed data is up-to-date.
+     */
     @Override
     protected void onResume() {
         super.onResume();
