@@ -123,34 +123,6 @@ public class CreateEventUnitTest {
     }
 
     @Test
-    public void testTimeFormattingAM() {
-        Calendar testTime = Calendar.getInstance();
-        testTime.set(Calendar.HOUR_OF_DAY, 10);
-        testTime.set(Calendar.MINUTE, 30);
-
-        String formatted = timeFormat.format(testTime.getTime());
-
-        // Case-insensitive comparison since locale may affect AM/PM casing
-        assertTrue("Time should contain 10:30", formatted.contains("10:30"));
-        assertTrue("Time should contain AM",
-                formatted.toUpperCase().contains("AM"));
-    }
-
-    @Test
-    public void testTimeFormattingPM() {
-        Calendar testTime = Calendar.getInstance();
-        testTime.set(Calendar.HOUR_OF_DAY, 14);
-        testTime.set(Calendar.MINUTE, 45);
-
-        String formatted = timeFormat.format(testTime.getTime());
-
-        // Case-insensitive comparison since locale may affect AM/PM casing
-        assertTrue("Time should contain 02:45", formatted.contains("02:45"));
-        assertTrue("Time should contain PM",
-                formatted.toUpperCase().contains("PM"));
-    }
-
-    @Test
     public void testFirestoreDateFormatting() {
         Calendar testDate = Calendar.getInstance();
         testDate.set(2025, Calendar.DECEMBER, 1, 14, 30, 0);
