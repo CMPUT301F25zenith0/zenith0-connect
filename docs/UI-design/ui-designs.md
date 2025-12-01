@@ -7,37 +7,41 @@ This page showcases the final UI designs for the application, demonstrating the 
 
 [Figma Link](https://www.figma.com/design/mhHKO6VMWJjie2viA3m7rc/App-UI?node-id=0-1&t=ZvJWi04sCoDymUa7-1)
 
-[User UI Frames](./App%20UI%20V.2.pdf)
-[Organizer UI Frames](./Organizer%20App%20UI%20V.2.pdf)
-[Admin UI Frames](./Admin%20APP%20UI.pdf)
+[User UI Frames](./User%20UI%20Frames.pdf)
+[Organizer UI Frames](.//Organizer%20UI%20Frames.pdf)
+[Admin UI Frames](./Admin%20UI%20Frames.pdf)
 
 ---
 
-## Design System
+## 🎨 Main App Color Palette
 
-### Color Palette
+### **Primary Colors**
+- **Primary Blue:** `#1E3A5F`
+- **Primary Background:** `#F9F9F9`
+- **Primary Text:** `#0F172A`
 
-- **Primary**: `#0b2e32` - backgrounds, navigation buttons
-- **Secondary**: `#94b1b5` - secondary buttonds
-- **Accent**: `#507d82` - small changes in colour through out UI
-- **Background**: `#0b2e32` / `#FFFFFF` - Backgrounds
-- **Text**: `#FFFFFF` / `#000000` - Used in titles, buttons texts, pops, and more
+### **Secondary Colors**
+- **Soft Pink (mist_pink):** `#D8C2C2`
+- **Light Warm Pink:** `#F5E6E8`
+- **Secondary Text Gray:** `#757575`
 
-### Typography
+### **Accent Colors**
+- **Accent Orange:** `#FF5722`
+- **Accent Green:** `#00C853`
+- **Accent Red:** `#D32F2F`
+- **Lottery Gold:** `#B45309`
 
-- **Headings**: *****
-- **Body Text**: *****
-- **Buttons/Labels**: *****
+
 
 ---
 
 ## Screen Designs
 
-### 1. Home Screen / Dashboard
+### 1. Event List
 
-![Home Screen](./images_OR_assets/home_screen%20design.PNG)
+![Event List](./images_OR_assets/Event_list.PNG)
 
-**Purpose**: Shows friendly guidance when no events match filters; offers CTA to refresh or adjust filters. Extends 01.02.01–01.02.02 (browse/filter) with empty-state handling.
+**Purpose**: Shows friendly guidance when no events match filters; offers CTA to refresh or adjust filters. Fufills many user stories e.g Extends 01.02.01–01.02.02 (browse/filter) with empty-state handling.
 
 **Key Features**:
 - Event Search
@@ -50,9 +54,9 @@ This page showcases the final UI designs for the application, demonstrating the 
 
 ### 2. Event Creation
 
-![Event Creation](./images_OR_assets/create-event_screen.PNG)
+![Event Creation](./images_OR_assets/create-event.PNG)
 
-**Purpose**: Allows organizers to create a new event by filling in key details such as title, date, location, registration window, price and geolocation settings. Addresses 02.01.01, 02.03.01, 02.04.01, by handling event creation and submission to the system
+**Purpose**: Allows organizers to create a new event by filling in key details such as title, date, location, registration window, price and geolocation settings. Addresses 02.01.01, 02.03.01, 02.04.01, by handling event creation and submission to the system. And more user stories like geolocation requirments
 
 **Key Features**:
 - Lists all information to be filled for event creation, giving organizer creative control
@@ -66,7 +70,7 @@ This page showcases the final UI designs for the application, demonstrating the 
 
 ![Manage Draw](./images_OR_assets/manage%20draw.PNG)
 
-**Purpose**: Displays the waiting list of entrants for a specific event, allowing organizers to initiate or schedule draws. Fulfills 02.05.01–02.05.02, handling random selection and result generation.
+**Purpose**: Displays the waiting list of entrants for a specific event, allowing organizers to initiate or schedule draws. Fulfills many user stories like 02.05.01–02.05.02 which handles random selection and result generation.
 
 **Key Features**:
 - Defines the current event
@@ -80,25 +84,15 @@ This page showcases the final UI designs for the application, demonstrating the 
 ## Design Rationale
 
 ### User Research Insights
-
-Brief summary of key findings from user research that informed the design
+User research highlighted the need for an interface that feels approachable for users of all ages while still supporting power features for organizers. Participants consistently emphasized the importance of simple navigation, visually gentle colors, and clear access to essential event details. Many users also expressed a desire for more freedom during event creation, noting that overly restrictive forms slow them down. These insights collectively shaped the direction of the app’s visual and interaction design.
 
 ### Design Decisions
-
-Explanation of major design choices and the reasoning behind them
+Based on these findings, the design prioritizes a clean, uncluttered layout with a color palette that is soft on the eyes but still offers strong contrast for readability. Navigation flows were simplified to reduce cognitive load and allow users to move effortlessly across sections of the app. The event creation experience was intentionally built with flexibility, ensuring organizers can input and adjust details without unnecessary friction. Each decision was guided by the goal of helping users make confident choices through clear, accessible information.
 
 ### Iterations
-
-Overview of how the designs evolved through feedback and testing
-
----
-
-## Next Steps
-
-- [ ] Developer handoff
-- [ ] Design QA during development
-- [ ] Usability testing with final implementation
-- [ ] Iterate based on user feedback
+The design evolved through multiple rounds of refinement driven by continuous feedback and testing. Early versions were adjusted to improve visual clarity, streamline button placement, and either reduce steps or screen clutter in key flows like event discovery and event creation. 
+User feedback also led to emphasizing readability, enhancing color balance, and ensuring that interface elements felt intuitive. Through these iterations, the app moved toward a more polished, user-centered final experience.
 
 ---
-_Last updated: [2025-10-21]_
+
+_Last updated: [2025-12-1]_
