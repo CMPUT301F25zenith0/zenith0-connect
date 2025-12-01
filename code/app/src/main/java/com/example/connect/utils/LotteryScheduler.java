@@ -30,6 +30,12 @@ public class LotteryScheduler {
         this.lotteryManager = new LotteryManager();
     }
 
+    // Callback interface for manual lottery
+    public interface LotteryCallback {
+        void onSuccess();
+        void onFailure(String error);
+    }
+
     /**
      * Check all events and perform lottery for those whose registration has closed
      * This method is called periodically by the background worker
@@ -100,10 +106,6 @@ public class LotteryScheduler {
         }
     }
 
-
-
-
-
     /**
      * Perform lottery for a specific event
      */
@@ -125,9 +127,19 @@ public class LotteryScheduler {
     }
 
     /**
-     * Manually trigger a lottery draw for a specific event (DEV ONLY)
+     * Manually trigger a lottery draw for a specific event (without callback - deprecated)
      */
     public void runLotteryManually(String eventId) {
+        runLotteryManually(eventId, null);
+    }
+
+    /**
+     * Manually trigger a lottery draw for a specific event with callback
+     *
+     * @param eventId The event to run lottery for
+     * @param callback Callback for success/failure notification
+     */
+    public void runLotteryManually(String eventId, LotteryCallback callback) {
         Log.d(TAG, "⚠️ Manual lottery triggered for event: " + eventId);
 
         db.collection("events")
@@ -136,46 +148,85 @@ public class LotteryScheduler {
                 .addOnSuccessListener(doc -> {
                     if (!doc.exists()) {
                         Log.e(TAG, "Manual lottery failed: Event not found");
+                        if (callback != null) {
+                            callback.onFailure("Event not found");
+                        }
                         return;
                     }
 
                     Event event = doc.toObject(Event.class);
+                    if (event == null) {
+                        Log.e(TAG, "Manual lottery failed: Could not parse event");
+                        if (callback != null) {
+                            callback.onFailure("Could not load event data");
+                        }
+                        return;
+                    }
+
                     event.setEventId(doc.getId());
 
                     String regStopStr = event.getRegStop();
                     if (regStopStr == null) {
                         Log.e(TAG, "Manual lottery blocked: reg_stop is NULL");
+                        if (callback != null) {
+                            callback.onFailure("Registration stop date not set");
+                        }
                         return;
                     }
 
                     try {
-                        SimpleDateFormat sdf =
-                                new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
                         Date regStopDate = sdf.parse(regStopStr);
                         Date now = new Date();
 
                         if (regStopDate == null) {
                             Log.e(TAG, "Manual lottery blocked: Failed to parse reg_stop");
+                            if (callback != null) {
+                                callback.onFailure("Invalid registration stop date format");
+                            }
                             return;
                         }
 
                         if (now.before(regStopDate)) {
                             Log.e(TAG, "❌ Manual lottery blocked: Registration deadline not passed");
+                            if (callback != null) {
+                                callback.onFailure("Registration deadline has not passed yet");
+                            }
                             return;
                         }
 
                     } catch (Exception ex) {
                         Log.e(TAG, "Manual lottery blocked: Failed to parse reg_stop", ex);
+                        if (callback != null) {
+                            callback.onFailure("Error parsing registration date: " + ex.getMessage());
+                        }
                         return;
                     }
 
-                    // ✅ All checks passed
-                    performLotteryForEvent(event);
+                    // ✅ All checks passed - perform lottery with callback
+                    lotteryManager.performAutomaticLottery(event.getEventId(), new LotteryManager.LotteryCallback() {
+                        @Override
+                        public void onSuccess(int selectedCount, int waitingListCount) {
+                            Log.d(TAG, "✅ Manual lottery completed successfully for " + event.getName());
+                            if (callback != null) {
+                                callback.onSuccess();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(String error) {
+                            Log.e(TAG, "❌ Manual lottery failed: " + error);
+                            if (callback != null) {
+                                callback.onFailure(error);
+                            }
+                        }
+                    });
                 })
                 .addOnFailureListener(e -> {
                     Log.e(TAG, "Manual lottery failed to fetch event", e);
+                    if (callback != null) {
+                        callback.onFailure("Failed to fetch event: " + e.getMessage());
+                    }
                 });
     }
-
-
 }

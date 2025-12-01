@@ -247,9 +247,40 @@ public class ManageDrawActivity extends AppCompatActivity {
         );
 
         btnManualLottery.setOnClickListener(v -> {
+            btnManualLottery.setEnabled(false); // Disable to prevent double-clicks
+
+            // Show loading message
+            Toast.makeText(this, "Running lottery for " + currentEvent.getName() + "...",
+                    Toast.LENGTH_SHORT).show();
+
             LotteryScheduler scheduler = new LotteryScheduler();
-            scheduler.runLotteryManually(eventId);
-            Toast.makeText(this, "Manual lottery triggered for event: " + currentEvent.getName(), Toast.LENGTH_SHORT).show();
+            scheduler.runLotteryManually(eventId, new LotteryScheduler.LotteryCallback() {
+                @Override
+                public void onSuccess() {
+                    runOnUiThread(() -> {
+                        Toast.makeText(ManageDrawActivity.this,
+                                "✅ Manual lottery completed successfully!",
+                                Toast.LENGTH_LONG).show();
+
+                        // Refresh the page data
+                        loadEventData(); // Refresh event info (status, draw date)
+                        loadWaitingListEntries(); // Refresh entrants list (counts, tabs)
+
+                        btnManualLottery.setEnabled(true); // Re-enable button
+                    });
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(ManageDrawActivity.this,
+                                "❌ Manual lottery failed: " + error,
+                                Toast.LENGTH_LONG).show();
+
+                        btnManualLottery.setEnabled(true); // Re-enable button
+                    });
+                }
+            });
         });
 
 
