@@ -33,7 +33,14 @@ public class EventRepository {
     private final FirebaseFirestore db;
 
     public EventRepository() {
-        this.db = FirebaseFirestore.getInstance();
+        this(FirebaseFirestore.getInstance());
+    }
+
+    /**
+     * Secondary constructor so test doubles can skip initializing Firestore.
+     */
+    protected EventRepository(FirebaseFirestore firestore) {
+        this.db = firestore;
     }
 
     /**

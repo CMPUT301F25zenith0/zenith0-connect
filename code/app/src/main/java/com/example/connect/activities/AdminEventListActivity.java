@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.connect.R;
 import com.example.connect.adapters.AdminEventAdapter;
 import com.example.connect.models.Event;
+import com.example.connect.testing.TestHooks;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.CollectionReference;
@@ -61,11 +62,18 @@ public class AdminEventListActivity extends AppCompatActivity {
         try {
             setContentView(R.layout.activity_admin_list);
 
-            db = FirebaseFirestore.getInstance();
+            boolean shouldUseNetwork = !TestHooks.isUiTestMode();
+            if (shouldUseNetwork) {
+                db = FirebaseFirestore.getInstance();
+            }
 
             initViews();
             setupRecyclerView();
-            loadEvents();
+            if (shouldUseNetwork) {
+                loadEvents();
+            } else if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
         } catch (Exception e) {
             Log.e("AdminEventList", "Error in onCreate", e);
             Toast.makeText(this, "Error starting activity: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -138,6 +146,11 @@ public class AdminEventListActivity extends AppCompatActivity {
      * if no events are found.
      */
     private void loadEvents() {
+        if (TestHooks.isUiTestMode()) {
+            applyCurrentFilter();
+            return;
+        }
+
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
 
@@ -225,6 +238,11 @@ public class AdminEventListActivity extends AppCompatActivity {
             return;
         }
 
+        if (TestHooks.isUiTestMode()) {
+            removeEventLocally(event);
+            return;
+        }
+
         // Delete the waitlist subcollection documents first
         deleteWaitlistForEvent(event.getEventId())
                 .addOnSuccessListener(aVoid -> {
@@ -259,5 +277,17 @@ public class AdminEventListActivity extends AppCompatActivity {
         // 2. Target the specific document using the eventId as the document ID
         return db.collection("waiting_lists").document(eventId)
                 .delete(); // Delete the document directly
+    }
+
+    /**
+     * Removes the event from local lists during UI tests to avoid hitting Firestore.
+     */
+    private void removeEventLocally(Event event) {
+        allEvents.removeIf(e -> e.getEventId() != null && e.getEventId().equals(event.getEventId()));
+        applyCurrentFilter();
+        if (tvEmptyState != null) {
+            tvEmptyState.setVisibility(allEvents.isEmpty() ? View.VISIBLE : View.GONE);
+        }
+        Toast.makeText(this, "Event removed (test mode)", Toast.LENGTH_SHORT).show();
     }
 }

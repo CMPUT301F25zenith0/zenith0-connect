@@ -25,6 +25,8 @@ import com.example.connect.adapters.PopularEventsAdapter;
 import com.example.connect.models.Event;
 import com.example.connect.models.User;
 import com.example.connect.network.EventRepository;
+import com.example.connect.network.EventRepositoryProvider;
+import com.example.connect.testing.TestHooks;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -83,7 +85,7 @@ public class EventListActivity extends AppCompatActivity {
     private List<Event> allEventsList = new ArrayList<>();
     private List<Event> popularEventsList = new ArrayList<>();
 
-    private final EventRepository eventRepository = new EventRepository();
+    private EventRepository eventRepository;
     private String currentSearchQuery = "";
 
     // Filter state variables
@@ -96,10 +98,13 @@ public class EventListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.event_list);
 
+        eventRepository = EventRepositoryProvider.getRepository();
         initViews();
         setupAdapter();
         setupClickListeners();
-        loadProfileImage();
+        if (!TestHooks.isUiTestMode()) {
+            loadProfileImage();
+        }
         loadEvents();
     }
 
@@ -237,11 +242,20 @@ public class EventListActivity extends AppCompatActivity {
             public void onSuccess(List<Event> events) {
                 Log.d("EventListActivity", "Loaded " + events.size() + " events");
 
+                // Filters for events with current valid registration period
+                List<Event> validEvents = new ArrayList<>();
+                for (Event event : events) {
+                    // Only add events where registration/event hasn't passed
+                    if (isRegistrationActive(event)) {
+                        validEvents.add(event);
+                    }
+                }
+
                 allEventsList.clear();
-                allEventsList.addAll(events);
+                allEventsList.addAll(validEvents);
 
                 popularEventsList.clear();
-                popularEventsList.addAll(getPopularEvents(events));
+                popularEventsList.addAll(getPopularEvents(validEvents));
                 popularEventsAdapter.notifyDataSetChanged();
 
                 applyAllFilters();
@@ -297,6 +311,7 @@ public class EventListActivity extends AppCompatActivity {
      */
     private long parseDateToMillis(String dateString) throws Exception {
         String[] formats = {
+                "yyyy-MM-dd'T'HH:mm:ss",
                 "dd/MM/yyyy",
                 "MM/dd/yyyy",
                 "yyyy-MM-dd",
@@ -471,6 +486,54 @@ public class EventListActivity extends AppCompatActivity {
                 .show();
     }
 
+    /**
+     * Checks if the event's registration period is currently active.
+     * Ensures Current Time is between 'regStart' and 'regStop'.
+     *
+     * @param event The event to check
+     * @return true if registration is open, false if not started yet or expired.
+     */
+    private boolean isRegistrationActive(Event event) {
+        long currentTime = System.currentTimeMillis();
+
+        try {
+            // Check if Registration has started yet (regStart)
+            if (event.getRegStart() != null && !event.getRegStart().trim().isEmpty()) {
+                long regStartTime = parseDateToMillis(event.getRegStart());
+                // If Current Time is BEFORE Registration Start Time, return false (Too early)
+                if (currentTime < regStartTime) {
+                    Log.d("EventList", "Hiding event " + event.getName() + ": Registration hasn't started.");
+                    return false;
+                }
+            }
+
+            // Check Registration Deadline (regStop)
+            if (event.getRegStop() != null && !event.getRegStop().trim().isEmpty()) {
+                long regEndTime = parseDateToMillis(event.getRegStop());
+                // If Current Time is AFTER Registration End Time, return false (Too late)
+                if (currentTime > regEndTime) {
+                    Log.d("EventList", "Hiding event " + event.getName() + ": Registration closed.");
+                    return false;
+                }
+                // If we have specific registration dates and passed both checks, it is valid.
+                return true;
+            }
+
+            // Fallback/Edge-Case: If no specific registration dates exist, check Event Start Time
+            // (Assuming you can't register for an event that has already started)
+            if (event.getDateTime() != null && !event.getDateTime().trim().isEmpty()) {
+                long eventStartTime = parseDateToMillis(event.getDateTime());
+                return currentTime < eventStartTime;
+            }
+
+        } catch (Exception e) {
+            Log.e("EventListActivity", "Date parse error for event: " + event.getName());
+        }
+
+        // If dates are broken/missing, hide the event to be safe.
+        return false;
+    }
+
     private List<Event> filterByDate(List<Event> events, String date) {
         List<Event> filtered = new ArrayList<>();
         for (Event event : events) {
@@ -563,6 +626,9 @@ public class EventListActivity extends AppCompatActivity {
      * If no profile image exists, the placeholder remains visible.
      */
     private void loadProfileImage() {
+        if (TestHooks.isUiTestMode()) {
+            return;
+        }
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null || profileHeaderImage == null) {
             return;
@@ -602,6 +668,8 @@ public class EventListActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadEvents();
-        loadProfileImage();
+        if (!TestHooks.isUiTestMode()) {
+            loadProfileImage();
+        }
     }
 }

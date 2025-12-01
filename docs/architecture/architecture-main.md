@@ -8,19 +8,22 @@ This section describes the **backend design**, **database schema**, **data flow*
 
 ## 📋 Table of Contents
 - [Overview](#overview)
-- [Backend Design (UML)](Zenith%20Connect%20App%20UML.pdf)
+- [Backend](#backend)
 - [Database Schema](#database-schema)
 - [System Flow](#system-flow)
 - [CRC Cards](#crc-cards)
-- [Additional Resources](#additional-resources)
+
 
 ---
 
 ## 🧩 Overview
 
-This document provides a high-level overview of how different parts of the application interact, the technologies used, and how data moves through the system.
+This document provides a high-level overview of how different parts of the application interact, the technologies used, and how data moves through the system. The architecture best follows software engineering principles, emphasizing modularity, separation of concerns, and maintainable code structures, and code comments. 
+
+The system leverages consistent UI patterns, centralized resource management, and structured data handling to promote long-term scalability. Core components follow clear responsibilities views handle presentation, controllers manage logic, and data layers communicate with Firestore in a predictable and secure manner. These practices ensure reliability, reduce technical debt, and support smooth collaboration across the development team.
 
 > 💡 *For details on individual components, refer to the linked documents below.*
+
 
 ---
 
@@ -28,14 +31,18 @@ This document provides a high-level overview of how different parts of the appli
 
 The backend is responsible for handling API requests, managing business logic, and interacting with the database.
 
-- **Framework / Language:** _e.g., Java, Android Studio Enviornment, Firebase 
+- **Java, XML, Android Studio Enviornment, Firebase**
 - **Key Modules:**
-  - Authentication & Authorization
-  - API Endpoints
-  - Data Processing / Business Logic
+  - Authentication & Authorization storing users in firebase
+  - Data Processing / Filtering Logic through firebase built-in functions
+  - Firebare indexing to collection group information through entire Database
+  - UI designs / Responsive screen using XML. E.g Material buttons, Image buttons, colour animations etc
 
-📄 **Detailed Documentation:**  
-➡️ [Backend Design Document] *(To be created)*
+  📄 **Backend Design:**  
+➡️ [UML](./UML%20Diagrams.pdf)
+➡️ [Description](./UML%20Diagram%20Documentation.pdf)
+
+
 
 ---
 
@@ -45,27 +52,14 @@ The backend is responsible for handling API requests, managing business logic, a
 This section outlines the data storage design, including entities, relationships, and schema diagrams.
 
 - **Database Type:** _e.g. Firebase_
-- **Main Entities:**
+- **Main Collections:**
   - Users
   - Events
-  - etc.
+  - Waitlists
+  - Notifications
 
 📄 **Detailed Schema:**  
-➡️ [Database Schema] *(To be created)*
-
----
-
-## 🔄 System Flow
-
-Describes how requests and data flow through the system — from the frontend to backend, to the database, and back.
-
-Include:
-- Sequence Diagrams
-- API Flow
-- Event Handling Logic
-
-📄 **Detailed Flow Description:**  
-➡️ [System Flow Diagram] *(To be created)*
+➡️ [Database Schema](./firedraw-schema.png)
 
 ---
 
@@ -78,13 +72,4 @@ Class–Responsibility–Collaborator (CRC) cards define the roles of classes an
 
 ---
 
-## 📚 Additional Resources
-
-- [API Reference](./API_Reference.md)
-- [Deployment Guide](./Deployment.md)
-- [Frontend Architecture](../Frontend/Architecture.md)
-- [Testing Strategy](./Testing_Strategy.md)
-
----
-
-_Last updated: [2025-10-21]
+_Last updated: [2025-12-1]_

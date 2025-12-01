@@ -8,19 +8,8 @@ This page contains **rough interface mockups** illustrating where key UI element
 ---
 
 ## 📱 Overview
-
-Each mockup below represents a part of the interface, showing **placement**, **proportion**, and **intended interaction**.
+Each mockup below represents a part of the interface, showing **placement**, **proportion**, and **intended interaction**
 [Mockup-PDF](./images_OR_assets/Final_%20Mockup%20Interface%20(P2).pdf)
----
-
-## 🔘 Example: Login Screen
-
-### Purpose
-Showcases placement of:
-- App logo (centered top)
-- Username & password fields
-- Login and Register buttons
-- Optional “Forgot password?” link
 
 ---
 
@@ -48,7 +37,7 @@ Showcases placement of:
 |------------|:------:|-------------|
 | **Button Styles** | ![Buttons](./images_OR_assets/button.PNG) | Primary, secondary, and disabled states. Maintain padding and rounded corners. |
 | **Input Fields** | ![Inputs](./images_OR_assets/input%20field.PNG) | Display input fields with placeholder text and labels above. |
-| **Logo Placement** | ![Logo Placement]() | Ensure visibility and spacing consistency across pages. |
+
 
 ---
 
@@ -56,9 +45,9 @@ Showcases placement of:
 
 | Element | Purpose | Example Location |
 |----------|----------|------------------|
-| **Buttons** | Trigger user actions (submit, navigate, confirm) | Home, Login, Settings |
-| **Text Fields** | Capture user input | Login, Profile setup |
-| **Icons** | Provide quick visual cues | Navigation bar, Action buttons |
+| **Buttons** | Trigger user actions (submit, navigate, confirm) | Navigation, detailes, swap user to organzier, access profile |
+| **Text Fields** | Capture user input | capture data to create users, events, add information |
+| **Icons** | Provide quick visual cues | Navigation bar, Action buttons,  |
 | **Logo** | Reinforce branding | App header, splash screen |
 
 ---
@@ -71,4 +60,4 @@ Showcases placement of:
 
 ---
 
-_Last updated: [2025-10-21]_
+_Last updated: [2025-12-1]_

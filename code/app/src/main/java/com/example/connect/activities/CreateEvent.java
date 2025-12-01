@@ -20,6 +20,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -106,6 +107,7 @@ public class CreateEvent extends AppCompatActivity {
     private String existingBase64Image = null; // Store existing image when editing
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
+    private TextView tvTitle;
     // --- Firebase ---
     private FirebaseFirestore db;
     private FirebaseAuth auth;
@@ -205,6 +207,9 @@ public class CreateEvent extends AppCompatActivity {
      * </p>
      */
     private void initializeViews() {
+
+        tvTitle = findViewById(R.id.tvTitle);
+
         // EditTexts
         etEventName = findViewById(R.id.etEventName);
         etDescription = findViewById(R.id.etDescription);
@@ -239,6 +244,8 @@ public class CreateEvent extends AppCompatActivity {
 
         // Initial UI State (Merged from Block 2)
         showPlaceholderImage();
+
+
     }
 
     /**
@@ -411,6 +418,9 @@ public class CreateEvent extends AppCompatActivity {
      * @param eventId The ID of the event to edit
      */
     private void loadEventForEditing(String eventId) {
+        if (tvTitle != null) {
+            tvTitle.setText("Edit Event");
+        }
         db.collection("events").document(eventId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {
