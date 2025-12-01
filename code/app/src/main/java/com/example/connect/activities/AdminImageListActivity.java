@@ -9,12 +9,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.connect.R;
 import com.example.connect.adapters.AdminImageAdapter;
+import com.example.connect.testing.TestHooks;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -61,11 +63,24 @@ public class AdminImageListActivity extends AppCompatActivity {
         try {
             setContentView(R.layout.activity_admin_list);
 
-            db = FirebaseFirestore.getInstance();
+            boolean shouldUseNetwork = !TestHooks.isUiTestMode();
+            if (shouldUseNetwork) {
+                db = FirebaseFirestore.getInstance();
+            }
 
             initViews();
             setupRecyclerView();
-            loadImages();
+
+            if (shouldUseNetwork) {
+                loadImages();
+            } else {
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                if (tvEmptyState != null) {
+                    tvEmptyState.setVisibility(allImages.isEmpty() ? View.VISIBLE : View.GONE);
+                }
+            }
         } catch (Exception e) {
             Log.e("AdminImageList", "Error in onCreate", e);
             Toast.makeText(this, "Error starting activity: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -119,6 +134,9 @@ public class AdminImageListActivity extends AppCompatActivity {
         adapter = new AdminImageAdapter(this::deleteImage, this::openImageDetails);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+        if (TestHooks.isUiTestMode() && recyclerView.getItemAnimator() != null) {
+            recyclerView.setItemAnimator(null); // keep Espresso checks deterministic
+        }
     }
 
 
@@ -135,6 +153,7 @@ public class AdminImageListActivity extends AppCompatActivity {
         } else {
             intent.putExtra("image_base64", image.url);
         }
+        intent.putExtra("image_title", image.displayName != null ? image.displayName : image.type);
         startActivity(intent);
     }
 
@@ -143,6 +162,10 @@ public class AdminImageListActivity extends AppCompatActivity {
      * Fetches from both the "events" and "accounts" collections and combines the results.
      */
     private void loadImages() {
+        if (TestHooks.isUiTestMode() || db == null) {
+            return;
+        }
+
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
 
@@ -245,7 +268,8 @@ public class AdminImageListActivity extends AppCompatActivity {
      * @param query The search query to filter by
      */
     private void filterImages(String query) {
-        if (adapter == null) return;
+        if (adapter == null)
+            return;
 
         if (query == null) {
             query = "";
@@ -310,6 +334,13 @@ public class AdminImageListActivity extends AppCompatActivity {
      * @param image The image item to delete
      */
     private void deleteImage(AdminImageAdapter.ImageItem image) {
+        if (TestHooks.isUiTestMode()) {
+            allImages.removeIf(item -> item.id.equals(image.id));
+            applyCurrentFilter();
+            Toast.makeText(this, "Image deleted", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         if (image.type.equals("Event Poster")) {
             // Delete both possible fields for events
             Map<String, Object> updates = new HashMap<>();
@@ -319,7 +350,7 @@ public class AdminImageListActivity extends AppCompatActivity {
             db.collection("events").document(image.id)
                     .update(updates)
                     .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Image removed", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Image deleted", Toast.LENGTH_SHORT).show();
                         loadImages(); // Refresh
                     })
                     .addOnFailureListener(e -> {
@@ -330,12 +361,23 @@ public class AdminImageListActivity extends AppCompatActivity {
             db.collection("accounts").document(image.id)
                     .update("profile_image_url", null)
                     .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Image removed", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Image deleted", Toast.LENGTH_SHORT).show();
                         loadImages(); // Refresh
                     })
                     .addOnFailureListener(e -> {
                         Toast.makeText(this, "Error removing image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     });
         }
+    }
+
+    @VisibleForTesting
+    public void populateImagesForTests(List<AdminImageAdapter.ImageItem> images) {
+        allImages.clear();
+        if (images != null) {
+            allImages.addAll(images);
+        }
+        progressBar.setVisibility(View.GONE);
+        tvEmptyState.setVisibility(allImages.isEmpty() ? View.VISIBLE : View.GONE);
+        applyCurrentFilter();
     }
 }

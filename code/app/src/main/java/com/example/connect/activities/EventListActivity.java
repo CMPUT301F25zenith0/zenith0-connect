@@ -25,6 +25,8 @@ import com.example.connect.adapters.PopularEventsAdapter;
 import com.example.connect.models.Event;
 import com.example.connect.models.User;
 import com.example.connect.network.EventRepository;
+import com.example.connect.network.EventRepositoryProvider;
+import com.example.connect.testing.TestHooks;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.textfield.TextInputEditText;
@@ -83,7 +85,7 @@ public class EventListActivity extends AppCompatActivity {
     private List<Event> allEventsList = new ArrayList<>();
     private List<Event> popularEventsList = new ArrayList<>();
 
-    private final EventRepository eventRepository = new EventRepository();
+    private EventRepository eventRepository;
     private String currentSearchQuery = "";
 
     // Filter state variables
@@ -96,10 +98,13 @@ public class EventListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.event_list);
 
+        eventRepository = EventRepositoryProvider.getRepository();
         initViews();
         setupAdapter();
         setupClickListeners();
-        loadProfileImage();
+        if (!TestHooks.isUiTestMode()) {
+            loadProfileImage();
+        }
         loadEvents();
     }
 
@@ -563,6 +568,9 @@ public class EventListActivity extends AppCompatActivity {
      * If no profile image exists, the placeholder remains visible.
      */
     private void loadProfileImage() {
+        if (TestHooks.isUiTestMode()) {
+            return;
+        }
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null || profileHeaderImage == null) {
             return;
@@ -602,6 +610,8 @@ public class EventListActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         loadEvents();
-        loadProfileImage();
+        if (!TestHooks.isUiTestMode()) {
+            loadProfileImage();
+        }
     }
 }

@@ -561,7 +561,7 @@ public class OrganizerMessagesActivity extends AppCompatActivity {
                     .get()
                     .addOnSuccessListener(doc -> {
                         if (doc.exists()) {
-                            String name = doc.getString("name");
+                            String name = doc.getString("display_name");
                             tvRecipient.setText(name != null ? name : "Unknown User");
                         } else {
                             tvRecipient.setText("Unknown User");
