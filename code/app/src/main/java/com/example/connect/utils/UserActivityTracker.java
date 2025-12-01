@@ -2,6 +2,7 @@ package com.example.connect.utils;
 
 import android.util.Log;
 
+import com.example.connect.testing.TestHooks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -30,6 +31,10 @@ public class UserActivityTracker {
      * Should be called when user opens the app or resumes an activity.
      */
     public static void markUserActive() {
+        if (TestHooks.isUiTestMode()) {
+            Log.d(TAG, "UI test mode - skipping markUserActive Firestore call");
+            return;
+        }
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             Log.d(TAG, "No authenticated user, skipping activity update");
@@ -58,6 +63,10 @@ public class UserActivityTracker {
      * Should be called when user closes the app or pauses an activity.
      */
     public static void markUserInactive() {
+        if (TestHooks.isUiTestMode()) {
+            Log.d(TAG, "UI test mode - skipping markUserInactive Firestore call");
+            return;
+        }
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             Log.d(TAG, "No authenticated user, skipping inactivity update");
