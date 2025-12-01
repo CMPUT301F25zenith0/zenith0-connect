@@ -29,6 +29,30 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+
+/**
+ * Activity for administrators to view and manage event organizers in the system.
+ *
+ * <p>This activity displays a searchable list of all organizer accounts with the ability to:
+ * <ul>
+ *   <li>View all active organizers (non-disabled accounts)</li>
+ *   <li>Search organizers by name or user ID in real-time</li>
+ *   <li>View detailed profile information for a specific organizer</li>
+ *   <li>Disable organizer accounts (which cascades to remove their events)</li>
+ * </ul>
+ *
+ * <p><b>Critical Deletion Behavior:</b> When an organizer is deleted, the system:
+ * <ol>
+ *   <li>Notifies all users involved with the organizer's events (waitlist, chosen, enrolled)</li>
+ *   <li>Deletes all events created by the organizer</li>
+ *   <li>Removes all associated waiting lists and entrant subcollections</li>
+ *   <li>Removes the organizer from any waiting lists they joined as an entrant</li>
+ *   <li>Disables the organizer's account (soft delete)</li>
+ * </ol>
+ *
+ * @author Vansh Taneja, Aakansh Chatterjee, Aalpesh Dayal
+ * @version 3.0
+ */
 public class AdminOrganizerListActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
@@ -86,7 +110,10 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
-    // setups search functionality on page
+    /**
+     * Sets up the search functionality with a text watcher for real-time filtering.
+     * Triggers filtering on every text change in the search input.
+     */
     private void setupSearch() {
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
@@ -103,7 +130,13 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         });
     }
 
-    // Called with every adjustment to maintain live filtering of list
+    /**
+     * Filters the organizer list based on a search query.
+     * Searches through organizer names and user IDs (case-insensitive).
+     * Updates the RecyclerView and empty state message based on results.
+     *
+     * @param searchText The search query to filter by
+     */
     private void filterList(String searchText) {
         String query = searchText.toLowerCase(Locale.getDefault()).trim();
         List<User> filteredList = new ArrayList<>();
@@ -139,6 +172,11 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
     }
 
 
+    /**
+     * Opens the profile detail view for a specific organizer.
+     *
+     * @param user The organizer whose profile should be viewed
+     */
     private void openOrganizerDetails(User user) {
         if (user.getUserId() == null)
             return;
@@ -149,6 +187,12 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Loads all active organizers from Firestore.
+     * Queries for accounts where organizer=true and disabled!=true.
+     * Shows a progress indicator while loading and applies the current search filter
+     * to the results.
+     */
     private void loadOrganizers() {
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
@@ -188,6 +232,27 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Disables an organizer account and removes all associated data.
+     *
+     * <p>This method performs a comprehensive cleanup process:
+     * <ol>
+     *   <li>Finds all events created by the organizer</li>
+     *   <li>Sends cancellation notifications to all users involved with each event
+     *       (users on waitlist, chosen entrants, and enrolled users)</li>
+     *   <li>Deletes all event documents</li>
+     *   <li>Deletes all waiting list documents and their entrants subcollections</li>
+     *   <li>Removes the organizer from any waiting lists they joined as an entrant
+     *       (using collectionGroup query)</li>
+     *   <li>Sets the organizer's account to disabled=true (soft delete) so user can't remake account</li>
+     * </ol>
+     *
+     * <p>All deletion operations are batched to ensure consistency. If any step fails,
+     * appropriate error messages are displayed. The organizer list is refreshed upon
+     * successful completion.
+     *
+     * @param user The organizer to delete
+     */
     private void deleteOrganizer(User user) {
         if (user.getUserId() == null) return;
 
@@ -250,7 +315,7 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                         // 2. Task to delete Waiting List AND Entrants sub-collection
                         DocumentReference wlRef = db.collection("waiting_lists").document(eventId);
 
-                        // We create a chained task: Fetch Entrants -> Batch Delete -> Return Task
+                        // Chained task: Fetch Entrants -> Batch Delete -> Return Task
                         com.google.android.gms.tasks.Task<Void> deleteWaitlistTask = wlRef.collection("entrants").get()
                                 .continueWithTask(task -> {
                                     WriteBatch batch = db.batch();
@@ -272,8 +337,8 @@ public class AdminOrganizerListActivity extends AppCompatActivity {
                         // Add this complex task to the list
                         tasks.add(deleteWaitlistTask);
                     }
-                    // --- Part B: Remove User from OTHER Waiting Lists (Collection Group) ---
-                    // We add this as a separate task to the list
+                    // Remove User from OTHER Waiting Lists (Collection Group)
+                    // Find user from all collection of entrants using collectionGroup, and remove them
                     com.google.android.gms.tasks.Task<Void> removeUserFromWaitlistsTask = db.collectionGroup("entrants")
                             .whereEqualTo("user_id", userId) // IMPORTANT: Must match your Firestore Index field name (snake_case vs camelCase)
                             .get()

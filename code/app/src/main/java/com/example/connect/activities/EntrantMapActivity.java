@@ -32,7 +32,32 @@ import java.util.Set;
 
 /**
  * Activity for displaying a map view of where entrants joined the waiting list from.
- * US 02.02.02: As an organizer I want to see on a map where entrants joined my event waiting list from.
+ *
+ * <p>This activity visualizes the geographic distribution of event entrants by showing
+ * markers on a Google Map for each entrant who provided location data when joining
+ * the waiting list. This helps organizers understand where their audience is coming from.
+ *
+ * <p>Features include:
+ * <ul>
+ *   <li>Display markers for each entrant with location data</li>
+ *   <li>Show entrant names in marker info windows</li>
+ *   <li>Automatic camera positioning to show all markers</li>
+ *   <li>Statistics showing entrants with/without location data</li>
+ *   <li>Batch loading of user data for performance optimization</li>
+ * </ul>
+ *
+ * <p><b>Requirements:</b>
+ * <ul>
+ *   <li>Google Play Services must be installed</li>
+ *   <li>Event ID must be passed via Intent extra "EVENT_ID"</li>
+ *   <li>Location data stored as latitude/longitude in entrant documents</li>
+ * </ul>
+ *
+ * <p>Implements US 02.02.02: As an organizer I want to see on a map where entrants
+ * joined my event waiting list from.
+ *
+ * @author Vansh Taneja
+ * @version 1.0
  */
 public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -116,6 +141,12 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
         btnBack.setOnClickListener(v -> finish());
     }
 
+    /**
+     * Callback invoked when the Google Map is ready to be used.
+     * Configures map settings and sets up marker click listeners.
+     *
+     * @param googleMap The GoogleMap instance that is ready
+     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -141,8 +172,9 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     /**
-     * Load all entrants from the waiting list and filter those with location data
-     * Then batch load all user data
+     * Loads all entrants from the waiting list and filters those with valid location data.
+     * Handles location data parsing with fallback mechanisms for different data types.
+     * After loading, initiates batch loading of user data for marker labels.
      */
     private void loadEntrants() {
         db.collection("waiting_lists")
@@ -230,8 +262,11 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     /**
-     * Batch load user data for all entrants with location
-     * Fixed: Issue #2 - loads all users in batches instead of individual queries
+     * Batch loads user data for all entrants with location information.
+     * Uses Firestore's 'in' query to load up to 10 users at a time for efficiency.
+     * Once all batches complete, assigns user data to entries and updates the map.
+     *
+     * @param userIds List of user IDs to load
      */
     private void batchLoadUserData(List<String> userIds) {
         if (userIds.isEmpty()) {
@@ -296,8 +331,10 @@ public class EntrantMapActivity extends AppCompatActivity implements OnMapReadyC
     }
 
     /**
-     * Update map with markers for all entrants that have location data
-     * Fixed: Issue #3 - only called once after all data is loaded
+     * Updates the map with markers for all entrants that have valid location data.
+     * Clears existing markers first, then adds new markers with user names as titles.
+     * Automatically adjusts camera to show all markers or focuses on a single marker.
+     * Should only be called once after all data is loaded.
      */
     private void updateMapWithMarkers() {
         if (mMap == null) {

@@ -160,7 +160,6 @@ public class EventDetails extends AppCompatActivity {
             btnLotteryInfo.setOnClickListener(v -> showLotteryCriteriaInfo());
         }
 
-        // ------TO BE IMPLEMENTED-----
         // Join waiting list button
         btnJoinList.setOnClickListener(v -> joinWaitingList());
 
@@ -255,7 +254,6 @@ public class EventDetails extends AppCompatActivity {
      * @param location           The location where the event will take place
      * @param price              The price to attend the event (or "Free")
      * @param registrationWindow The registration start and end dates
-     * @param waitingListCount   The current number of people on the waiting list
      */
     private void displayEventDetails(String eventName, String organizationName,
             String dateTime, String location, String price,
@@ -321,10 +319,10 @@ public class EventDetails extends AppCompatActivity {
             waitlistRegistration.remove();
         }
 
-        // ✅ Listen to the entrants subcollection instead of the document
+        // Listen to the entrants subcollection instead of the document
         waitlistRegistration = db.collection("waiting_lists")
                 .document(eventId)
-                .collection("entrants")  // ✅ Count from subcollection
+                .collection("entrants")  // Count from subcollection
                 .addSnapshotListener((querySnapshot, error) -> {
                     if (error != null) {
                         Log.e("EventDetails", "Error listening to waitlist", error);
@@ -333,7 +331,7 @@ public class EventDetails extends AppCompatActivity {
 
                     int count = 0;
                     if (querySnapshot != null) {
-                        count = querySnapshot.size();  // ✅ Count all entrants
+                        count = querySnapshot.size();  // Count all entrants
                     }
 
                     Log.d("EventDetails", "Waitlist count: " + count);
@@ -479,12 +477,12 @@ public class EventDetails extends AppCompatActivity {
                         return;
                     }
 
-                    // ✅ Check waiting list capacity (not draw_capacity)
+                    // Check waiting list capacity (not draw_capacity)
                     db.collection("waiting_lists")
                             .document(eventId)
                             .get()
                             .addOnSuccessListener(waitingListDoc -> {
-                                // ✅ Get total_capacity from waiting_lists collection (not events)
+                                // Get total_capacity from waiting_lists collection (not events)
                                 final Long totalCapacity = waitingListDoc.exists()
                                         ? waitingListDoc.getLong("total_capacity")
                                         : null;
@@ -502,7 +500,7 @@ public class EventDetails extends AppCompatActivity {
                                                 return;
                                             }
 
-                                            // ✅ Count ALL entrants (regardless of status) for capacity check
+                                            // Count ALL entrants (regardless of status) for capacity check
                                             db.collection("waiting_lists")
                                                     .document(eventId)
                                                     .collection("entrants")
@@ -510,7 +508,7 @@ public class EventDetails extends AppCompatActivity {
                                                     .addOnSuccessListener(querySnapshot -> {
                                                         int currentSize = querySnapshot.size();
 
-                                                        // ✅ ENFORCE: Only check limit if total_capacity is set and > 0
+                                                        // Only check limit if total_capacity is set and > 0
                                                         // null or 0 = unlimited waiting list
                                                         if (totalCapacity != null && totalCapacity > 0
                                                                 && currentSize >= totalCapacity) {
@@ -679,9 +677,13 @@ public class EventDetails extends AppCompatActivity {
     private interface CoordinatesCallback {
         void onResult(Double latitude, Double longitude);
     }
-    
+
     /**
-     * Request location permission from user
+     * Requests location permission from the user.
+     *
+     * <p>If the user has previously denied permission, shows an explanation dialog
+     * describing why location access is needed. Otherwise, directly requests permission.
+     * The result is handled in {@link #onRequestPermissionsResult}.
      */
     private void requestLocationPermission() {
         // Check if we should show explanation
@@ -708,9 +710,16 @@ public class EventDetails extends AppCompatActivity {
                     LOCATION_PERMISSION_REQUEST_CODE);
         }
     }
-    
+
     /**
-     * Handle permission request result
+     * Handles the result of a permission request.
+     *
+     * <p>If location permission is granted, proceeds to capture location and add the user
+     * to the waiting list. If denied, clears pending data and notifies the user.
+     *
+     * @param requestCode The request code passed to requestPermissions
+     * @param permissions The requested permissions
+     * @param grantResults The grant results for the corresponding permissions
      */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -734,9 +743,23 @@ public class EventDetails extends AppCompatActivity {
             }
         }
     }
-    
+
     /**
-     * Adds user to waiting list with optional location data
+     * Adds a user to the waiting list with optional location data.
+     *
+     * <p>This method:
+     * <ol>
+     *   <li>Retrieves the existing waiting list to preserve total_capacity</li>
+     *   <li>Creates or updates the waiting list document</li>
+     *   <li>Adds the user to the entrants subcollection with status "waiting"</li>
+     *   <li>Includes location data (latitude/longitude) if provided</li>
+     * </ol>
+     *
+     * <p>Implements US 02.02.02: Location data is stored when available.
+     *
+     * @param userId The ID of the user joining the waiting list
+     * @param latitude The latitude of the user's location (nullable)
+     * @param longitude The longitude of the user's location (nullable)
      */
     private void addToWaitingList(String userId, Double latitude, Double longitude) {
         // First, get the current waiting list to preserve total_capacity
@@ -754,7 +777,7 @@ public class EventDetails extends AppCompatActivity {
                     Map<String, Object> waitingListData = new HashMap<>();
                     waitingListData.put("event_id", eventId);
                     waitingListData.put("created_at", FieldValue.serverTimestamp());
-                    waitingListData.put("total_capacity", totalCapacity); // ✅ Preserve capacity
+                    waitingListData.put("total_capacity", totalCapacity); // Preserve capacity
 
                     db.collection("waiting_lists")
                             .document(eventId)
@@ -800,7 +823,10 @@ public class EventDetails extends AppCompatActivity {
 
     /**
      * Removes the current user from the event's waiting list.
-     * Deletes the user's document from the entrants subcollection.
+     *
+     * <p>Verifies the user is on the waiting list before attempting removal.
+     * Deletes the user's document from the entrants subcollection and refreshes
+     * the event details upon successful removal.
      */
     private void leaveWaitingList() {
         if (eventId == null)

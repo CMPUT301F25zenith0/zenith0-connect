@@ -16,6 +16,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import android.util.Log;
 
+import org.checkerframework.common.returnsreceiver.qual.This;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,11 +25,23 @@ import java.util.List;
  * Activity for the Admin Dashboard.
  * Provides access to administrative features like managing events, profiles,
  * images, and organizers.
- * 
- * @author Vansh Taneja
- * @version 1.0
+ * <ul>
+ *   <li>Event Management - View, edit, and delete events in the system</li>
+ *   <li>Profile Management - Manage user profiles and account information</li>
+ *   <li>Image Management - Review and moderate user-uploaded images</li>
+ *   <li>Organizer Management - Manage event organizer accounts and permissions</li>
+ *   <li>Notification Logs - View history of system notifications sent to users</li>
+ *   <li>Report Logs - Review user-submitted reports and take appropriate action</li>
+ * </ul>
+ * <p>Security Considerations:
+ * This activity should only be accessible to authenticated users with admin privileges.
+ * Ensure proper authentication checks are performed before allowing access to this screen.
+ *
+ * @author Vansh Taneja, Aakansh Chatterjee
+ * @version 3.0
  */
-public class AdminDashboardActivity extends AppCompatActivity {
+
+ public class AdminDashboardActivity extends AppCompatActivity {
 
     // UI Elements
     private MaterialCardView cardManageEvents;
@@ -81,10 +95,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvStatSystem = findViewById(R.id.tv_stat_system);
     }
 
-    // This Method updates data on the starting dashboard screen | E.g, Total User
-    // and Total Active Users
+    /**
+     * This Method updates data on the starting dashboard screen | Total User and Total Active Users
+     * This Data is tracked through states in the DB
+     */
     private void loadDashboardStats() {
-        // TODO - Implement System stat update
 
         // Query Firestore to get the total count of users in the accounts collection
         db.collection("accounts")
@@ -131,10 +146,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     // If query fails, log error and keep default value
                     Log.e("AdminDashboard", "Failed to get user count: " + e.getMessage(), e);
-                    // Optionally, you could set an error message or keep the default value
                 });
     }
 
+    /**
+     * Setups up listeners for all Cards
+     */
     private void setupClickListeners() {
         cardManageEvents.setOnClickListener(v -> {
             startActivity(new Intent(this, AdminEventListActivity.class));

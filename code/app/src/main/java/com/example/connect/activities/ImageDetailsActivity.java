@@ -13,6 +13,18 @@ import com.google.android.material.appbar.MaterialToolbar;
 
 import java.time.Instant;
 
+/**
+ * Activity for displaying a full-screen image.
+ *
+ * <p>This activity supports displaying images from two sources:
+ * <ul>
+ *   <li>URL-based images (loaded via Glide from a network URL)</li>
+ *   <li>Base64-encoded images (decoded and loaded via Glide)</li>
+ * </ul>
+ *
+ * @author Vansh Taneja
+ * @version 1.0
+ */
 public class ImageDetailsActivity extends AppCompatActivity {
 
     @Override

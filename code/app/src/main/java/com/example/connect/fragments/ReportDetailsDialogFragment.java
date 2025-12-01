@@ -17,6 +17,11 @@ import com.example.connect.R;
 import com.example.connect.models.Report;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+/**
+ * DialogFragment for displaying detailed information about a report.
+ * Shows report severity, status, description, and reporter information.
+ * Allows admins to resolve or dismiss reports.
+ */
 public class ReportDetailsDialogFragment extends DialogFragment {
 
     private static final String ARG_REPORT = "report_object";
@@ -27,6 +32,12 @@ public class ReportDetailsDialogFragment extends DialogFragment {
         void onReportResolved(Report report);
     }
 
+    /**
+     * Creates a new instance of ReportDetailsDialogFragment.
+     *
+     * @param report The Report object to display details for
+     * @return A new instance of the dialog fragment
+     */
     public static ReportDetailsDialogFragment newInstance(Report report) {
         ReportDetailsDialogFragment fragment = new ReportDetailsDialogFragment();
         Bundle args = new Bundle();
@@ -58,6 +69,13 @@ public class ReportDetailsDialogFragment extends DialogFragment {
         return inflater.inflate(R.layout.report_details_frag, container, false);
     }
 
+    /**
+     * Initializes views and populates them with report data.
+     * Sets up button listeners for resolving or canceling the report.
+     *
+     * @param view The created view
+     * @param savedInstanceState Saved state bundle
+     */
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -100,8 +118,12 @@ public class ReportDetailsDialogFragment extends DialogFragment {
     }
 
     /**
-     * Fetches the user's name from the 'accounts' collection using the reporter_id.
-     * Display ID in-case no name is associated
+     * Fetches the reporter's display name from Firestore.
+     * Updates the TextView with the reporter's name and ID.
+     * If no name is found, displays the ID with an appropriate message.
+     *
+     * @param reporterId The ID of the user who created the report
+     * @param tvReporter The TextView to update with reporter information
      */
     private void fetchReporterName(String reporterId, TextView tvReporter) {
         // 1. Check if ID is null immediately

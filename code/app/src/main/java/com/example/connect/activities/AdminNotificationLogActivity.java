@@ -8,6 +8,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.connect.R;
 import com.google.android.material.appbar.MaterialToolbar;
 
+/**
+ * Activity for administrators to view notification logs sent by the system.
+ *
+ * <p>This activity displays a chronological list of all notifications that have been
+ * sent to users, sorted by timestamp in descending order (most recent first). Each log
+ * entry includes details about when the notification was sent and to whom.
+ *
+ * @author Vansh Taneja
+ * @version 1.0
+ */
+
 public class AdminNotificationLogActivity extends AppCompatActivity {
 
     private androidx.recyclerview.widget.RecyclerView recyclerView;
@@ -46,6 +57,13 @@ public class AdminNotificationLogActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
+    /**
+     * Loads notification logs from Firestore with a fallback mechanism.
+     *
+     * <p>First attempts to query with orderBy for descending timestamp. If that fails
+     * (typically due to missing Firestore index), falls back to an unordered query and
+     * manually sorts the results by timestamp in descending order.
+     */
     private void loadNotificationLogs() {
         progressBar.setVisibility(android.view.View.VISIBLE);
         tvEmptyState.setVisibility(android.view.View.GONE);
