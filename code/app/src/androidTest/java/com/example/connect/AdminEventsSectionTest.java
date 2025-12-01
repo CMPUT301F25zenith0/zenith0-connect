@@ -6,7 +6,6 @@ import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.replaceText;
 import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
-import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.espresso.intent.Intents.intended;
 import static androidx.test.espresso.intent.Intents.intending;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
@@ -33,9 +32,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.example.connect.R;
 import com.example.connect.activities.AdminDashboardActivity;
 import com.example.connect.activities.AdminEventDetailActivity;
 import com.example.connect.activities.AdminEventListActivity;
+import com.example.connect.adapters.AdminEventAdapter;
 import com.example.connect.models.Event;
 import com.example.connect.testing.TestHooks;
 
@@ -45,6 +46,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -102,7 +104,7 @@ public class AdminEventsSectionTest {
     public void testAdminEventList_DisplaysEvents() {
         try (ActivityScenario<AdminEventListActivity> scenario =
                      ActivityScenario.launch(AdminEventListActivity.class)) {
-            scenario.onActivity(activity -> activity.populateEventsForTests(createSampleEvents()));
+            seedEvents(scenario, createSampleEvents());
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
             onView(withText("Tech Summit 2025")).check(matches(isDisplayed()));
@@ -119,7 +121,7 @@ public class AdminEventsSectionTest {
     public void testAdminEventList_SearchByTitle() {
         try (ActivityScenario<AdminEventListActivity> scenario =
                      ActivityScenario.launch(AdminEventListActivity.class)) {
-            scenario.onActivity(activity -> activity.populateEventsForTests(createSampleEvents()));
+            seedEvents(scenario, createSampleEvents());
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
             onView(withId(R.id.search_input)).perform(replaceText("Music"));
@@ -142,7 +144,7 @@ public class AdminEventsSectionTest {
 
         try (ActivityScenario<AdminEventListActivity> scenario =
                      ActivityScenario.launch(AdminEventListActivity.class)) {
-            scenario.onActivity(activity -> activity.populateEventsForTests(events));
+            seedEvents(scenario, events);
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
             onView(withId(R.id.recycler_view))
@@ -172,7 +174,7 @@ public class AdminEventsSectionTest {
             List<Event> events = new ArrayList<>();
             events.add(buildEvent("event-detail-1", "Detail Showcase", "org-detail", "2025-03-15"));
 
-            scenario.onActivity(activity -> activity.populateEventsForTests(events));
+            seedEvents(scenario, events);
             InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
             onView(withId(R.id.recycler_view))
@@ -202,6 +204,39 @@ public class AdminEventsSectionTest {
         event.setOrganizerId(organizerId);
         event.setDescription("Test description for " + title);
         return event;
+    }
+
+    /**
+     * Seeds {@link AdminEventListActivity} with deterministic data by injecting directly
+     * into its private fields. This keeps the Espresso tests independent from Firestore.
+     */
+    private void seedEvents(ActivityScenario<AdminEventListActivity> scenario, List<Event> events) {
+        scenario.onActivity(activity -> {
+            try {
+                Field allEventsField = AdminEventListActivity.class.getDeclaredField("allEvents");
+                allEventsField.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                List<Event> allEvents = (List<Event>) allEventsField.get(activity);
+                allEvents.clear();
+                allEvents.addAll(events);
+
+                Field adapterField = AdminEventListActivity.class.getDeclaredField("adapter");
+                adapterField.setAccessible(true);
+                AdminEventAdapter adapter = (AdminEventAdapter) adapterField.get(activity);
+                adapter.setEvents(new ArrayList<>(events));
+
+                View progressBar = activity.findViewById(R.id.progress_bar);
+                View emptyState = activity.findViewById(R.id.tv_empty_state);
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                if (emptyState != null) {
+                    emptyState.setVisibility(events.isEmpty() ? View.VISIBLE : View.GONE);
+                }
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new AssertionError("Unable to seed AdminEventListActivity test data", e);
+            }
+        });
     }
 
     /**

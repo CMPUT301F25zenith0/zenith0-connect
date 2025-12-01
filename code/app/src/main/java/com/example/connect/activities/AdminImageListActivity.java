@@ -63,16 +63,23 @@ public class AdminImageListActivity extends AppCompatActivity {
         try {
             setContentView(R.layout.activity_admin_list);
 
-            db = FirebaseFirestore.getInstance();
+            boolean shouldUseNetwork = !TestHooks.isUiTestMode();
+            if (shouldUseNetwork) {
+                db = FirebaseFirestore.getInstance();
+            }
 
             initViews();
             setupRecyclerView();
 
-            if (TestHooks.isUiTestMode()) {
-                progressBar.setVisibility(View.GONE);
-                tvEmptyState.setVisibility(View.VISIBLE);
-            } else {
+            if (shouldUseNetwork) {
                 loadImages();
+            } else {
+                if (progressBar != null) {
+                    progressBar.setVisibility(View.GONE);
+                }
+                if (tvEmptyState != null) {
+                    tvEmptyState.setVisibility(allImages.isEmpty() ? View.VISIBLE : View.GONE);
+                }
             }
         } catch (Exception e) {
             Log.e("AdminImageList", "Error in onCreate", e);
@@ -152,7 +159,7 @@ public class AdminImageListActivity extends AppCompatActivity {
      * Fetches from both the "events" and "accounts" collections and combines the results.
      */
     private void loadImages() {
-        if (TestHooks.isUiTestMode()) {
+        if (TestHooks.isUiTestMode() || db == null) {
             return;
         }
 
