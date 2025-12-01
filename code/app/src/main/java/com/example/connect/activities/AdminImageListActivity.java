@@ -134,6 +134,9 @@ public class AdminImageListActivity extends AppCompatActivity {
         adapter = new AdminImageAdapter(this::deleteImage, this::openImageDetails);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+        if (TestHooks.isUiTestMode() && recyclerView.getItemAnimator() != null) {
+            recyclerView.setItemAnimator(null); // keep Espresso checks deterministic
+        }
     }
 
 
