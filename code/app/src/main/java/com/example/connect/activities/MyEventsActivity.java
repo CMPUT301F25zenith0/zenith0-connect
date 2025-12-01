@@ -49,7 +49,7 @@ public class MyEventsActivity extends AppCompatActivity {
     private static final String TAG = "MyEventsActivity";
 
     // UI Components
-    private Button scanBtn, profileBtn, homeBtn, myEventsBtn, notificationBtn;
+    private Button scanBtn, profileBtn, homeBtn, myEventsBtn, notificationBtn, btnTabMyEvents;
     private Button btnTabWaitlist, btnTabSelected, btnTabConfirmed;
     private ListView myEventsListView;
     private TextView emptyView;
@@ -62,6 +62,7 @@ public class MyEventsActivity extends AppCompatActivity {
     private List<Event> waitlistedEventsList = new ArrayList<>();
     private List<Event> selectedEventsList = new ArrayList<>();
     private List<Event> confirmedEventsList = new ArrayList<>();
+    private List<Event> allEventsList = new ArrayList<>(); //
 
     // Firebase
     private final EventRepository eventRepository = new EventRepository();
@@ -105,6 +106,8 @@ public class MyEventsActivity extends AppCompatActivity {
         btnTabWaitlist = findViewById(R.id.btn_tab_waitlist);
         btnTabSelected = findViewById(R.id.btn_tab_selected);
         btnTabConfirmed = findViewById(R.id.btn_tab_confirmed);
+        btnTabMyEvents = findViewById(R.id.btn_tab_my_events);
+
 
         myEventsListView = findViewById(R.id.my_events_list);
         emptyView = findViewById(R.id.empty_view);
@@ -130,6 +133,7 @@ public class MyEventsActivity extends AppCompatActivity {
         btnTabWaitlist.setOnClickListener(v -> switchTab(MyEventsAdapter.TAB_WAITLIST));
         btnTabSelected.setOnClickListener(v -> switchTab(MyEventsAdapter.TAB_SELECTED));
         btnTabConfirmed.setOnClickListener(v -> switchTab(MyEventsAdapter.TAB_CONFIRMED));
+        btnTabMyEvents.setOnClickListener(v -> switchTab(MyEventsAdapter.TAB_MY_EVENTS));
 
         myEventsListView.setOnItemClickListener((parent, view, position, id) -> {
             if (position < displayList.size()) {
@@ -157,6 +161,9 @@ public class MyEventsActivity extends AppCompatActivity {
         } else if (tabIndex == MyEventsAdapter.TAB_CONFIRMED) {
             displayList.addAll(confirmedEventsList);
             emptyView.setText("No confirmed events found.");
+        } else if (tabIndex == myEventsAdapter.TAB_MY_EVENTS) {
+            displayList.addAll(allEventsList);
+            emptyView.setText("No events found");
         } else {
             // Default to Waitlist
             displayList.addAll(waitlistedEventsList);
@@ -181,34 +188,39 @@ public class MyEventsActivity extends AppCompatActivity {
         int darkColor = ContextCompat.getColor(this, R.color.background_dark);
         int grayColor = ContextCompat.getColor(this, R.color.text_secondary);
 
-        // Reset all to inactive first
-        btnTabWaitlist.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
-        btnTabWaitlist.setTextColor(grayColor);
-
-        btnTabSelected.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
-        btnTabSelected.setTextColor(grayColor);
-
-        btnTabConfirmed.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
-        btnTabConfirmed.setTextColor(grayColor);
+        // Reset all to inactive
+        setInactiveStyle(btnTabWaitlist, grayColor);
+        setInactiveStyle(btnTabSelected, grayColor);
+        setInactiveStyle(btnTabConfirmed, grayColor);
+        setInactiveStyle(btnTabMyEvents, grayColor);
 
         // Set active one
         if (activeTab == MyEventsAdapter.TAB_WAITLIST) {
-            btnTabWaitlist.setBackgroundTintList(ColorStateList.valueOf(goldColor));
-            btnTabWaitlist.setTextColor(darkColor);
+            setActiveStyle(btnTabWaitlist, goldColor, darkColor);
         } else if (activeTab == MyEventsAdapter.TAB_SELECTED) {
-            btnTabSelected.setBackgroundTintList(ColorStateList.valueOf(goldColor));
-            btnTabSelected.setTextColor(darkColor);
+            setActiveStyle(btnTabSelected, goldColor, darkColor);
         } else if (activeTab == MyEventsAdapter.TAB_CONFIRMED) {
-            btnTabConfirmed.setBackgroundTintList(ColorStateList.valueOf(goldColor));
-            btnTabConfirmed.setTextColor(darkColor);
+            setActiveStyle(btnTabConfirmed, goldColor, darkColor);
+        } else if (activeTab == MyEventsAdapter.TAB_MY_EVENTS) {
+            setActiveStyle(btnTabMyEvents, goldColor, darkColor);
         }
     }
 
+    // Helper methods to keep code clean
+    private void setInactiveStyle(Button btn, int color) {
+        btn.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+        btn.setTextColor(color);
+    }
+    private void setActiveStyle(Button btn, int bgInfo, int textColor) {
+        btn.setBackgroundTintList(ColorStateList.valueOf(bgInfo));
+        btn.setTextColor(textColor);
+    }
 
     private void loadUserEvents() {
         selectedEventsList.clear();
         waitlistedEventsList.clear();
         confirmedEventsList.clear();
+        allEventsList.clear();
         displayList.clear();
         myEventsAdapter.notifyDataSetChanged();
 
@@ -289,6 +301,12 @@ public class MyEventsActivity extends AppCompatActivity {
                 waitlistedEventsList.add(event);
                 if (currentTab == MyEventsAdapter.TAB_WAITLIST) listUpdated = true;
             }
+        }
+        // ALWAYS add to the "All" list
+        if (!allEventsList.contains(event)) {
+            allEventsList.add(event);
+            // If we are currently looking at the "All" tab, trigger an update
+            if (currentTab == MyEventsAdapter.TAB_MY_EVENTS) listUpdated = true;
         }
 
         if (listUpdated) {
