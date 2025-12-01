@@ -26,7 +26,7 @@
 
 | Section | Description |
 |----------|-------------|
-| [🛠 Setup Guide] | Installation, dependencies, and local run instructions |
+| [🛠 Setup Guide](/docs/setup-guide.md) | Installation, dependencies, and local run instructions |
 | [🎨 UI Design](./docs/UI-design/ui-main.md) | Screens, color palettes, and navigation flow |
 | [⚙️ Architecture](./docs/architecture/architecture-main.md) | Backend design, database schema, and flow |
 | [🧑‍💻 Contributing](docs/contributing.md) | Guidelines for developers |
