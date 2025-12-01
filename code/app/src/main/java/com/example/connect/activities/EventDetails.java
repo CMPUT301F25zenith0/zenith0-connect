@@ -928,7 +928,7 @@ public class EventDetails extends AppCompatActivity {
     private void showLotteryCriteriaInfo() {
         new android.app.AlertDialog.Builder(this)
                 .setTitle("Lottery Criteria")
-                .setMessage("TThe draw is conducted by randomly selecting a fixed number of entrants from the waiting list, and every entrant has an equal and fair chance of being selected.")
+                .setMessage("The draw is conducted by randomly selecting a fixed number of entrants from the waiting list, and every entrant has an equal and fair chance of being selected.")
                 .setPositiveButton("Got it", (dialog, which) -> dialog.dismiss())
                 .show();
     }
