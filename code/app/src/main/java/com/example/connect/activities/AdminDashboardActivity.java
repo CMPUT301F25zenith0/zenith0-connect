@@ -8,6 +8,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.connect.R;
+import com.example.connect.testing.TestHooks;
 import com.example.connect.utils.UserActivityTracker;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -68,13 +69,18 @@ import java.util.List;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_dashboard);
 
-        mAuth = FirebaseAuth.getInstance();
-        db = FirebaseFirestore.getInstance();
+        boolean shouldUseNetwork = !TestHooks.isUiTestMode();
+        if (shouldUseNetwork) {
+            mAuth = FirebaseAuth.getInstance();
+            db = FirebaseFirestore.getInstance();
+        }
 
         initViews();
         setupClickListeners();
 
-        loadDashboardStats();
+        if (shouldUseNetwork) {
+            loadDashboardStats();
+        }
     }
 
     /**
@@ -100,6 +106,9 @@ import java.util.List;
      * This Data is tracked through states in the DB
      */
     private void loadDashboardStats() {
+        if (TestHooks.isUiTestMode() || db == null) {
+            return;
+        }
 
         // Query Firestore to get the total count of users in the accounts collection
         db.collection("accounts")
@@ -180,7 +189,9 @@ import java.util.List;
         btnLogout.setOnClickListener(v -> {
             // Mark user as inactive before logging out
             UserActivityTracker.markUserInactive();
-            mAuth.signOut();
+            if (mAuth != null) {
+                mAuth.signOut();
+            }
             Intent intent = new Intent(AdminDashboardActivity.this, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
@@ -198,7 +209,9 @@ import java.util.List;
         // Mark admin user as active
         UserActivityTracker.markUserActive();
         // Refresh dashboard data
-        loadDashboardStats();
+        if (!TestHooks.isUiTestMode()) {
+            loadDashboardStats();
+        }
     }
 
     /**
@@ -220,6 +233,10 @@ import java.util.List;
      * @param callback Callback to receive the list of active user IDs
      */
     public void getActiveUsers(ActiveUsersCallback callback) {
+        if (TestHooks.isUiTestMode() || db == null) {
+            callback.onSuccess(new ArrayList<>());
+            return;
+        }
         db.collection("accounts")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
