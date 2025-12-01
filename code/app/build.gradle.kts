@@ -47,6 +47,10 @@ android {
     }
 }
 
+configurations.all {
+    exclude(group = "com.google.protobuf", module = "protobuf-lite")
+}
+
 dependencies {
 
     // ---------- Android libraries ----------
@@ -74,7 +78,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation(libs.core)
-    implementation(libs.ext.junit)
+
+
 
     // ---------- Unit testing ----------
     testImplementation("junit:junit:4.13.2")
@@ -83,6 +88,9 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
     testImplementation("androidx.test:core:1.6.0")
+    implementation(libs.fragment.testing)
+    implementation(libs.espresso.contrib)
+    implementation(libs.ext.junit)
 
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.0")
 
@@ -92,7 +100,6 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("org.mockito:mockito-android:5.12.0")
     androidTestImplementation("org.mockito:mockito-android:5.12.0")
-    androidTestImplementation ("org.mockito:mockito-inline:5.12.0")  // Important for final classes
 
     testImplementation ("com.google.firebase:firebase-appcheck-safetynet:16.1.2") // any recent version
     testImplementation("com.google.firebase:firebase-firestore:24.10.0")
