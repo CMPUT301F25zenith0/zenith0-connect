@@ -459,23 +459,27 @@ public class CreateEventUnitTest {
         String description = "An amazing conference";
         String location = "Edmonton, AB";
 
-        Calendar startDateTime = Calendar.getInstance();
-        startDateTime.add(Calendar.DAY_OF_MONTH, 1);
-
-        Calendar endDateTime = (Calendar) startDateTime.clone();
-        endDateTime.add(Calendar.HOUR_OF_DAY, 2);
+        Calendar now = Calendar.getInstance();
 
         Calendar regOpens = Calendar.getInstance();
+        regOpens.add(Calendar.HOUR_OF_DAY, 1); // Registration opens in 1 hour (future)
+
+        Calendar startDateTime = Calendar.getInstance();
+        startDateTime.add(Calendar.DAY_OF_MONTH, 1); // Event starts tomorrow
+
+        Calendar endDateTime = (Calendar) startDateTime.clone();
+        endDateTime.add(Calendar.HOUR_OF_DAY, 2); // Event ends 2 hours after start
+
         Calendar regCloses = (Calendar) startDateTime.clone();
-        regCloses.add(Calendar.HOUR_OF_DAY, -1);
+        regCloses.add(Calendar.HOUR_OF_DAY, -1); // Registration closes 1 hour before event
 
         // Validate all fields
         assertFalse("Event name should not be empty", eventName.trim().isEmpty());
         assertFalse("Description should not be empty", description.trim().isEmpty());
         assertFalse("Location should not be empty", location.trim().isEmpty());
-        assertFalse("Start time should not be in past", startDateTime.before(Calendar.getInstance()));
+        assertFalse("Start time should not be in past", startDateTime.before(now));
         assertFalse("End time should not be before start", endDateTime.before(startDateTime));
-        assertFalse("Reg opens should not be in past", regOpens.before(Calendar.getInstance()));
+        assertFalse("Reg opens should not be in past", regOpens.before(now));
         assertFalse("Reg closes should not be before opens", regCloses.before(regOpens));
         assertTrue("Reg closes should be before event start", regCloses.before(startDateTime));
     }

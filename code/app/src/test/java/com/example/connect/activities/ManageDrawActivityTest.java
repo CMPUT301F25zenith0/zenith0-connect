@@ -170,7 +170,7 @@ public class ManageDrawActivityTest {
     @Test
     public void manualLottery_showsCorrectToast() {
         click(R.id.btnManualLottery);
-        assertEquals("Manual lottery triggered for event: Summer Music Fest 2025",
+        assertEquals("Running lottery for Summer Music Fest 2025...",
                 ShadowToast.getTextOfLatestToast());
     }
 
