@@ -1,4 +1,4 @@
-package com.example.connect;
+package com.example.connect.activities;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;

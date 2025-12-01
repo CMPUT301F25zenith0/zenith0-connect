@@ -74,6 +74,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:18.2.0")
     implementation("com.google.android.gms:play-services-location:21.0.1")
     implementation(libs.core)
+    implementation(libs.ext.junit)
 
     // ---------- Unit testing ----------
     testImplementation("junit:junit:4.13.2")
