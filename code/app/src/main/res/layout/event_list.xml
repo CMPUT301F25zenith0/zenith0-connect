@@ -3,179 +3,110 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#4A7C7E">
+    android:background="@color/background_dark">
 
-    <!-- Header Section (Non-scrollable) -->
-    <LinearLayout
-        android:id="@+id/headerSection"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingTop="36dp"
-        android:paddingBottom="16dp"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp">
-
-        <!-- Search Bar -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="25dp"
-            app:cardElevation="4dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:gravity="center_vertical"
-                android:background="@color/f1">
-
-                <EditText
-                    android:id="@+id/search_Bar"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="Search for any event..."
-                    android:textColorHint="#999999"
-                    android:background="@android:color/transparent"
-                    android:inputType="text"
-                    android:imeOptions="actionSearch"/>
-
-                <ImageView
-                    android:id="@+id/searchIcon"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:src="@drawable/ic_search"
-                    android:contentDescription="Search"
-                    android:layout_marginStart="12dp"/>
-
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Filter Chips -->
-        <LinearLayout
-            android:id="@+id/filterChipsContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/interest_filter_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Interest"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#2C3E3F"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-            <Button
-                android:id="@+id/date_filter_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Date"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#2C3E3F"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-            <Button
-                android:id="@+id/location_filter_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Location"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#2C3E3F"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-            <Button
-                android:id="@+id/clear_filters_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="X"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#D32F2F"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-        </LinearLayout>
-
-    </LinearLayout>
+    <!-- HEADER: JACKPOT BOARD -->
+    <!-- ListView for Events (Scrollable) -->
+    <!-- Header View will be added programmatically -->
 
     <!-- ListView for Events (Scrollable) -->
     <ListView
         android:id="@+id/events_ListView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/headerSection"
         android:layout_above="@id/bottomNavigation"
         android:padding="16dp"
         android:divider="@android:color/transparent"
         android:dividerHeight="16dp"
-        android:scrollbars="vertical"/>
+        android:scrollbars="vertical"
+        android:clipToPadding="false"/>
 
-    <!-- Bottom Navigation -->
+    <!-- Bottom Navigation (Refined) -->
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:orientation="horizontal"
-        android:background="@color/white"
+        android:background="@color/card_bg"
         android:paddingVertical="8dp"
-        android:gravity="center">
+        android:gravity="center"
+        android:elevation="16dp">
 
         <Button
             android:id="@+id/home_btn"
-            android:textSize="@dimen/nav_bar_txt_size"
-            android:background="@drawable/nav_bar_btns"
-            android:layout_width="1dp"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Home"
-            android:textColor="#FFFFFF" />
+            android:textColor="@color/primary_gold"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_menu_view"
+            app:iconTint="@color/primary_gold"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
 
         <Button
             android:id="@+id/myevents_btn"
-            android:textSize="@dimen/nav_bar_txt_size"
-            android:background="@drawable/nav_bar_btns"
-            android:layout_width="20dp"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="My Events"
-            android:textColor="#FFFFFF" />
+            android:text="Events"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_menu_agenda"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
 
         <Button
             android:id="@+id/scan_btn"
-            android:textSize="@dimen/nav_bar_txt_size"
-            android:background="@drawable/nav_bar_btns"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Scan"
-            android:textColor="#FFFFFF"/>
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
 
         <Button
             android:id="@+id/profile_btn"
-            android:layout_width="5dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:background="@drawable/nav_bar_btns"
-            android:text="Profile"
-            android:textColor="#FFFFFF"
-            android:textSize="@dimen/nav_bar_txt_size" />
-
-        <Button
-            android:id="@+id/notificaton_btn"
-            android:textSize="@dimen/nav_bar_txt_size"
-            android:background="@drawable/nav_bar_btns"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Noti"
-            android:textColor="#FFFFFF"/>
+            android:text="Profile"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_menu_myplaces"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/notificaton_btn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Alerts"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_popup_reminder"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
 
     </LinearLayout>
 

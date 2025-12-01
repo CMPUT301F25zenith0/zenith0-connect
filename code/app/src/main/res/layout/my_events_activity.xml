@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background_dark">
+
+    <TextView
+        android:id="@+id/pageTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="My Events"
+        android:textColor="@color/text_primary"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:padding="16dp"
+        android:layout_alignParentTop="true"/>
+
+    <LinearLayout
+        android:id="@+id/tab_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/pageTitle"
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp"
+        android:paddingBottom="8dp"
+        android:weightSum="4">
+
+        <Button
+            android:id="@+id/btn_tab_waitlist"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="0dp"
+            android:layout_weight="1"
+            android:backgroundTint="@android:color/transparent"
+            android:text="Waitlist"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp" />
+
+        <Button
+            android:id="@+id/btn_tab_selected"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Selected"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:backgroundTint="@android:color/transparent"
+            android:textColor="@color/text_secondary"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp"
+            android:layout_marginHorizontal="0dp"/>
+
+        <Button
+            android:id="@+id/btn_tab_confirmed"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="0dp"
+            android:layout_weight="1"
+            android:backgroundTint="@android:color/transparent"
+            android:text="Confirmed"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp" />
+
+        <Button
+            android:id="@+id/btn_tab_my_events"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="MyEvents"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:backgroundTint="@android:color/transparent"
+            android:textColor="@color/text_secondary"
+            app:strokeColor="@color/text_secondary"
+            app:strokeWidth="1dp"
+            android:layout_marginStart="0dp"/>
+
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/my_events_list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/tab_container"
+        android:layout_above="@id/bottomNavigation"
+        android:paddingHorizontal="16dp"
+        android:paddingBottom="16dp"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="16dp"
+        android:clipToPadding="false"
+        android:scrollbars="vertical"/>
+
+    <TextView
+        android:id="@+id/empty_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="No events found in this section."
+        android:textColor="@color/text_secondary"
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:background="@color/card_bg"
+        android:paddingVertical="8dp"
+        android:gravity="center"
+        android:elevation="16dp">
+
+        <Button
+            android:id="@+id/home_btn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Home"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_menu_view"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/myevents_btn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Events"
+            android:textColor="@color/primary_gold"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_menu_agenda"
+            app:iconTint="@color/primary_gold"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/scan_btn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Scan"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/profile_btn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Profile"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_menu_myplaces"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/notificaton_btn"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Alerts"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            app:icon="@android:drawable/ic_popup_reminder"
+            app:iconTint="@color/text_secondary"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            android:backgroundTint="@android:color/transparent"/>
+
+    </LinearLayout>
+
+</RelativeLayout>

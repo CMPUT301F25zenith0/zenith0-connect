@@ -26,7 +26,7 @@ public class NotificationHelper {
      * Notify users who were chosen for an event
      */
     public void notifyChosenEntrants(String eventId, List<String> chosenEntrantIds,
-                                     String eventName, NotificationCallback callback) {
+            String eventName, NotificationCallback callback) {
         Log.d(TAG, "notifyChosenEntrants called | eventId=" + eventId +
                 " | entrants=" + chosenEntrantIds.size() + " | eventName=" + eventName);
 
@@ -43,11 +43,17 @@ public class NotificationHelper {
         sendNotificationsToUsers(chosenEntrantIds, title, body, type, eventId, eventName, callback);
     }
 
+    public void notifyCustom(String eventId, List<String> chosenEntrantIds,
+                             String eventName, NotificationCallback callback, String customTitle, String customBody, String type){
+
+        sendNotificationsToUsers(chosenEntrantIds, customTitle, customBody, type, eventId, eventName, callback);
+    }
+
     /**
      * Notify users who were NOT chosen for an event
      */
     public void notifyNotChosenEntrants(String eventId, List<String> notChosenEntrantIds,
-                                        String eventName, NotificationCallback callback) {
+            String eventName, NotificationCallback callback) {
         Log.d(TAG, "notifyNotChosenEntrants called | eventId=" + eventId +
                 " | entrants=" + notChosenEntrantIds.size() + " | eventName=" + eventName);
 
@@ -66,10 +72,32 @@ public class NotificationHelper {
     }
 
     /**
+     * Notify users who were NOT chosen for an event
+     */
+    public void notifyCanceledEntrants(String eventId, List<String> notifyCanceledEntrantsIds,
+                                        String eventName, NotificationCallback callback) {
+        Log.d(TAG, "notifyCanceledEntrants called | eventId=" + eventId +
+                " | entrants=" + notifyCanceledEntrantsIds.size() + " | eventName=" + eventName);
+
+        if (notifyCanceledEntrantsIds.isEmpty()) {
+            Log.w(TAG, "No entrants provided for not-chosen notification");
+            callback.onFailure("No entrants to notify");
+            return;
+        }
+
+        String title = "Event Update";
+        String body = "Thank you for your interest in " + eventName +
+                ". The event organizer would like to notify you since you canceled the event invitation.";
+        String type = "canceled";
+
+        sendNotificationsToUsers(notifyCanceledEntrantsIds, title, body, type, eventId, eventName, callback);
+    }
+
+    /**
      * Notify all users in the waiting list for an event
      */
     public void notifyAllWaitingListEntrants(String eventId, List<String> waitingListIds,
-                                             String eventName, NotificationCallback callback) {
+            String eventName, NotificationCallback callback) {
         Log.d(TAG, "notifyAllWaitingListEntrants called | eventId=" + eventId +
                 " | entrants=" + waitingListIds.size() + " | eventName=" + eventName);
 
@@ -87,12 +115,14 @@ public class NotificationHelper {
         sendNotificationsToUsers(waitingListIds, title, body, type, eventId, eventName, callback);
     }
 
+
     /**
-     * Send notifications to a list of users, respecting their notification preferences
+     * Send notifications to a list of users, respecting their notification
+     * preferences
      */
     private void sendNotificationsToUsers(List<String> userIds, String title, String body,
-                                          String type, String eventId, String eventName,
-                                          NotificationCallback callback) {
+            String type, String eventId, String eventName,
+            NotificationCallback callback) {
 
         if (userIds.isEmpty()) {
             callback.onFailure("No users to notify");
@@ -101,9 +131,9 @@ public class NotificationHelper {
 
         // Use atomic counters to track progress
         final int totalUsers = userIds.size();
-        final int[] processedCount = {0};
-        final int[] notifiedCount = {0};
-        final int[] skippedCount = {0};
+        final int[] processedCount = { 0 };
+        final int[] notifiedCount = { 0 };
+        final int[] skippedCount = { 0 };
 
         for (String userId : userIds) {
             db.collection("accounts").document(userId).get()
@@ -138,6 +168,7 @@ public class NotificationHelper {
                         notificationData.put("timestamp", FieldValue.serverTimestamp());
                         notificationData.put("read", false);
 
+                        // 1. Send to user's private collection
                         db.collection("accounts").document(userId)
                                 .collection("notifications")
                                 .add(notificationData)
@@ -145,6 +176,11 @@ public class NotificationHelper {
                                     Log.d(TAG, "✅ Notification saved for user: " + userId);
                                     notifiedCount[0]++;
                                     processedCount[0]++;
+
+                                    // 2. Log to central admin collection (fire and forget)
+                                    Map<String, Object> logData = new HashMap<>(notificationData);
+                                    logData.put("recipientId", userId);
+                                    db.collection("notification_logs").add(logData);
 
                                     // Check if all users processed
                                     if (processedCount[0] == totalUsers) {
@@ -184,6 +220,7 @@ public class NotificationHelper {
 
     public interface NotificationCallback {
         void onSuccess(String message);
+
         void onFailure(String error);
     }
 }

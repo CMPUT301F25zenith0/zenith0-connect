@@ -4,48 +4,50 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#5F8A8A">
+    android:background="@color/background_light">
 
     <!-- Top Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:background="#5F8A8A"
+        android:layout_height="56dp"
+        android:background="@color/card_bg_light"
+        android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Back button (icon) -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="36dp"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_marginStart="12dp"
-            android:backgroundTint="#2C4E4E"
             android:contentDescription="Back"
-            app:icon="@android:drawable/ic_media_previous"
-            app:iconTint="#FFFFFF"
-            app:iconPadding="0dp"
-            app:cornerRadius="18dp"
+            app:cornerRadius="22dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:backgroundTint="@android:color/transparent"
+            app:icon="@drawable/ic_back_arrow"
+            app:iconTint="@color/dark_blue"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
         <TextView
             android:id="@+id/tvTitle"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Organizer Messages "
-            android:textColor="#000000"
+            android:text="Organizer Messages"
+            android:textColor="@color/text_primary_light"
             android:textSize="20sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toEndOf="@id/btnBack"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.523" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <!-- Subtitle -->
@@ -53,9 +55,9 @@
         android:id="@+id/tvSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Manage events and send notifications to entrants"
+        android:text="View and manage all notifications sent to entrants"
         android:textSize="14sp"
-        android:textColor="#2C4E4E"
+        android:textColor="@color/text_secondary_light"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginTop="12dp"
@@ -81,203 +83,224 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Event Configuration Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Event Configuration"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#2C4E4E"
-                android:layout_marginBottom="12dp"/>
-
-            <com.google.android.material.textfield.TextInputLayout
+            <!-- Messages Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Event ID"
-                android:layout_marginBottom="12dp"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxStrokeColor="#92B8A0">
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:strokeColor="@color/mist_pink"
+                app:strokeWidth="1dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_event_id"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="TEST_EVENT"
-                    android:inputType="text"/>
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical"
+                    android:padding="20dp">
 
-            <com.google.android.material.textfield.TextInputLayout
+                    <!-- Messages Header -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Sent Messages"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary_light"
+                        android:layout_marginBottom="12dp"/>
+
+                    <!-- Search Bar -->
+                    <LinearLayout
+                        android:id="@+id/searchBar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/rounded_border"
+                        android:orientation="horizontal"
+                        android:padding="12dp"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔍"
+                            android:textSize="20sp"
+                            android:textColor="@color/dark_blue"
+                            android:paddingEnd="12dp" />
+
+                        <EditText
+                            android:id="@+id/etSearch"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Search messages by title, content, or event"
+                            android:textColorHint="#999999"
+                            android:textSize="14sp"
+                            android:background="@android:color/transparent"
+                            android:paddingStart="0dp"
+                            android:paddingEnd="0dp" />
+                    </LinearLayout>
+
+                    <!-- Filter and New Message Buttons Row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="end"
+                        android:layout_marginBottom="12dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnFilterByEvent"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:text="Filter By Event"
+                            android:textColor="@color/dark_blue"
+                            android:textSize="13sp"
+                            android:layout_marginEnd="8dp"
+                            app:strokeColor="@color/dark_blue"
+                            app:strokeWidth="1dp"
+                            app:cornerRadius="21dp"
+                            app:icon="@android:drawable/ic_menu_sort_by_size"
+                            app:iconTint="@color/dark_blue"
+                            app:iconSize="18dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnNewMessage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:text="New Message"
+                            android:textColor="@color/white"
+                            android:textSize="13sp"
+                            android:backgroundTint="@color/dark_blue"
+                            app:cornerRadius="21dp"
+                            app:icon="@android:drawable/ic_menu_add"
+                            app:iconTint="@color/white"
+                            app:iconSize="18dp"/>
+                    </LinearLayout>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/mist_pink"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="16dp"/>
+
+                    <!-- Messages RecyclerView Container -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="400dp"
+                        android:background="@android:color/transparent">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/recyclerViewMessages"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:clipToPadding="false"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"/>
+
+                        <!-- Empty State for Messages -->
+                        <LinearLayout
+                            android:id="@+id/tvNoMessages"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:visibility="gone">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📭"
+                                android:textSize="48sp"
+                                android:layout_marginBottom="8dp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="No messages sent yet"
+                                android:textSize="16sp"
+                                android:textColor="@color/text_secondary_light"
+                                android:textStyle="bold"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Send your first notification to entrants"
+                                android:textSize="14sp"
+                                android:textColor="@color/text_secondary_light"
+                                android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                    </FrameLayout>
+
+                    <!-- Message Count Info -->
+                    <TextView
+                        android:id="@+id/tvMessageCount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Showing all messages"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary_light"
+                        android:textStyle="italic"
+                        android:layout_marginTop="8dp"
+                        android:layout_gravity="center"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Help Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Event Name"
                 android:layout_marginBottom="16dp"
-                app:boxBackgroundColor="#FFFFFF"
-                app:boxStrokeColor="#92B8A0">
+                app:cardCornerRadius="20dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#E3F2FD"
+                app:strokeColor="@color/dark_blue"
+                app:strokeWidth="1dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_event_name"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Community Basketball"
-                    android:inputType="text"/>
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
 
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="2dp"
-                android:background="#2C4E4E"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ℹ️"
+                        android:textSize="24sp"
+                        android:layout_marginEnd="12dp"/>
 
-            <!-- Notification Buttons Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Send Notifications"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#2C4E4E"
-                android:layout_marginBottom="12dp"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_notify_chosen"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Notify All Entrants"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:backgroundTint="#92B8A0"
-                android:padding="16dp"
-                android:layout_marginBottom="12dp"
-                app:cornerRadius="12dp"/>
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Quick Tips"
+                            android:textSize="14sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/dark_blue"
+                            android:layout_marginBottom="4dp"/>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_notify_waiting_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Notify Waiting List"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:backgroundTint="#92B8A0"
-                android:padding="16dp"
-                android:layout_marginBottom="16dp"
-                app:cornerRadius="12dp"/>
-
-            <!-- Divider -->
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="2dp"
-                android:background="#2C4E4E"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"/>
-
-            <!-- Messages Section -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Messages"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#2C4E4E"
-                android:layout_marginBottom="12dp"/>
-
-            <!-- Search Bar -->
-            <LinearLayout
-                android:id="@+id/searchBar"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:drawable/edit_text"
-                android:orientation="horizontal"
-                android:padding="12dp"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <TextView
-                    android:id="@+id/btnMenu"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="☰"
-                    android:textSize="20sp"
-                    android:textColor="#666666"
-                    android:paddingEnd="12dp" />
-
-                <EditText
-                    android:id="@+id/etSearch"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="Search messages"
-                    android:textColorHint="#999999"
-                    android:textSize="14sp"
-                    android:background="@android:color/transparent"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp" />
-
-                <TextView
-                    android:id="@+id/btnSearch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔍"
-                    android:textSize="20sp"
-                    android:textColor="#666666"
-                    android:paddingStart="12dp" />
-            </LinearLayout>
-
-            <!-- Filter By Event Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFilterByEvent"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:text="Filter By Event"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:backgroundTint="#92B8A0"
-                android:paddingStart="32dp"
-                android:paddingEnd="32dp"
-                android:layout_marginBottom="12dp"
-                android:layout_gravity="end"
-                app:cornerRadius="24dp" />
-
-            <!-- Messages RecyclerView Container -->
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="300dp"
-                android:layout_marginBottom="12dp">
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerViewMessages"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clipToPadding="false"/>
-
-                <!-- Empty State for Messages -->
-                <TextView
-                    android:id="@+id/tvNoMessages"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:text="No messages yet"
-                    android:textSize="16sp"
-                    android:textColor="#4A6B6B"
-                    android:visibility="gone"/>
-            </FrameLayout>
-
-            <!-- New Message Button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnNewMessage"
-                android:layout_width="wrap_content"
-                android:layout_height="48dp"
-                android:text="New Message"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:backgroundTint="#92B8A0"
-                android:paddingStart="32dp"
-                android:paddingEnd="32dp"
-                android:layout_gravity="end"
-                android:layout_marginBottom="16dp"
-                app:cornerRadius="24dp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="• Click any message to view full details\n• Use search to find specific messages\n• Filter by event to see event-specific notifications\n• Send custom messages to entrant groups"
+                            android:textSize="12sp"
+                            android:textColor="@color/dark_blue"
+                            android:lineSpacingExtra="2dp"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
         </LinearLayout>
     </ScrollView>
@@ -288,8 +311,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="#2C3E3E"
-        android:padding="8dp"
+        android:background="@color/card_bg_light"
+        android:elevation="8dp"
+        android:padding="12dp"
         android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -297,74 +321,74 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavDashboard"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Dashboard"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textAllCaps="false"
-            android:minHeight="44dp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:backgroundTint="#1A2828"
             android:layout_marginEnd="6dp"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            app:cornerRadius="24dp" />
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="DASHBOARD"
+            android:textAllCaps="true"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_view"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavMessage"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Message"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textAllCaps="false"
-            android:minHeight="44dp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:backgroundTint="#1A2828"
             android:layout_marginEnd="6dp"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            app:cornerRadius="24dp" />
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="MESSAGE"
+            android:textAllCaps="true"
+            android:textColor="@color/accent_orange"
+            android:textSize="11sp"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_dialog_email"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/accent_orange" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavMap"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Map"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textAllCaps="false"
-            android:minHeight="44dp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:backgroundTint="#1A2828"
             android:layout_marginEnd="6dp"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            app:cornerRadius="24dp" />
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="MAP"
+            android:textAllCaps="true"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_mapmode"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavProfile"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Profile"
-            android:textColor="#FFFFFF"
-            android:textSize="10sp"
-            android:textAllCaps="false"
-            android:minHeight="44dp"
-            android:maxLines="1"
-            android:singleLine="true"
-            android:backgroundTint="#1A2828"
-            android:paddingStart="2dp"
-            android:paddingEnd="2dp"
-            app:cornerRadius="24dp" />
+            android:minHeight="48dp"
+            android:text="PROFILE"
+            android:textAllCaps="true"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_myplaces"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

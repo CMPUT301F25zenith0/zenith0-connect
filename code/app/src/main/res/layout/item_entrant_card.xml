@@ -14,6 +14,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Entrant info -->
         <TextView
             android:id="@+id/tvEntrantName"
             android:layout_width="wrap_content"
@@ -33,55 +34,46 @@
             android:textSize="13sp"
             android:layout_marginBottom="4dp" />
 
-        <TextView
-            android:id="@+id/tvEntrantStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Status: Waiting"
-            android:textColor="#666666"
-            android:textSize="13sp"
-            android:layout_marginBottom="12dp" />
+        <!-- Status and button row -->
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvEntrantStatus"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Status: Waiting"
+                android:textColor="#666666"
+                android:textSize="13sp" />
 
             <Button
-                android:id="@+id/btnDraw"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="Draw"
-                android:textColor="#2C4E4E"
-                android:textSize="12sp"
-                android:backgroundTint="#A5D8D8"
-                android:layout_marginEnd="8dp"
-                app:cornerRadius="20dp" />
+                android:id="@+id/btnSendCustomNotification"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Send Custom Notification"
+                android:backgroundTint="#2C4E4E"
+                android:textColor="#FFFFFF"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:layout_marginStart="8dp"/>
 
             <Button
-                android:id="@+id/btnSelected"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="Selected"
-                android:textColor="#2C4E4E"
-                android:textSize="12sp"
-                android:backgroundTint="#A5D8D8"
-                android:layout_marginEnd="8dp"
-                app:cornerRadius="20dp" />
+                android:id="@+id/btnCancelEntrant"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:backgroundTint="#D32F2F"
+                android:minHeight="36dp"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:text="Cancel Entrant"
+                android:textColor="#FFFFFF"
+                android:visibility="gone" />
 
-            <Button
-                android:id="@+id/btnNotify"
-                android:layout_width="0dp"
-                android:layout_height="40dp"
-                android:layout_weight="1"
-                android:text="Notify"
-                android:textColor="#2C4E4E"
-                android:textSize="12sp"
-                android:backgroundTint="#A5D8D8"
-                app:cornerRadius="20dp" />
         </LinearLayout>
 
     </LinearLayout>

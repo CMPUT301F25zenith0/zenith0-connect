@@ -5,600 +5,602 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.connect.R;
+import com.example.connect.adapters.NotificationMessageAdapter;
+import com.example.connect.models.NotificationMessage;
 import com.example.connect.utils.NotificationHelper;
 import com.google.android.material.button.MaterialButton;
+import com.google.firebase.Timestamp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * This is the Java for the organizer dashboard, it has the functionality for Notify All Entrants and for Notifying Waiting List.
+ * Organizer Messages Activity
+ * Shows all notifications sent by the organizer
+ * Features:
+ * - View all sent notifications
+ * - Search messages by title/body
+ * - Filter by event
+ * - Send new custom messages
+ * - View notification details (recipients, status)
  */
 public class OrganizerMessagesActivity extends AppCompatActivity {
-    private static final String TAG = "OrganizerMessagesActivityTag";
+    private static final String TAG = "OrganizerMessages";
+
+    // Firebase
 
     private FirebaseFirestore db;
     private NotificationHelper notificationHelper;
 
-    private Spinner spinnerEntrants;
-    private EditText etEventId, etEventName, etSearch;
-    private MaterialButton btnBack;
-    private Button btnNotifyChosen, btnNotifyWaitingList;
-    private MaterialButton btnFilterByEvent, btnNewMessage;
-    private MaterialButton btnNavDashboard, btnNavMessage, btnNavMap, btnNavProfile;
+    // UI Components
+    private MaterialButton btnBack, btnFilterByEvent, btnNewMessage;
+    private EditText etSearch;
+    private RecyclerView recyclerViewMessages;
+    private View tvNoMessages; // Changed to View since it's now a LinearLayout
 
-    private List<String> entrantUids = new ArrayList<>();
-    private List<String> entrantNames = new ArrayList<>();
-    String eventId = "TEST_EVENT"; // Default for testing
+    // Bottom Navigation
+    private Button btnNavDashboard, btnNavMessage, btnNavMap, btnNavProfile;
 
+    // Data
+    private NotificationMessageAdapter adapter;
+    private List<NotificationMessage> allMessages = new ArrayList<>();
+    private List<NotificationMessage> filteredMessages = new ArrayList<>();
+    private String currentEventFilter = null; // null = show all events
+    private boolean isTest = false;
+
+    public void setIsTest(boolean isTest) {
+        this.isTest = isTest;
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_messages);
 
-        db = FirebaseFirestore.getInstance();
-        notificationHelper = new NotificationHelper();
-
-        // Initialize views
         initializeViews();
-
-        // Load entrants
-        loadEntrants();
-
-        // Set up click listeners
+        setupRecyclerView();
         setupClickListeners();
+
+        if (!isTest) {
+            db = FirebaseFirestore.getInstance();
+            notificationHelper = new NotificationHelper();
+            loadAllNotifications();
+        }
     }
 
-    /**
-     * Initialize all views
-     */
     private void initializeViews() {
-        // Text inputs
-        etEventId = findViewById(R.id.et_event_id);
-        etEventName = findViewById(R.id.et_event_name);
-        etSearch = findViewById(R.id.etSearch);
-
-        // Top bar
         btnBack = findViewById(R.id.btnBack);
-
-        // Notification buttons
-        btnNotifyChosen = findViewById(R.id.btn_notify_chosen);
-        btnNotifyWaitingList = findViewById(R.id.btn_notify_waiting_list);
-
-        // Messages section buttons
+        etSearch = findViewById(R.id.etSearch);
         btnFilterByEvent = findViewById(R.id.btnFilterByEvent);
         btnNewMessage = findViewById(R.id.btnNewMessage);
+        recyclerViewMessages = findViewById(R.id.recyclerViewMessages);
+        tvNoMessages = findViewById(R.id.tvNoMessages);
 
-        // Bottom navigation
+        // Bottom Navigation
         btnNavDashboard = findViewById(R.id.btnNavDashboard);
         btnNavMessage = findViewById(R.id.btnNavMessage);
         btnNavMap = findViewById(R.id.btnNavMap);
         btnNavProfile = findViewById(R.id.btnNavProfile);
     }
 
+    private void setupRecyclerView() {
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerViewMessages.setLayoutManager(layoutManager);
+
+        adapter = new NotificationMessageAdapter();
+        adapter.setOnMessageClickListener(message -> showMessageDetails(message));
+        recyclerViewMessages.setAdapter(adapter);
+    }
+
     private void setupClickListeners() {
-        // Back button
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
+        btnBack.setOnClickListener(v -> finish());
 
-        // US 02.05.01 & US 01.04.01 - Notify chosen entrants
-        btnNotifyChosen.setOnClickListener(v -> {
-            String eventIdStr = etEventId.getText().toString().trim();
-            String eventName = etEventName.getText().toString().trim();
+        // Search functionality
+        etSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-            if (eventIdStr.isEmpty() || eventName.isEmpty()) {
-                Toast.makeText(this, "Please enter event ID and name", Toast.LENGTH_SHORT).show();
-                return;
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterMessages(s.toString());
             }
 
-            // Atomic counters for both groups
-            AtomicInteger totalNotifications = new AtomicInteger(0);
-            AtomicInteger completedGroups = new AtomicInteger(0);
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
 
-            // Get chosen entrants from "chosen" collection
-            getChosenEntrantsFromCollection(eventIdStr, chosenIds -> {
-                // Get not-chosen entrants (waiting list minus chosen)
-                getNotChosenEntrantsFromCollections(eventIdStr, notChosenIds -> {
+        btnFilterByEvent.setOnClickListener(v -> showEventFilterDialog());
 
-                    int tempTotalGroups = 0;
-                    if (!chosenIds.isEmpty()) tempTotalGroups++;
-                    if (!notChosenIds.isEmpty()) tempTotalGroups++;
+        btnNewMessage.setOnClickListener(v -> showNewMessageDialog());
 
-                    if (tempTotalGroups == 0) {
-                        Toast.makeText(this, "No entrants found", Toast.LENGTH_SHORT).show();
+        // Bottom Navigation
+        btnNavDashboard.setOnClickListener(v -> {
+            Intent intent = new Intent(OrganizerMessagesActivity.this, OrganizerActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        });
+
+        btnNavMessage.setOnClickListener(v -> {
+            // Already here, do nothing or refresh
+            Toast.makeText(this, "Already on Messages", Toast.LENGTH_SHORT).show();
+        });
+
+        btnNavMap.setOnClickListener(v -> {
+            Toast.makeText(this, "Select an event from dashboard to view map", Toast.LENGTH_SHORT).show();
+        });
+
+        btnNavProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(OrganizerMessagesActivity.this, ProfileActivity.class);
+            intent.putExtra("from_organizer", true);
+            startActivity(intent);
+        });
+    }
+
+    /**
+     * Load all notifications sent by this organizer
+     * Filters by organizer_id and excludes "recommendations" type
+     */
+    void loadAllNotifications() {
+        // First, get all events created by this organizer
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid()
+                : "dummy-organizer-id";
+
+        db.collection("events")
+                .whereEqualTo("organizer_id", currentUserId)
+                .get()
+                .addOnSuccessListener(eventSnapshot -> {
+                    if (eventSnapshot.isEmpty()) {
+                        Log.d(TAG, "No events found for this organizer");
+                        showEmptyState();
                         return;
                     }
 
-                    final int totalGroups = tempTotalGroups;
+                    // Collect all event IDs for this organizer
+                    List<String> organizerEventIds = new ArrayList<>();
+                    for (QueryDocumentSnapshot eventDoc : eventSnapshot) {
+                        organizerEventIds.add(eventDoc.getId());
+                    }
 
-                    NotificationHelper.NotificationCallback combinedCallback =
+                    Log.d(TAG, "Found " + organizerEventIds.size() + " events for organizer");
+
+                    // Now load notifications for these events
+                    db.collection("notification_logs")
+                            .orderBy("timestamp", Query.Direction.DESCENDING)
+                            .get()
+                            .addOnSuccessListener(notifSnapshot -> {
+                                allMessages.clear();
+
+                                if (notifSnapshot.isEmpty()) {
+                                    Log.d(TAG, "No notifications found");
+                                    showEmptyState();
+                                    return;
+                                }
+
+                                for (QueryDocumentSnapshot doc : notifSnapshot) {
+                                    String eventId = doc.getString("eventId");
+                                    String type = doc.getString("type");
+
+                                    // Filter: only include notifications for this organizer's events
+                                    // AND exclude "recommendations" type
+                                    if (eventId != null && organizerEventIds.contains(eventId)
+                                            && !"recommendations".equals(type)) {
+
+                                        NotificationMessage message = new NotificationMessage();
+                                        message.setId(doc.getId());
+                                        message.setTitle(doc.getString("title"));
+                                        message.setBody(doc.getString("body"));
+                                        message.setType(type);
+                                        message.setEventId(eventId);
+                                        message.setEventName(doc.getString("eventName"));
+                                        message.setRecipientId(doc.getString("recipientId"));
+                                        message.setTimestamp(doc.getTimestamp("timestamp"));
+                                        message.setRead(doc.getBoolean("read") != null ? doc.getBoolean("read") : false);
+
+                                        allMessages.add(message);
+                                    }
+                                }
+
+                                Log.d(TAG, "Loaded " + allMessages.size() + " notifications for organizer");
+                                filterMessages(etSearch.getText().toString());
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.e(TAG, "Error loading notifications", e);
+                                Toast.makeText(this, "Error loading messages", Toast.LENGTH_SHORT).show();
+                                showEmptyState();
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading organizer events", e);
+                    Toast.makeText(this, "Error loading your events", Toast.LENGTH_SHORT).show();
+                    showEmptyState();
+                });
+    }
+
+    /**
+     * Filter messages by search query and event filter
+     */
+    private void filterMessages(String query) {
+        filteredMessages.clear();
+        String lowerQuery = query.toLowerCase().trim();
+
+        for (NotificationMessage message : allMessages) {
+            // Apply event filter first
+            if (currentEventFilter != null && !currentEventFilter.isEmpty()) {
+                if (message.getEventId() == null || !message.getEventId().equals(currentEventFilter)) {
+                    continue;
+                }
+            }
+
+            // Apply search filter
+            if (lowerQuery.isEmpty()) {
+                filteredMessages.add(message);
+            } else {
+                boolean matchesTitle = message.getTitle() != null &&
+                        message.getTitle().toLowerCase().contains(lowerQuery);
+                boolean matchesBody = message.getBody() != null &&
+                        message.getBody().toLowerCase().contains(lowerQuery);
+                boolean matchesEvent = message.getEventName() != null &&
+                        message.getEventName().toLowerCase().contains(lowerQuery);
+
+                if (matchesTitle || matchesBody || matchesEvent) {
+                    filteredMessages.add(message);
+                }
+            }
+        }
+
+        updateUI();
+    }
+
+    private void updateUI() {
+        if (filteredMessages.isEmpty()) {
+            showEmptyState();
+        } else {
+            tvNoMessages.setVisibility(View.GONE);
+            recyclerViewMessages.setVisibility(View.VISIBLE);
+            adapter.submitList(new ArrayList<>(filteredMessages));
+        }
+    }
+
+    private void showEmptyState() {
+        tvNoMessages.setVisibility(View.VISIBLE);
+        recyclerViewMessages.setVisibility(View.GONE);
+        adapter.submitList(new ArrayList<>());
+    }
+
+    /**
+     * Show dialog to filter by event
+     */
+    private void showEventFilterDialog() {
+        // Get unique events from messages
+        Map<String, String> eventsMap = new HashMap<>();
+        for (NotificationMessage message : allMessages) {
+            if (message.getEventId() != null && message.getEventName() != null) {
+                eventsMap.put(message.getEventId(), message.getEventName());
+            }
+        }
+
+        if (eventsMap.isEmpty()) {
+            Toast.makeText(this, "No events with messages", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> eventNames = new ArrayList<>(eventsMap.values());
+        List<String> eventIds = new ArrayList<>(eventsMap.keySet());
+
+        // Add "All Events" option at the beginning
+        eventNames.add(0, "All Events");
+        eventIds.add(0, null);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Filter by Event");
+        builder.setItems(eventNames.toArray(new String[0]), (dialog, which) -> {
+            currentEventFilter = eventIds.get(which);
+
+            String filterText = eventNames.get(which);
+            btnFilterByEvent.setText(filterText.equals("All Events") ?
+                    "Filter By Event" : filterText);
+
+            filterMessages(etSearch.getText().toString());
+
+            Toast.makeText(this, "Filtered to: " + filterText, Toast.LENGTH_SHORT).show();
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
+    }
+
+    /**
+     * Show dialog to send a new custom message
+     * Fixed: Only shows events created by this organizer
+     */
+    private void showNewMessageDialog() {
+        // Get current user ID
+        if (com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() == null) {
+            Toast.makeText(this, "Not logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String currentUserId = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid();
+        Log.d(TAG, "Loading events for organizer: " + currentUserId);
+
+        // Get only events created by this organizer
+        db.collection("events")
+                .whereEqualTo("organizer_id", currentUserId)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    Log.d(TAG, "Query returned " + querySnapshot.size() + " documents");
+
+                    if (querySnapshot.isEmpty()) {
+                        Toast.makeText(this, "You haven't created any events yet", Toast.LENGTH_LONG).show();
+                        Log.w(TAG, "No events found with organizer_id = " + currentUserId);
+                        return;
+                    }
+
+                    List<String> eventNames = new ArrayList<>();
+                    List<String> eventIds = new ArrayList<>();
+
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        // Try both "name" and "event_title" fields
+                        String name = doc.getString("name");
+                        if (name == null || name.isEmpty()) {
+                            name = doc.getString("event_title");
+                        }
+
+                        String organizerId = doc.getString("organizer_id");
+                        Log.d(TAG, "Found event: " + name + " (ID: " + doc.getId() + ", organizer_id: " + organizerId + ")");
+
+                        if (name != null && !name.isEmpty()) {
+                            eventNames.add(name);
+                            eventIds.add(doc.getId());
+                        } else {
+                            Log.w(TAG, "Skipping event with null/empty name: " + doc.getId());
+                        }
+                    }
+
+                    if (eventNames.isEmpty()) {
+                        Toast.makeText(this, "No valid events found", Toast.LENGTH_LONG).show();
+                        Log.w(TAG, "All events had null/empty names");
+                        return;
+                    }
+
+                    Log.d(TAG, "Successfully loaded " + eventNames.size() + " events for dropdown");
+                    showNewMessageDialogStep2(eventNames, eventIds);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading events", e);
+                    Toast.makeText(this, "Error loading events: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+    }
+
+    private void showNewMessageDialogStep2(List<String> eventNames, List<String> eventIds) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_new_message, null);
+
+        Spinner spinnerEvent = dialogView.findViewById(R.id.spinnerEvent);
+        Spinner spinnerRecipients = dialogView.findViewById(R.id.spinnerRecipients);
+        EditText etTitle = dialogView.findViewById(R.id.etMessageTitle);
+        EditText etBody = dialogView.findViewById(R.id.etMessageBody);
+        Button btnSend = dialogView.findViewById(R.id.btnSendMessage);
+
+        // Setup event spinner
+        ArrayAdapter<String> eventAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, eventNames);
+        eventAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerEvent.setAdapter(eventAdapter);
+
+        // Setup recipients spinner
+        String[] recipientOptions = {"All Waiting", "All Selected", "All Enrolled", "All Canceled"};
+        ArrayAdapter<String> recipientAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, recipientOptions);
+        recipientAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerRecipients.setAdapter(recipientAdapter);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setTitle("Send New Message")
+                .setNegativeButton("Cancel", null)
+                .create();
+
+        btnSend.setOnClickListener(v -> {
+            String title = etTitle.getText().toString().trim();
+            String body = etBody.getText().toString().trim();
+            int eventPosition = spinnerEvent.getSelectedItemPosition();
+            String recipientType = spinnerRecipients.getSelectedItem().toString();
+
+            if (title.isEmpty() || body.isEmpty()) {
+                Toast.makeText(this, "Please enter title and message", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String selectedEventId = eventIds.get(eventPosition);
+            String selectedEventName = eventNames.get(eventPosition);
+
+            sendCustomMessageToGroup(selectedEventId, selectedEventName, recipientType, title, body);
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
+
+    /**
+     * Send custom message to a group of entrants
+     */
+    private void sendCustomMessageToGroup(String eventId, String eventName,
+                                          String recipientType, String title, String body) {
+        // Determine status to query
+        String status;
+        switch (recipientType) {
+            case "All Waiting":
+                status = "waiting";
+                break;
+            case "All Selected":
+                status = "selected";
+                break;
+            case "All Enrolled":
+                status = "enrolled";
+                break;
+            case "All Canceled":
+                status = "canceled";
+                break;
+            default:
+                Toast.makeText(this, "Invalid recipient type", Toast.LENGTH_SHORT).show();
+                return;
+        }
+
+        // Get all entrants with this status
+        db.collection("waiting_lists")
+                .document(eventId)
+                .collection("entrants")
+                .whereEqualTo("status", status)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (querySnapshot.isEmpty()) {
+                        Toast.makeText(this, "No " + status + " entrants found",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    List<String> recipientIds = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        String userId = doc.getString("user_id");
+                        if (userId != null) {
+                            recipientIds.add(userId);
+                        }
+                    }
+
+                    if (recipientIds.isEmpty()) {
+                        Toast.makeText(this, "No valid recipients found", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    // Send custom notification
+                    notificationHelper.notifyCustom(eventId, recipientIds, eventName,
                             new NotificationHelper.NotificationCallback() {
                                 @Override
                                 public void onSuccess(String message) {
-                                    int sent = extractNumber(message);
-                                    totalNotifications.addAndGet(sent);
-
-                                    if (completedGroups.incrementAndGet() == totalGroups) {
-                                        runOnUiThread(() -> Toast.makeText(
-                                                OrganizerMessagesActivity.this,
-                                                "Sent " + totalNotifications.get() + " notifications successfully!",
-                                                Toast.LENGTH_LONG
-                                        ).show());
-                                    }
+                                    runOnUiThread(() -> {
+                                        Toast.makeText(OrganizerMessagesActivity.this,
+                                                "Message sent to " + recipientIds.size() + " users",
+                                                Toast.LENGTH_LONG).show();
+                                        loadAllNotifications(); // Refresh
+                                    });
                                 }
 
                                 @Override
                                 public void onFailure(String error) {
-                                    if (completedGroups.incrementAndGet() == totalGroups) {
-                                        runOnUiThread(() -> Toast.makeText(
-                                                OrganizerMessagesActivity.this,
-                                                "Some notifications failed: " + error,
-                                                Toast.LENGTH_LONG
-                                        ).show());
-                                    }
+                                    runOnUiThread(() -> {
+                                        Toast.makeText(OrganizerMessagesActivity.this,
+                                                "Failed to send: " + error,
+                                                Toast.LENGTH_LONG).show();
+                                    });
                                 }
-                            };
-
-                    // Send to chosen entrants
-                    if (!chosenIds.isEmpty()) {
-                        notificationHelper.notifyChosenEntrants(eventIdStr, chosenIds, eventName, combinedCallback);
-                    }
-
-                    // Send to not-chosen entrants
-                    if (!notChosenIds.isEmpty()) {
-                        notificationHelper.notifyNotChosenEntrants(eventIdStr, notChosenIds, eventName, combinedCallback);
-                    }
-
+                            }, title, body, "custom");
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error loading entrants", e);
+                    Toast.makeText(this, "Error loading recipients", Toast.LENGTH_SHORT).show();
                 });
-            });
-        });
+    }
 
-        // US 02.07.01 - Notify all waiting list entrants
-        btnNotifyWaitingList.setOnClickListener(v -> {
-            String eventIdStr = etEventId.getText().toString().trim();
-            String eventName = etEventName.getText().toString().trim();
-            Log.d(TAG, "Event id and event name: " + eventIdStr + eventName);
+    /**
+     * Show detailed information about a notification message
+     */
+    private void showMessageDetails(NotificationMessage message) {
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_message_details, null);
 
-            if (eventIdStr.isEmpty() || eventName.isEmpty()) {
-                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        TextView tvTitle = dialogView.findViewById(R.id.tvDetailTitle);
+        TextView tvBody = dialogView.findViewById(R.id.tvDetailBody);
+        TextView tvEvent = dialogView.findViewById(R.id.tvDetailEvent);
+        TextView tvType = dialogView.findViewById(R.id.tvDetailType);
+        TextView tvTimestamp = dialogView.findViewById(R.id.tvDetailTimestamp);
+        TextView tvRecipient = dialogView.findViewById(R.id.tvDetailRecipient);
+        TextView tvStatus = dialogView.findViewById(R.id.tvDetailStatus);
 
-            // Get waiting list IDs from the waiting_lists collection
-            getWaitingListEntrantsFromCollection(eventIdStr, waitingListIds -> {
-                if (waitingListIds.isEmpty()) {
-                    Toast.makeText(this, "No entrants in waiting list", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+        tvTitle.setText(message.getTitle());
+        tvBody.setText(message.getBody());
+        tvEvent.setText(message.getEventName() != null ? message.getEventName() : "Unknown Event");
+        tvType.setText(formatNotificationType(message.getType()));
 
-                notificationHelper.notifyAllWaitingListEntrants(
-                        eventIdStr,
-                        waitingListIds,
-                        eventName,
-                        new NotificationHelper.NotificationCallback() {
-                            @Override
-                            public void onSuccess(String msg) {
-                                runOnUiThread(() ->
-                                        Toast.makeText(OrganizerMessagesActivity.this,
-                                                msg, Toast.LENGTH_SHORT).show()
-                                );
-                            }
+        if (message.getTimestamp() != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault());
+            tvTimestamp.setText(sdf.format(message.getTimestamp().toDate()));
+        } else {
+            tvTimestamp.setText("Unknown time");
+        }
 
-                            @Override
-                            public void onFailure(String error) {
-                                runOnUiThread(() ->
-                                        Toast.makeText(OrganizerMessagesActivity.this,
-                                                "Error: " + error, Toast.LENGTH_LONG).show()
-                                );
-                            }
+        // Load recipient name
+        if (message.getRecipientId() != null) {
+            db.collection("accounts")
+                    .document(message.getRecipientId())
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            String name = doc.getString("name");
+                            tvRecipient.setText(name != null ? name : "Unknown User");
+                        } else {
+                            tvRecipient.setText("Unknown User");
                         }
-                );
-            });
-        });
-        // Search functionality
-        if (etSearch != null) {
-            etSearch.addTextChangedListener(new TextWatcher() {
-                @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-                @Override
-                public void onTextChanged(CharSequence s, int start, int before, int count) {
-                    if (s.length() > 0) {
-                        // TODO: Implement search messages functionality
-                        Toast.makeText(OrganizerMessagesActivity.this,
-                                "Search: " + s.toString(), Toast.LENGTH_SHORT).show();
-                    }
-                }
-
-                @Override
-                public void afterTextChanged(Editable s) {}
-            });
+                    })
+                    .addOnFailureListener(e -> tvRecipient.setText("Unknown User"));
+        } else {
+            tvRecipient.setText("Unknown User");
         }
 
-        // Filter by event button
-        if (btnFilterByEvent != null) {
-            btnFilterByEvent.setOnClickListener(v -> {
-                // TODO: Implement filter by event dialog
-                Toast.makeText(this, "Filter By Event - Coming Soon", Toast.LENGTH_SHORT).show();
-            });
-        }
+        tvStatus.setText(message.isRead() ? "Read ✓" : "Unread");
+        tvStatus.setTextColor(getResources().getColor(
+                message.isRead() ? android.R.color.holo_green_dark : android.R.color.holo_orange_dark,
+                null
+        ));
 
-        // New message button
-        if (btnNewMessage != null) {
-            btnNewMessage.setOnClickListener(v -> {
-                // TODO: Navigate to new message compose screen
-                Toast.makeText(this, "New Message - Coming Soon", Toast.LENGTH_SHORT).show();
-            });
-        }
+        new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setPositiveButton("Close", null)
+                .show();
+    }
 
-        // Bottom Navigation
-        if (btnNavDashboard != null) {
-            btnNavDashboard.setOnClickListener(v -> {
-                // TODO: Navigate to dashboard
-                Toast.makeText(this, "Dashboard - Coming Soon", Toast.LENGTH_SHORT).show();
-            });
-        }
-
-        if (btnNavMessage != null) {
-            btnNavMessage.setOnClickListener(v -> {
-                // Already on messages page
-                Toast.makeText(this, "Already on Messages", Toast.LENGTH_SHORT).show();
-            });
-        }
-
-        if (btnNavMap != null) {
-            btnNavMap.setOnClickListener(v -> {
-                // TODO: Navigate to map
-                Toast.makeText(this, "Map - Coming Soon", Toast.LENGTH_SHORT).show();
-            });
-        }
-
-        if (btnNavProfile != null) {
-            btnNavProfile.setOnClickListener(v -> {
-                Intent profileIntent = new Intent(OrganizerMessagesActivity.this, ProfileActivity.class);
-                startActivity(profileIntent);
-            });
+    private String formatNotificationType(String type) {
+        if (type == null) return "General";
+        switch (type) {
+            case "chosen": return "Selected";
+            case "not_chosen": return "Not Selected";
+            case "canceled": return "Canceled";
+            case "waiting_list_announcement": return "Waiting List";
+            case "custom": return "Custom";
+            default: return type;
         }
     }
 
-    int extractNumber(String message) {
-        try {
-            Pattern pattern = Pattern.compile("\\d+");
-            Matcher matcher = pattern.matcher(message);
-            if (matcher.find()) {
-                return Integer.parseInt(matcher.group());
-            }
-        } catch (Exception e) {
-            Log.e("OrganizerMessagesActivity", "Failed to extract number from message: " + message, e);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!isTest) {
+            loadAllNotifications(); // Only refresh in real app
         }
-        return 0;
-    }
-
-    /**
-     * Load all accounts/entrants from Firestore for the spinner
-     */
-    private void loadEntrants() {
-        Log.d(TAG, "Loading entrants from Firestore...");
-        db.collection("accounts").get().addOnCompleteListener(task -> {
-            if (!task.isSuccessful()) {
-                Log.e(TAG, "Failed to load entrants", task.getException());
-                return;
-            }
-
-            entrantUids.clear();
-            entrantNames.clear();
-
-            int totalDocs = task.getResult().size();
-            Log.d(TAG, "Total documents in accounts collection: " + totalDocs);
-
-            for (QueryDocumentSnapshot doc : task.getResult()) {
-                String name = doc.getString("full_name");
-                String uid = doc.getId();
-                if (name != null) {
-                    entrantNames.add(name);
-                    entrantUids.add(uid);
-                    Log.d(TAG, "Added entrant: " + name + " UID: " + uid);
-                } else {
-                    Log.w(TAG, "Skipped document with UID " + uid + " because name is null");
-                }
-            }
-
-            Log.d(TAG, "Total entrants added: " + entrantNames.size());
-        });
-    }
-
-
-    /**
-     * Get chosen entrants from the "chosen" collection
-     */
-    private void getChosenEntrantsFromCollection(String eventId, EntrantIdsCallback callback) {
-        db.collection("chosen").document(eventId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
-                        Log.d(TAG, "No chosen document found for event: " + eventId);
-                        callback.onEntrantIdsFetched(new ArrayList<>());
-                        return;
-                    }
-
-                    List<String> chosenIds = (List<String>) documentSnapshot.get("entries");
-                    if (chosenIds == null) {
-                        chosenIds = new ArrayList<>();
-                    }
-
-                    Log.d(TAG, "Found " + chosenIds.size() + " chosen entrants");
-                    callback.onEntrantIdsFetched(chosenIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching chosen entrants", e);
-                    callback.onEntrantIdsFetched(new ArrayList<>());
-                });
-    }
-
-    /**
-     * Get not-chosen entrants (waiting list minus chosen)
-     */
-    private void getNotChosenEntrantsFromCollections(String eventId, EntrantIdsCallback callback) {
-        // First get waiting list
-        db.collection("waiting_lists").document(eventId)
-                .get()
-                .addOnSuccessListener(waitingListDoc -> {
-                    if (!waitingListDoc.exists()) {
-                        Log.d(TAG, "No waiting list found for event: " + eventId);
-                        callback.onEntrantIdsFetched(new ArrayList<>());
-                        return;
-                    }
-
-                    List<String> waitingListIds = (List<String>) waitingListDoc.get("entries");
-                    if (waitingListIds == null || waitingListIds.isEmpty()) {
-                        Log.d(TAG, "Waiting list is empty");
-                        callback.onEntrantIdsFetched(new ArrayList<>());
-                        return;
-                    }
-
-                    // Then get chosen list
-                    db.collection("chosen").document(eventId)
-                            .get()
-                            .addOnSuccessListener(chosenDoc -> {
-                                List<String> chosenIds = new ArrayList<>();
-                                if (chosenDoc.exists()) {
-                                    List<String> chosen = (List<String>) chosenDoc.get("entries");
-                                    if (chosen != null) {
-                                        chosenIds = chosen;
-                                    }
-                                }
-
-                                // Calculate not-chosen: waiting list minus chosen
-                                List<String> notChosenIds = new ArrayList<>(waitingListIds);
-                                notChosenIds.removeAll(chosenIds);
-
-                                Log.d(TAG, "Found " + notChosenIds.size() + " not-chosen entrants");
-                                callback.onEntrantIdsFetched(notChosenIds);
-                            })
-                            .addOnFailureListener(e -> {
-                                Log.e(TAG, "Error fetching chosen list", e);
-                                // If we can't get chosen list, treat all waiting list as not-chosen
-                                callback.onEntrantIdsFetched(waitingListIds);
-                            });
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching waiting list", e);
-                    callback.onEntrantIdsFetched(new ArrayList<>());
-                });
-    }
-
-    /**
-     * Get waiting list entrants from the "waiting_lists" collection
-     */
-    private void getWaitingListEntrantsFromCollection(String eventId, EntrantIdsCallback callback) {
-        db.collection("waiting_lists").document(eventId)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (!documentSnapshot.exists()) {
-                        Log.d(TAG, "No waiting list found for event: " + eventId);
-                        callback.onEntrantIdsFetched(new ArrayList<>());
-                        return;
-                    }
-
-                    List<String> waitingListIds = (List<String>) documentSnapshot.get("entries");
-                    if (waitingListIds == null) {
-                        waitingListIds = new ArrayList<>();
-                    }
-
-                    Log.d(TAG, "Found " + waitingListIds.size() + " waiting list entrants");
-                    callback.onEntrantIdsFetched(waitingListIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Error fetching waiting list", e);
-                    callback.onEntrantIdsFetched(new ArrayList<>());
-                });
-    }
-
-    /**
-     * Callback interface for fetching entrant IDs
-     */
-    private interface EntrantIdsCallback {
-        void onEntrantIdsFetched(List<String> entrantIds);
-    }
-
-
-
-
-
-
-    /**
-     * Get list of chosen entrant IDs from Firestore (DEPRECATED)
-     */
-    private void getChosenEntrantsOLD(String eventId, EntrantListCallback callback) {
-        db.collection("events").document(eventId)
-                .collection("chosen")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<String> chosenIds = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        chosenIds.add(doc.getId());
-                    }
-                    Log.d(TAG, "Found " + chosenIds.size() + " chosen entrants for event " + eventId);
-                    callback.onEntrantsLoaded(chosenIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get chosen entrants", e);
-                    Toast.makeText(this, "Failed to load chosen entrants", Toast.LENGTH_SHORT).show();
-                    callback.onEntrantsLoaded(new ArrayList<>());
-                });
-    }
-
-    /**
-     * Get list of not chosen entrant IDs from Firestore (DEPRECATED)
-     */
-    private void getNotChosenEntrantsOLD(String eventId, EntrantListCallback callback) {
-        db.collection("events").document(eventId)
-                .collection("notChosen")
-                .get()
-                .addOnSuccessListener(querySnapshot -> {
-                    List<String> notChosenIds = new ArrayList<>();
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
-                        notChosenIds.add(doc.getId());
-                    }
-                    Log.d(TAG, "Found " + notChosenIds.size() + " not-chosen entrants");
-                    callback.onEntrantsLoaded(notChosenIds);
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to get not-chosen entrants", e);
-                    Toast.makeText(this, "Failed to load not-chosen entrants", Toast.LENGTH_SHORT).show();
-                    callback.onEntrantsLoaded(new ArrayList<>());
-                });
-    }
-
-
-    /**
-     * Mark a user as chosen in Firestore (DEPRECATED)
-     */
-    private void markUserAsChosen(String uid) {
-        if (spinnerEntrants == null || spinnerEntrants.getSelectedItemPosition() < 0) {
-            Toast.makeText(this, "No entrant selected", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to mark user as chosen: " + selectedName + " UID: " + uid);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
-
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
-        }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("chosen")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully marked as chosen: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " marked as chosen!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to mark as chosen: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to mark as chosen: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Mark a user as not chosen in Firestore
-     */
-    private void markUserAsNotChosen(String uid) {
-        if (spinnerEntrants == null || spinnerEntrants.getSelectedItemPosition() < 0) {
-            Toast.makeText(this, "No entrant selected", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to mark user as NOT chosen: " + selectedName + " UID: " + uid);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
-
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
-        }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("notChosen")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully marked as NOT chosen: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " marked as NOT chosen!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to mark as NOT chosen: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to mark as NOT chosen: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Add a user to waiting list in Firestore
-     */
-    private void addToWaitingList(String uid) {
-        if (spinnerEntrants == null || spinnerEntrants.getSelectedItemPosition() < 0) {
-            Toast.makeText(this, "No entrant selected", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String selectedName = entrantNames.get(spinnerEntrants.getSelectedItemPosition());
-        Log.d(TAG, "Attempting to add user to waiting list: " + selectedName + " UID: " + uid);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("timestamp", FieldValue.serverTimestamp());
-
-        String currentEventId = etEventId.getText().toString().trim();
-        if (currentEventId.isEmpty()) {
-            currentEventId = eventId; // Use default if not set
-        }
-
-        db.collection("events")
-                .document(currentEventId)
-                .collection("waitingList")
-                .document(uid)
-                .set(data)
-                .addOnSuccessListener(aVoid -> {
-                    Log.d(TAG, "Successfully added to waiting list: " + selectedName + " UID: " + uid);
-                    Toast.makeText(this, selectedName + " added to waiting list!", Toast.LENGTH_SHORT).show();
-                })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Failed to add to waiting list: " + selectedName + " UID: " + uid, e);
-                    Toast.makeText(this, "Failed to add to waiting list: " + selectedName, Toast.LENGTH_SHORT).show();
-                });
-    }
-
-    /**
-     * Callback interface for loading entrant lists
-     */
-    private interface EntrantListCallback {
-        void onEntrantsLoaded(List<String> entrantIds);
     }
 }

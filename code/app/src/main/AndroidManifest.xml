@@ -1,14 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- for notifications -->
+
+    <!-- Internet and Notifications -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
+    <!-- Camera and Media -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- Location Services (US 02.02.02) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
+        android:name=".ConnectApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -18,6 +29,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Connect">
 
+        <!-- Google Maps API Key -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCTJLLxXCi4xEEFVznngLmMmgcTZtKpbxU" />
 
         <!-- ✅ Start the app with MainActivity -->
         <activity
@@ -29,26 +44,75 @@
             </intent-filter>
         </activity>
 
-        <!-- Other activities (no launcher intent-filter) -->
-        <activity android:name=".activities.LoginActivity" />
-        <activity android:name=".activities.EventListActivity" />
-        <activity android:name=".activities.EventDetails" />
-        <activity android:name=".activities.ProfileActivity" />
-        <activity android:name=".activities.CreateAcctActivity" />
-        <activity android:name=".activities.OrganizerActivity" />
-        <activity android:name=".activities.OrganizerMessagesActivity" />
+        <!-- Authentication Activities -->
+        <activity
+            android:name=".activities.LoginActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.CreateAcctActivity"
+            android:exported="false" />
 
-        <activity android:name=".activities.QRCodeScanner" />
+        <!-- Event Activities -->
+        <activity
+            android:name=".activities.EventListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.EventDetails"
+            android:exported="false" />
         <activity
             android:name=".activities.CreateEvent"
+            android:exported="false" />
+        <activity
+            android:name=".activities.MyEventsActivity"
+            android:exported="false" />
+
+        <!-- Organizer Activities -->
+        <activity
+            android:name=".activities.OrganizerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.OrganizerMessagesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.ManageDrawActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Connect" />
+        <activity
+            android:name=".activities.EntrantMapActivity"
+            android:exported="false" />
+
+        <!-- Admin Activities -->
+        <activity
+            android:name=".activities.AdminDashboardActivity"
+            android:exported="false" />
+        <activity android:name=".activities.AdminEventListActivity" />
+        <activity android:name=".activities.AdminProfileListActivity" />
+        <activity android:name=".activities.AdminImageListActivity" />
+        <activity android:name=".activities.AdminEventDetailActivity"
+            android:exported="false"/>
+        <activity android:name=".activities.AdminOrganizerListActivity" />
+        <activity android:name=".activities.AdminNotificationLogActivity" />
+        <activity android:name=".activities.ImageDetailsActivity" />
+        <activity android:name=".activities.AdminReportActivity" />
+
+        <!-- User Profile -->
+        <activity
+            android:name=".activities.ProfileActivity"
+            android:exported="false" />
+
+        <!-- QR Code Scanner -->
+        <activity
+            android:name=".activities.QRCodeScanner"
             android:exported="false" />
 
         <!-- Notifications for Entrant -->
         <activity
-            android:name=".activities.NotificationsActivity"
+            android:name=".activities.UserNotificationsActivity"
             android:exported="false"
             android:label="My Notifications"/>
 
+        <!-- Services -->
+        <!-- Notification Listener Service -->
         <service
             android:name=".network.NotificationListenerService"
             android:enabled="true"
@@ -56,11 +120,5 @@
             android:foregroundServiceType="dataSync"/>
 
     </application>
-
-    <!-- Permission to Use Camera -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
 </manifest>

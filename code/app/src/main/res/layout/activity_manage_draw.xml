@@ -1,30 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5">
+    android:background="@color/background_light">
 
-    <!-- Top Bar -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/topBar"
         android:layout_width="0dp"
         android:layout_height="56dp"
-        android:background="#FFFFFF"
+        android:background="@color/card_bg_light"
         android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- FIX: guaranteed-visible back arrow (no custom drawable needed) -->
         <ImageButton
             android:id="@+id/btnBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="12dp"
             android:background="@android:color/transparent"
-            android:src="@android:drawable/ic_media_previous"
-            android:tint="#2C4E4E"
+            android:src="@drawable/ic_back_arrow"
+            app:tint="#4A7070"
             android:contentDescription="Back"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -37,7 +36,7 @@
             android:text="Manage Draw"
             android:textStyle="bold"
             android:textSize="20sp"
-            android:textColor="#000000"
+            android:textColor="@color/text_primary_light"
             android:includeFontPadding="false"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -45,7 +44,6 @@
             app:layout_constraintBottom_toBottomOf="parent"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Event info card -->
     <androidx.cardview.widget.CardView
         android:id="@+id/eventInfoCard"
         android:layout_width="0dp"
@@ -134,13 +132,12 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Tabs -->
     <LinearLayout
         android:id="@+id/filterTabs"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="#D8D8D8"
+        android:background="#E0E0E0"
         android:padding="6dp"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
@@ -155,10 +152,12 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Waiting"
-            android:textColor="#000000"
+            android:textColor="@color/text_primary_light"
             android:textSize="14sp"
             android:gravity="center"
-            android:padding="8dp" />
+            android:padding="8dp"
+            android:background="#FFFFFF"
+            android:elevation="2dp" />
 
         <TextView
             android:id="@+id/btnTabSelected"
@@ -166,7 +165,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Selected"
-            android:textColor="#000000"
+            android:textColor="@color/text_secondary_light"
             android:textSize="14sp"
             android:gravity="center"
             android:padding="8dp" />
@@ -177,7 +176,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Enrolled"
-            android:textColor="#000000"
+            android:textColor="@color/text_secondary_light"
             android:textSize="14sp"
             android:gravity="center"
             android:padding="8dp" />
@@ -188,110 +187,207 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Canceled"
-            android:textColor="#000000"
+            android:textColor="@color/text_secondary_light"
             android:textSize="14sp"
             android:gravity="center"
-            android:padding="8dp" />
+            android:padding="8dp"/>
     </LinearLayout>
 
-    <!-- Swappable content -->
+    <LinearLayout
+        android:id="@+id/manageActions"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp"
+        app:layout_constraintTop_toBottomOf="@id/filterTabs"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNotifySelected"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+            android:text="Notify Selected"
+            android:textAllCaps="false"
+            android:textColor="@color/interests"
+            android:textSize="12sp"
+            app:backgroundTint="@color/mist_pink"
+            app:cornerRadius="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNotifyWaiting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="1"
+
+            android:text="Notify   Waitlist"
+            android:textAllCaps="false"
+            android:textColor="@color/interests"
+            android:textSize="12sp"
+            app:backgroundTint="@color/mist_pink"
+            app:cornerRadius="20dp" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNotifyCanceled"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Notify Canceled"
+            android:textAllCaps="false"
+            android:textColor="@color/interests"
+            android:textSize="12sp"
+            app:backgroundTint="@color/mist_pink"
+            app:cornerRadius="20dp" />
+
+    </LinearLayout>
+
     <FrameLayout
         android:id="@+id/contentContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/filterTabs"
-        app:layout_constraintBottom_toTopOf="@+id/bottomNavigation"
+        android:padding="12dp"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/manageActions"
+        app:layout_constraintVertical_bias="0.0" />
 
-    <!-- Bottom Navigation -->
+    <LinearLayout
+        android:id="@+id/lotteryButtons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="end"
+        android:padding="2dp"
+        android:background="@android:color/transparent"
+        app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="0dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnManualLottery"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="0dp"
+            android:text="Run Lottery (Manual)"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary_light"
+            android:textSize="11sp"
+            app:strokeColor="@color/text_primary_light"
+            app:cornerRadius="24dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDrawReplacement"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="0dp"
+            android:text="Draw Replacement"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary_light"
+            android:textSize="11sp"
+            app:strokeColor="@color/text_primary_light"
+            app:cornerRadius="24dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelUnresponsive"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cancel Unresponsive Entrants"
+            android:textAllCaps="false"
+            android:textColor="@color/text_primary_light"
+            android:textSize="11sp"
+            app:strokeColor="@color/text_primary_light"
+            app:cornerRadius="24dp"/>
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/bottomNavigation"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:background="#2C3E3E"
-        android:padding="8dp"
+        android:background="@color/card_bg_light"
+        android:elevation="12dp"
+        android:paddingVertical="10dp"
+        android:paddingHorizontal="12dp"
         android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- FIX: no wrapping + autosize -->
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavDashboard"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
             android:layout_weight="1"
-            android:text="Dashboard"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:includeFontPadding="false"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="8sp"
-            android:autoSizeMaxTextSize="11sp"
-            android:autoSizeStepGranularity="1sp"
-            android:backgroundTint="#1A2828"
-            android:layout_marginEnd="6dp" />
+            android:text="DASHBOARD"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:textAllCaps="true"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_view"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavMessage"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
             android:layout_weight="1"
-            android:text="Message"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:includeFontPadding="false"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="8sp"
-            android:autoSizeMaxTextSize="11sp"
-            android:autoSizeStepGranularity="1sp"
-            android:backgroundTint="#1A2828"
-            android:layout_marginEnd="6dp" />
+            android:text="MESSAGES"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:textAllCaps="true"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_dialog_email"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavMap"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="6dp"
             android:layout_weight="1"
-            android:text="Map"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:includeFontPadding="false"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="8sp"
-            android:autoSizeMaxTextSize="11sp"
-            android:autoSizeStepGranularity="1sp"
-            android:backgroundTint="#1A2828"
-            android:layout_marginEnd="6dp" />
+            android:text="MAP"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:textAllCaps="true"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_mapmode"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNavProfile"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Profile"
-            android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:includeFontPadding="false"
-            android:autoSizeTextType="uniform"
-            android:autoSizeMinTextSize="8sp"
-            android:autoSizeMaxTextSize="11sp"
-            android:autoSizeStepGranularity="1sp"
-            android:backgroundTint="#1A2828" />
+            android:text="PROFILE"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:textAllCaps="true"
+            app:backgroundTint="@android:color/transparent"
+            app:icon="@android:drawable/ic_menu_myplaces"
+            app:iconGravity="textTop"
+            app:iconSize="24dp"
+            app:iconTint="@color/text_secondary" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
