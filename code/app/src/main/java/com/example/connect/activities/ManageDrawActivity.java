@@ -258,6 +258,7 @@ public class ManageDrawActivity extends AppCompatActivity {
                 @Override
                 public void onSuccess() {
                     runOnUiThread(() -> {
+                        Log.d(TAG, "⚠️ Manual lottery triggered for event: " + eventId);
                         Toast.makeText(ManageDrawActivity.this,
                                 "✅ Manual lottery completed successfully!",
                                 Toast.LENGTH_LONG).show();

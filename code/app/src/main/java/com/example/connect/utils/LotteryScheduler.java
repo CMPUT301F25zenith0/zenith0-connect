@@ -140,8 +140,6 @@ public class LotteryScheduler {
      * @param callback Callback for success/failure notification
      */
     public void runLotteryManually(String eventId, LotteryCallback callback) {
-        Log.d(TAG, "⚠️ Manual lottery triggered for event: " + eventId);
-
         db.collection("events")
                 .document(eventId)
                 .get()
