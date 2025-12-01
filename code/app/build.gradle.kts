@@ -100,6 +100,7 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.2")
     androidTestImplementation("org.mockito:mockito-android:5.12.0")
     androidTestImplementation("org.mockito:mockito-android:5.12.0")
+    androidTestImplementation ("org.mockito:mockito-android:5.5.0")
 
     testImplementation ("com.google.firebase:firebase-appcheck-safetynet:16.1.2") // any recent version
     testImplementation("com.google.firebase:firebase-firestore:24.10.0")
